@@ -133,6 +133,8 @@ for Actions.
 
 ## Post-Deploy Verification
 
+- Current stage API URL:
+	- `https://pet-slay-api-stage-j67sekma7a-el.a.run.app`
 - `gcloud run services describe pet-slay-api-stage --region=asia-south1 --format='value(status.url)'`
 - `curl "$(gcloud run services describe pet-slay-api-stage --region=asia-south1 --format='value(status.url)')/health"`
 
