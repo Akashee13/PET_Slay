@@ -10,6 +10,8 @@ import { type AdminProduct, listAdminProducts, updateProductListing } from "@/sr
 type ListingFilter = "all" | "listed" | "attention";
 type SortMode = "newest" | "price_low" | "price_high";
 
+const PRODUCT_PLACEHOLDER_IMAGE = "https://image.pollinations.ai/prompt/minimal%20fashion%20placeholder%20image?width=900&height=1200&nologo=true";
+
 function formatVisibleUntil(value?: string): string {
   if (!value) {
     return "No expiry";
@@ -26,6 +28,19 @@ function isExpired(product: AdminProduct): boolean {
     return false;
   }
   return new Date(product.visibleUntil).getTime() <= Date.now();
+}
+
+function getProductImages(product: AdminProduct): string[] {
+  const uniqueImages = new Set<string>();
+  if (product.coverImageUrl) {
+    uniqueImages.add(product.coverImageUrl);
+  }
+  for (const imageUrl of product.imageUrls ?? []) {
+    if (imageUrl) {
+      uniqueImages.add(imageUrl);
+    }
+  }
+  return uniqueImages.size > 0 ? Array.from(uniqueImages) : [PRODUCT_PLACEHOLDER_IMAGE];
 }
 
 export default function ListedProductsPage() {
@@ -151,16 +166,30 @@ export default function ListedProductsPage() {
             {visibleProducts.map((product) => {
               const expired = isExpired(product);
               const listed = product.listingStatus === "listed" && !expired;
+              const productImages = getProductImages(product);
+              const carouselImages = productImages.length > 1 ? [...productImages, ...productImages] : productImages;
               return (
                 <article key={product.id} className="plp-card">
-                  <Link href={`/products/${product.id}`} className="plp-image-link" aria-label={`Patch ${product.title}`}>
-                    <img
-                      src={product.coverImageUrl || product.imageUrls?.[0] || "https://image.pollinations.ai/prompt/minimal%20fashion%20placeholder%20image?width=900&height=1200&nologo=true"}
-                      alt={product.title}
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                    />
-                  </Link>
+                  <div className="plp-carousel" aria-label={`${product.title} image gallery`}>
+                    <div className={`plp-carousel-track ${productImages.length > 1 ? "auto-scroll" : ""}`}>
+                      {carouselImages.map((imageUrl, index) => (
+                        <Link
+                          href={`/products/${product.id}`}
+                          className="plp-carousel-slide"
+                          aria-label={`Patch ${product.title}`}
+                          key={`${product.id}-${imageUrl}-${index}`}
+                        >
+                          <img
+                            src={imageUrl}
+                            alt={`${product.title} look ${(index % productImages.length) + 1}`}
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                  {productImages.length > 1 && <p className="plp-image-hint">Auto-scrolls · swipe to inspect {productImages.length} images</p>}
                   <div className="plp-card-body">
                     <div className="plp-card-copy">
                       <p>{product.category.replace("_", " ")}</p>

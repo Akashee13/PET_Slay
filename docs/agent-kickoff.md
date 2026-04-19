@@ -14,7 +14,7 @@
 - Stage API: `https://pet-slay-api-stage-j67sekma7a-el.a.run.app`
 - Stage Admin target URL: `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app`
 - Architecture: React Native buyer app, Next.js admin app, Go API, Supabase-backed Postgres/Auth/Storage
-- Last refreshed: `2026-04-19`
+- Last refreshed: `2026-04-20`
 
 ## Product Context
 
@@ -39,7 +39,8 @@
 - Supabase stage project exists and stage secrets are configured in GitHub Actions.
 - Backend has progressed from in-memory scaffolding to mostly Postgres-backed repositories.
 - Stage deploy pipeline includes DB migration execution and readiness enforcement flags.
-- Current live stage readiness reports `databaseConfigured=false` and `databaseRequired=true`, which means stage API is still not connected to a live database DSN.
+- Current live stage readiness reports `databaseConfigured=true` and `databaseRequired=true`.
+- Stage API and stage admin have both deployed successfully through GitHub Actions after Supabase DB activation.
 
 ## What Is Already Done
 
@@ -111,15 +112,18 @@
   - Admin list remains all-products and can `list_now` or `unlist_now`.
   - New admin tab `/listed-products` shows a product table with list/unlist/patch actions.
   - Admin language selector now drives visible nav/page copy through React context.
+- Added admin PLP + media UX refinements:
+  - Authenticated admin landing page defaults to `/listed-products`.
+  - Listed-products page uses a PLP-style card grid inspired by lightweight fashion collection pages.
+  - Product upload controls now accumulate multiple selected image files, support remove-before-submit chips, and keep the 5-image product cap.
+  - Listed product cards show multiple product images in a horizontal, swipeable, auto-scrolling gallery.
 
 ## Next Recommended Work
 
-1. Confirm `STAGE_DATABASE_URL` in GitHub is a live Supabase pooler/direct Postgres DSN with the actual password, not `[YOUR-PASSWORD]`.
-2. Trigger `Deploy Stage API (Cloud Run)` and confirm migrations run successfully.
-3. Verify `GET /health/ready` shows `databaseConfigured=true` and `databaseRequired=true`.
-4. Ensure Supabase Storage bucket (default `product-images`) and policies allow admin-side upload and public read.
-5. Smoke test admin product create/update and `/listed-products` list/unlist actions on `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app`.
-6. Continue `T052` across admin/mobile auth boundaries, then move to `T053` payload/image/deep-link optimization.
+1. Smoke test admin product create/update with multiple selected files on `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app`.
+2. Smoke test `/listed-products` image carousel, list/unlist, and patch actions after the admin deployment finishes.
+3. Add real admin UI tests for file selection and PLP image rendering; current admin `npm test` is only a placeholder.
+4. Continue `T052` across admin/mobile auth boundaries, then move to `T053` payload/image/deep-link optimization.
 
 ## Milestone Refresh Rule
 

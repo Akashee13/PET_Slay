@@ -5,6 +5,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { getAdminSessionToken } from "@/src/features/auth/admin-session";
 import { useAdminLanguage } from "@/src/features/i18n/admin-language";
+import { mergeSelectedProductImages, removeSelectedProductImage } from "@/src/features/products/file-selection";
 import {
   createAdminProduct,
   type AdminProduct,
@@ -323,9 +324,24 @@ export default function ProductsPage() {
               type="file"
               accept="image/png,image/jpeg,image/webp"
               multiple
-              onChange={(event) => setCreateUploadFiles(Array.from(event.target.files ?? []).slice(0, 5))}
+              onChange={(event) => {
+                setCreateUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
+                event.currentTarget.value = "";
+              }}
             />
-            {createUploadFiles.length > 0 && <p className="subtle">Files selected: {createUploadFiles.map((file) => file.name).join(", ")}</p>}
+            <p className="file-help">Select up to 5 images at once, or choose again to add more before creating the product.</p>
+            {createUploadFiles.length > 0 && (
+              <div className="file-chip-row" aria-live="polite">
+                {createUploadFiles.map((file, index) => (
+                  <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
+                    {file.name}
+                    <button type="button" onClick={() => setCreateUploadFiles((current) => removeSelectedProductImage(current, index))}>
+                      Remove
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
             {!isAdminSupabaseConfigured() && <p className="error">Image upload needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.</p>}
             <button type="submit">Create Product</button>
           </form>
@@ -390,9 +406,24 @@ export default function ProductsPage() {
               type="file"
               accept="image/png,image/jpeg,image/webp"
               multiple
-              onChange={(event) => setUpdateUploadFiles(Array.from(event.target.files ?? []).slice(0, 5))}
+              onChange={(event) => {
+                setUpdateUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
+                event.currentTarget.value = "";
+              }}
             />
-            {updateUploadFiles.length > 0 && <p className="subtle">Files selected: {updateUploadFiles.map((file) => file.name).join(", ")}</p>}
+            <p className="file-help">Select up to 5 images at once, or choose again to add more before patching the product.</p>
+            {updateUploadFiles.length > 0 && (
+              <div className="file-chip-row" aria-live="polite">
+                {updateUploadFiles.map((file, index) => (
+                  <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
+                    {file.name}
+                    <button type="button" onClick={() => setUpdateUploadFiles((current) => removeSelectedProductImage(current, index))}>
+                      Remove
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
             <button type="submit">Update Product</button>
           </form>
           {updateForm.productId && (

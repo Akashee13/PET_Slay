@@ -11,7 +11,7 @@
 - Repo root: `/Users/akash/Documents/PetProjects/PET_Slay`
 - Branch: `001-wholesale-fashion-platform`
 - Primary feature folder: `/Users/akash/Documents/PetProjects/PET_Slay/specs/001-wholesale-fashion-platform`
-- Last refreshed: `2026-04-19`
+- Last refreshed: `2026-04-20`
 
 ## Product Decisions
 
@@ -31,6 +31,7 @@
 - Stage Admin target URL: `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app`
 - Deploy path: GitHub Actions -> OIDC -> Cloud Run
 - Supabase stage project exists and GitHub stage secrets have been populated
+- Stage API readiness is live with `databaseConfigured=true` and `databaseRequired=true`
 
 ## Key Docs
 
@@ -151,24 +152,29 @@
   - `/Users/akash/Documents/PetProjects/PET_Slay/.github/workflows/deploy-stage-admin-cloudrun.yml`
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/Dockerfile`
   - `/Users/akash/Documents/PetProjects/PET_Slay/scripts/deploy-stage-admin-cloudrun.sh`
+- Admin product media UX now supports additive multiple file selection:
+  - shared helper: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/src/features/products/file-selection.ts`
+  - create/update form: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/products/page.tsx`
+  - product detail patch form: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/products/[productId]/page.tsx`
+- Admin listed-products PLP now renders multiple images per product in a horizontal, swipeable, auto-scrolling gallery:
+  - page: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/listed-products/page.tsx`
+  - styles: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/globals.css`
 
 ## Known Caveats
 
 - Initial SQL file (`0001_initial_schema.sql`) is still not internally idempotent, but reruns are now guarded by `schema_migrations` tracking.
-- Latest stage readiness still reports `databaseConfigured=false` while `databaseRequired=true`; API is not yet connected to a live DB DSN.
-- Latest live verification command: `/Users/akash/Documents/PetProjects/PET_Slay/scripts/verify-stage-api.sh` reached stage and failed readiness with HTTP 503 because `databaseConfigured=false`.
+- Admin `npm run lint` currently cannot run locally because `eslint` is not listed in `apps/admin/package.json` devDependencies.
+- Admin `npm test` currently runs a placeholder command only; add real UI/component tests for file selection and PLP galleries.
 - Mobile workspace-wide typecheck currently fails on pre-existing issues in `apps/mobile/src/i18n/index.ts` and `apps/mobile/src/services/supabase.ts`; the new `apps/mobile/src/services/notifications.ts` file typechecks in isolation.
 - Admin UI currently uses manual bearer token entry (no Supabase auth wiring yet) to accelerate stage operations.
-- Supabase Storage must have bucket/policies configured (default bucket name `product-images`) for direct file uploads to succeed from admin UI.
+- Supabase Storage bucket/policy migration exists for default bucket `product-images`; continue to smoke test uploads after each admin/API deploy.
 
 ## Best Next Technical Path
 
-1. Confirm `STAGE_DATABASE_URL` is a live Postgres DSN with actual password, not a placeholder.
-2. Trigger `Deploy Stage API (Cloud Run)` workflow on `001-wholesale-fashion-platform`.
-3. Confirm migrations run and `GET /health/ready` reports `databaseConfigured=true` and `databaseRequired=true`.
-4. Validate admin product persistence and image upload end-to-end (create, list, update with files).
-5. Ensure Storage bucket `product-images` (or configured bucket) exists and policies allow upload/public-read for intended auth model.
-6. Continue API hardening tasks in order: `T050` (campaign relevance safeguards), `T052` (security/role boundary hardening), `T053` (catalog payload optimization).
+1. Validate admin product persistence and multi-image upload end-to-end on stage.
+2. Validate `/listed-products` PLP carousel, list/unlist, and patch actions on stage.
+3. Add real admin UI/component tests for image file selection and gallery rendering.
+4. Continue API hardening tasks in order: `T052` (security/role boundary hardening), `T053` (catalog payload optimization).
 
 ## Working Style
 

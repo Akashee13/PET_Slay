@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { getAdminSessionToken } from "@/src/features/auth/admin-session";
+import { mergeSelectedProductImages, removeSelectedProductImage } from "@/src/features/products/file-selection";
 import { type AdminProduct, updateAdminProduct, updateProductListing } from "@/src/services/admin-api";
 import { uploadProductImages } from "@/src/services/product-image-upload";
 import { isAdminSupabaseConfigured } from "@/src/services/supabase";
@@ -143,9 +144,24 @@ export default function ProductDetailPage() {
             type="file"
             accept="image/png,image/jpeg,image/webp"
             multiple
-            onChange={(event) => setUploadFiles(Array.from(event.target.files ?? []).slice(0, 5))}
+            onChange={(event) => {
+              setUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
+              event.currentTarget.value = "";
+            }}
           />
-          {uploadFiles.length > 0 && <p className="subtle">Files selected: {uploadFiles.map((file) => file.name).join(", ")}</p>}
+          <p className="file-help">Select up to 5 images at once, or choose again to add more before patching this product.</p>
+          {uploadFiles.length > 0 && (
+            <div className="file-chip-row" aria-live="polite">
+              {uploadFiles.map((file, index) => (
+                <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
+                  {file.name}
+                  <button type="button" onClick={() => setUploadFiles((current) => removeSelectedProductImage(current, index))}>
+                    Remove
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
           {!isAdminSupabaseConfigured() && <p className="error">Image upload needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.</p>}
           <button type="submit">Patch Product</button>
         </form>
