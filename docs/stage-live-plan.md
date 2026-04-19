@@ -51,10 +51,15 @@ development and validation rather than formal release.
 Use GitHub Actions + Cloud Run first:
 
 - workflow: `.github/workflows/deploy-stage-api-cloudrun.yml`
+- workflow: `.github/workflows/deploy-stage-admin-cloudrun.yml`
 - trigger: push to `001-wholesale-fashion-platform` when `apps/api/**` changes
 - manual override: workflow dispatch with optional `image_tag`, `region`, `service`
 
 This avoids stage-cluster bootstrap work while still giving a real remote stage API.
+
+Admin deploy uses the same GCP OIDC secrets and pushes `apps/admin/Dockerfile` to
+Artifact Registry, then deploys service `pet-slay-admin-stage` with
+`NEXT_PUBLIC_API_BASE_URL` pointed at stage API.
 
 ## GitHub Actions Secret Contract (`deploy-stage-api-cloudrun.yml`)
 
@@ -135,8 +140,11 @@ for Actions.
 
 - Current stage API URL:
 	- `https://pet-slay-api-stage-j67sekma7a-el.a.run.app`
+- Target stage Admin URL:
+	- `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app`
 - `gcloud run services describe pet-slay-api-stage --region=asia-south1 --format='value(status.url)'`
 - `curl "$(gcloud run services describe pet-slay-api-stage --region=asia-south1 --format='value(status.url)')/health"`
+- `STAGE_ADMIN_URL="$(gcloud run services describe pet-slay-admin-stage --region=asia-south1 --format='value(status.url)')" scripts/verify-stage-admin-web.sh`
 
 ## Local Validation Before Deploy
 

@@ -1,6 +1,6 @@
 APP_NAME=pet-slay-api
 
-.PHONY: run test fmt migrate-up migrate-down
+.PHONY: run test fmt migrate-up migrate-down seed-stage-catalog verify-stage-api
 
 run:
 	go run ./cmd/server
@@ -16,3 +16,9 @@ migrate-up:
 
 migrate-down:
 	./scripts/migrate.sh down
+
+seed-stage-catalog:
+	./scripts/seed-stage-catalog.sh
+
+verify-stage-api:
+	../../scripts/verify-stage-api.sh

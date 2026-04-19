@@ -122,4 +122,3 @@ func (r *PostgresRepository) MarkSent(campaignID string) (*Campaign, error) {
 		Status: "sent",
 	}, nil
 }
-

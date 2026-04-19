@@ -92,4 +92,3 @@ func TestPostgresRepositoryCreatesCampaignTransactionally(t *testing.T) {
 		t.Fatalf("unmet sql expectations: %v", err)
 	}
 }
-

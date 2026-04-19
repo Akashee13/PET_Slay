@@ -1,8 +1,8 @@
 <!--
 Sync Impact Report
-Version change: 1.0.0 -> 1.1.0
+Version change: 1.1.0 -> 1.2.0
 Modified principles:
-- II. Spec-First Decision Making -> II. Spec-First and Test-First Delivery
+- II. Spec-First and Test-First Delivery (expanded quality gate)
 Added sections:
 - None
 Removed sections:
@@ -80,6 +80,9 @@ just feature delivery.
 - Tasks and implementation MUST enforce test-first sequencing for every change,
   including API behavior, shared packages, and UI flows where automated coverage
   is practical.
+- Every commit intended for shared branches MUST keep happy-path integration
+  tests passing for impacted surfaces; a commit that breaks happy integration
+  tests MUST NOT be merged.
 - Plans MUST include a constitution check explaining how the design satisfies the
   multilingual requirement, the two-surface model, and conversion-respectful
   operations.
@@ -98,4 +101,4 @@ for principle removals or incompatible governance changes. Minor version changes
 are required for new principles or materially expanded rules. Patch changes are
 reserved for clarifications that do not alter project behavior.
 
-**Version**: 1.1.0 | **Ratified**: 2026-04-19 | **Last Amended**: 2026-04-19
+**Version**: 1.2.0 | **Ratified**: 2026-04-19 | **Last Amended**: 2026-04-19

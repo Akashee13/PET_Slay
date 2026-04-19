@@ -55,12 +55,17 @@ export default function OrdersPage() {
 
   return (
     <main className="stack">
-      <h1 style={{ marginBottom: 0 }}>Order Queue</h1>
-      <p>Connected to `/v1/admin/orders` and `/v1/admin/orders/{'{orderId}'}`.</p>
+      <section className="toolbar">
+        <div>
+          <p className="eyebrow">Fulfilment Desk</p>
+          <h1 className="headline">Order Queue</h1>
+          <p className="subtle">Connected to `/v1/admin/orders` and `/v1/admin/orders/{'{orderId}'}`.</p>
+        </div>
+      </section>
 
       <div className="row">
         <button type="button" onClick={loadOrders}>
-        Refresh Orders
+          Refresh Orders
         </button>
       </div>
 
@@ -69,13 +74,14 @@ export default function OrdersPage() {
 
       {!loading && orders.length === 0 && <p>No orders available yet.</p>}
 
-      <div className="stack">
+      <div className="order-list">
         {orders.map((order) => (
           <article key={order.id} className="card stack">
             <div className="spread">
               <div>
                 <strong>{order.id}</strong>
-                <div>Total: ₹{order.totalAmount}</div>
+                <div className="subtle">Total: ₹{order.totalAmount}</div>
+                <span className="status-chip">{order.status}</span>
               </div>
               <div className="row">
                 <select
@@ -91,10 +97,10 @@ export default function OrdersPage() {
                     </option>
                   ))}
                 </select>
-                <Link href={`/orders/${order.id}`}>Open</Link>
+                <Link href={`/orders/${order.id}`} className="inline-link">Open</Link>
               </div>
             </div>
-            <ul>
+            <ul className="order-items">
               {order.items.map((item, index) => (
                 <li key={`${order.id}-${index}`}>
                   {item.productId} x {item.quantity} @ ₹{item.unitPrice}

@@ -52,22 +52,35 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <main>
-      <h1>Product {params.productId}</h1>
-      <p>Patch fields through `/v1/admin/products/{'{productId}'}`.</p>
+    <main className="stack-lg">
+      <section className="toolbar">
+        <div>
+          <p className="eyebrow">Inventory Detail</p>
+          <h1 className="headline">Product {params.productId}</h1>
+          <p className="subtle">Patch fields through `/v1/admin/products/{'{productId}'}`.</p>
+        </div>
+      </section>
 
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 10, maxWidth: 560 }}>
-        <input placeholder="Title (optional)" value={title} onChange={(event) => setTitle(event.target.value)} />
-        <textarea placeholder="Description (optional)" value={description} onChange={(event) => setDescription(event.target.value)} />
-        <input placeholder="Base wholesale price (optional)" type="number" step="0.01" value={baseWholesalePrice} onChange={(event) => setBaseWholesalePrice(event.target.value)} />
-        <input placeholder="MOQ (optional)" type="number" value={moq} onChange={(event) => setMoq(event.target.value)} />
-        <input placeholder="Availability status (optional)" value={availabilityStatus} onChange={(event) => setAvailabilityStatus(event.target.value)} />
-        <input placeholder="isNewArrival true|false (optional)" value={isNewArrival} onChange={(event) => setIsNewArrival(event.target.value)} />
-        <button type="submit">Patch Product</button>
-      </form>
+      <section className="panel">
+        <form onSubmit={onSubmit} className="field-grid">
+          <label htmlFor="detail-title">Title (optional)</label>
+          <input id="detail-title" placeholder="Title (optional)" value={title} onChange={(event) => setTitle(event.target.value)} />
+          <label htmlFor="detail-description">Description (optional)</label>
+          <textarea id="detail-description" placeholder="Description (optional)" value={description} onChange={(event) => setDescription(event.target.value)} />
+          <label htmlFor="detail-price">Base wholesale price (optional)</label>
+          <input id="detail-price" placeholder="Base wholesale price (optional)" type="number" step="0.01" value={baseWholesalePrice} onChange={(event) => setBaseWholesalePrice(event.target.value)} />
+          <label htmlFor="detail-moq">MOQ (optional)</label>
+          <input id="detail-moq" placeholder="MOQ (optional)" type="number" value={moq} onChange={(event) => setMoq(event.target.value)} />
+          <label htmlFor="detail-status">Availability status (optional)</label>
+          <input id="detail-status" placeholder="Availability status (optional)" value={availabilityStatus} onChange={(event) => setAvailabilityStatus(event.target.value)} />
+          <label htmlFor="detail-arrival">isNewArrival true|false (optional)</label>
+          <input id="detail-arrival" placeholder="isNewArrival true|false (optional)" value={isNewArrival} onChange={(event) => setIsNewArrival(event.target.value)} />
+          <button type="submit">Patch Product</button>
+        </form>
+      </section>
 
-      {error && <p style={{ color: "crimson" }}>{error}</p>}
-      {result && <pre style={{ marginTop: 12, background: "#f6f6f6", padding: 12, overflow: "auto" }}>{JSON.stringify(result, null, 2)}</pre>}
+      {error && <p className="error">{error}</p>}
+      {result && <pre>{JSON.stringify(result, null, 2)}</pre>}
     </main>
   );
 }

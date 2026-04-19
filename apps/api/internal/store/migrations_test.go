@@ -3,7 +3,10 @@ package store
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
+
+	"github.com/DATA-DOG/go-sqlmock"
 )
 
 func TestLoadMigrationFilesInOrder(t *testing.T) {
@@ -34,3 +37,60 @@ func TestLoadMigrationFilesInOrder(t *testing.T) {
 	}
 }
 
+func TestApplyMigrationsSkipsAlreadyAppliedFiles(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("create sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	mock.ExpectExec(regexp.QuoteMeta(ensureSchemaMigrationsTableSQL)).WillReturnResult(sqlmock.NewResult(0, 0))
+	rows := sqlmock.NewRows([]string{"name"}).AddRow("0001_initial.sql")
+	mock.ExpectQuery(regexp.QuoteMeta(selectAppliedMigrationsSQL)).WillReturnRows(rows)
+
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("CREATE TABLE bar (id INT);")).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(regexp.QuoteMeta(insertAppliedMigrationSQL)).WithArgs("0002_next.sql").
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+
+	files := []MigrationFile{
+		{Name: "0001_initial.sql", SQL: "CREATE TABLE foo (id INT);"},
+		{Name: "0002_next.sql", SQL: "CREATE TABLE bar (id INT);"},
+	}
+
+	if err := ApplyMigrations(db, files); err != nil {
+		t.Fatalf("apply migrations: %v", err)
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet sql expectations: %v", err)
+	}
+}
+
+func TestApplyMigrationsRollsBackWhenMigrationFails(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatalf("create sqlmock: %v", err)
+	}
+	defer db.Close()
+
+	mock.ExpectExec(regexp.QuoteMeta(ensureSchemaMigrationsTableSQL)).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectQuery(regexp.QuoteMeta(selectAppliedMigrationsSQL)).WillReturnRows(sqlmock.NewRows([]string{"name"}))
+
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta("CREATE TABLE foo (id INT);")).
+		WillReturnError(os.ErrPermission)
+	mock.ExpectRollback()
+
+	files := []MigrationFile{{Name: "0001_initial.sql", SQL: "CREATE TABLE foo (id INT);"}}
+	err = ApplyMigrations(db, files)
+	if err == nil {
+		t.Fatal("expected migration error, got nil")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("unmet sql expectations: %v", err)
+	}
+}

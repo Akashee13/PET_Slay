@@ -34,17 +34,18 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="container stack-lg" style={{ paddingTop: 18 }}>
-      <header className="card spread">
-        <strong>PET_Slay Admin</strong>
+    <div className="container stack-lg" style={{ paddingTop: 20 }}>
+      <header className="topbar spread">
+        <strong>PET_Slay Operations Console</strong>
         <nav className="nav-row">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} style={{ fontWeight: pathname === item.href ? 700 : 500 }}>
+            <Link key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined}>
               {item.label}
             </Link>
           ))}
           <button
             type="button"
+            className="secondary"
             onClick={() => {
               clearAdminSessionToken();
               router.push("/");

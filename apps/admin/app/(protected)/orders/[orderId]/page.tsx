@@ -30,29 +30,32 @@ export default function OrderDetailPage() {
   }
 
   return (
-    <main>
-      <h1>Order {params.orderId}</h1>
-      <p>Update order status through `/v1/admin/orders/{'{orderId}'}`.</p>
+    <main className="stack-lg">
+      <section className="toolbar">
+        <div>
+          <p className="eyebrow">Order Detail</p>
+          <h1 className="headline">Order {params.orderId}</h1>
+          <p className="subtle">Update order status through `/v1/admin/orders/{'{orderId}'}`.</p>
+        </div>
+      </section>
 
-      <form onSubmit={onSubmit} style={{ display: "grid", gap: 12, maxWidth: 420 }}>
-        <label htmlFor="status">New Status</label>
-        <select id="status" value={status} onChange={(event) => setStatus(event.target.value)}>
-          <option value="pending">pending</option>
-          <option value="confirmed">confirmed</option>
-          <option value="processing">processing</option>
-          <option value="shipped">shipped</option>
-          <option value="delivered">delivered</option>
-          <option value="cancelled">cancelled</option>
-        </select>
-        <button type="submit">Update Status</button>
-      </form>
+      <section className="panel">
+        <form onSubmit={onSubmit} className="field-grid" style={{ maxWidth: 460 }}>
+          <label htmlFor="status">New Status</label>
+          <select id="status" value={status} onChange={(event) => setStatus(event.target.value)}>
+            <option value="pending">pending</option>
+            <option value="confirmed">confirmed</option>
+            <option value="processing">processing</option>
+            <option value="shipped">shipped</option>
+            <option value="delivered">delivered</option>
+            <option value="cancelled">cancelled</option>
+          </select>
+          <button type="submit">Update Status</button>
+        </form>
+      </section>
 
-      {error && <p style={{ color: "crimson", marginTop: 12 }}>{error}</p>}
-      {result && (
-        <pre style={{ marginTop: 12, background: "#f6f6f6", padding: 12, overflow: "auto" }}>
-          {JSON.stringify(result, null, 2)}
-        </pre>
-      )}
+      {error && <p className="error">{error}</p>}
+      {result && <pre>{JSON.stringify(result, null, 2)}</pre>}
     </main>
   );
 }

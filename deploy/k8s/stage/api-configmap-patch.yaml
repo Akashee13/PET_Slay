@@ -4,3 +4,4 @@ metadata:
   name: pet-slay-api-config
 data:
   APP_ENV: "stage"
+  DATABASE_REQUIRED: "true"

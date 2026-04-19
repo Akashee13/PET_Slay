@@ -45,4 +45,3 @@ func supportedCampaignLanguage(language string) bool {
 		return false
 	}
 }
-
