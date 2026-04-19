@@ -66,9 +66,9 @@ function ProtectedLayoutInner({ children }: { children: ReactNode }) {
 
   const navItems = useMemo(
     () => [
-      { href: "/orders", label: t("ordersNav") },
-      { href: "/products", label: t("productsNav") },
       { href: "/listed-products", label: t("listedProductsNav") },
+      { href: "/products", label: t("productsNav") },
+      { href: "/orders", label: t("ordersNav") },
     ],
     [t]
   );

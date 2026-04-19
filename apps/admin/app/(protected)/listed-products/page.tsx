@@ -7,6 +7,9 @@ import { getAdminSessionToken } from "@/src/features/auth/admin-session";
 import { useAdminLanguage } from "@/src/features/i18n/admin-language";
 import { type AdminProduct, listAdminProducts, updateProductListing } from "@/src/services/admin-api";
 
+type ListingFilter = "all" | "listed" | "attention";
+type SortMode = "newest" | "price_low" | "price_high";
+
 function formatVisibleUntil(value?: string): string {
   if (!value) {
     return "No expiry";
@@ -29,13 +32,36 @@ export default function ListedProductsPage() {
   const { t } = useAdminLanguage();
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<ListingFilter>("all");
+  const [sortMode, setSortMode] = useState<SortMode>("newest");
   const [busyProductId, setBusyProductId] = useState("");
   const [error, setError] = useState("");
 
-  const sortedProducts = useMemo(
-    () => [...products].sort((left, right) => right.id.localeCompare(left.id)),
-    [products],
-  );
+  const visibleProducts = useMemo(() => {
+    const filtered = products.filter((product) => {
+      const listed = product.listingStatus === "listed" && !isExpired(product);
+      if (filter === "listed") {
+        return listed;
+      }
+      if (filter === "attention") {
+        return !listed;
+      }
+      return true;
+    });
+
+    return [...filtered].sort((left, right) => {
+      if (sortMode === "price_low") {
+        return left.baseWholesalePrice - right.baseWholesalePrice;
+      }
+      if (sortMode === "price_high") {
+        return right.baseWholesalePrice - left.baseWholesalePrice;
+      }
+      return right.id.localeCompare(left.id);
+    });
+  }, [filter, products, sortMode]);
+
+  const listedCount = products.filter((product) => product.listingStatus === "listed" && !isExpired(product)).length;
+  const attentionCount = products.length - listedCount;
 
   async function loadProducts() {
     const token = getAdminSessionToken();
@@ -81,93 +107,97 @@ export default function ListedProductsPage() {
 
   return (
     <main className="stack-lg">
-      <section className="toolbar">
-        <div>
-          <p className="eyebrow">{t("listedProductsEyebrow")}</p>
-          <h1 className="headline">{t("listedProductsTitle")}</h1>
-          <p className="subtle">{t("listedProductsSubtitle")}</p>
+      <section className="plp-hero">
+        <div className="breadcrumb">Home / Admin / {t("listedProductsNav")}</div>
+        <div className="plp-title-row">
+          <div>
+            <p className="eyebrow">{t("listedProductsEyebrow")}</p>
+            <h1>{t("listedProductsTitle")}</h1>
+            <p>{t("listedProductsSubtitle")}</p>
+          </div>
+          <button type="button" onClick={loadProducts} className="secondary">
+            {t("refreshCatalog")}
+          </button>
         </div>
-        <button type="button" onClick={loadProducts} className="secondary">
-          {t("refreshCatalog")}
-        </button>
       </section>
 
       {error && <p className="error">{error}</p>}
 
-      <section className="panel stack">
-        {loading && <p className="subtle">Loading catalog table...</p>}
-        {!loading && sortedProducts.length === 0 && <p className="subtle">{t("productTableEmpty")}</p>}
-        {!loading && sortedProducts.length > 0 && (
-          <div className="table-shell">
-            <table className="product-table">
-              <thead>
-                <tr>
-                  <th>Image</th>
-                  <th>Product</th>
-                  <th>Price / MOQ</th>
-                  <th>Listing</th>
-                  <th>Visible until</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedProducts.map((product) => {
-                  const expired = isExpired(product);
-                  const listed = product.listingStatus === "listed" && !expired;
-                  return (
-                    <tr key={product.id}>
-                      <td>
-                        <img
-                          className="table-thumb"
-                          src={product.coverImageUrl || product.imageUrls?.[0] || "https://image.pollinations.ai/prompt/minimal%20fashion%20placeholder%20image?width=512&height=512&nologo=true"}
-                          alt={product.title}
-                          loading="lazy"
-                          referrerPolicy="no-referrer"
-                        />
-                      </td>
-                      <td>
-                        <strong>{product.title}</strong>
-                        <span className="table-meta">{product.id}</span>
-                        <span className="table-meta">{product.category}</span>
-                      </td>
-                      <td>
-                        <strong>₹{product.baseWholesalePrice}</strong>
-                        <span className="table-meta">MOQ {product.moq}</span>
-                      </td>
-                      <td>
-                        <span className={`status-chip ${listed ? "success" : "danger"}`}>
-                          {listed ? "listed" : expired ? "expired" : product.listingStatus}
-                        </span>
-                      </td>
-                      <td>{formatVisibleUntil(product.visibleUntil)}</td>
-                      <td>
-                        <div className="action-stack">
-                          <button
-                            type="button"
-                            className="secondary"
-                            disabled={busyProductId === product.id}
-                            onClick={() => onListingAction(product.id, "list_now")}
-                          >
-                            {t("listNow")}
-                          </button>
-                          <button
-                            type="button"
-                            className="secondary danger-action"
-                            disabled={busyProductId === product.id}
-                            onClick={() => onListingAction(product.id, "unlist_now")}
-                          >
-                            {t("unlistNow")}
-                          </button>
-                          <Link href={`/products/${product.id}`} className="inline-link">
-                            {t("patchProduct")}
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+      <section className="plp-controls">
+        <div className="collection-count">
+          <strong>{products.length}</strong> products
+          <span>{listedCount} listed</span>
+          <span>{attentionCount} need action</span>
+        </div>
+        <div className="plp-filter-row">
+          <select value={filter} onChange={(event) => setFilter(event.target.value as ListingFilter)} aria-label="Filter products">
+            <option value="all">All products</option>
+            <option value="listed">Listed now</option>
+            <option value="attention">Expired / unlisted</option>
+          </select>
+          <select value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)} aria-label="Sort products">
+            <option value="newest">Sort: Newest</option>
+            <option value="price_low">Price: Low to high</option>
+            <option value="price_high">Price: High to low</option>
+          </select>
+        </div>
+      </section>
+
+      <section className="plp-board">
+        {loading && <p className="subtle">Loading products...</p>}
+        {!loading && visibleProducts.length === 0 && <p className="subtle">{t("productTableEmpty")}</p>}
+        {!loading && visibleProducts.length > 0 && (
+          <div className="plp-grid">
+            {visibleProducts.map((product) => {
+              const expired = isExpired(product);
+              const listed = product.listingStatus === "listed" && !expired;
+              return (
+                <article key={product.id} className="plp-card">
+                  <Link href={`/products/${product.id}`} className="plp-image-link" aria-label={`Patch ${product.title}`}>
+                    <img
+                      src={product.coverImageUrl || product.imageUrls?.[0] || "https://image.pollinations.ai/prompt/minimal%20fashion%20placeholder%20image?width=900&height=1200&nologo=true"}
+                      alt={product.title}
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                    />
+                  </Link>
+                  <div className="plp-card-body">
+                    <div className="plp-card-copy">
+                      <p>{product.category.replace("_", " ")}</p>
+                      <h2>{product.title}</h2>
+                      <span>₹{product.baseWholesalePrice} wholesale · MOQ {product.moq}</span>
+                    </div>
+                    <div className="plp-card-meta">
+                      <span className={`status-chip ${listed ? "success" : "danger"}`}>
+                        {listed ? "listed" : expired ? "expired" : product.listingStatus}
+                      </span>
+                      <small>Visible until {formatVisibleUntil(product.visibleUntil)}</small>
+                    </div>
+                    <div className="plp-actions">
+                      <button
+                        type="button"
+                        className="secondary"
+                        disabled={busyProductId === product.id}
+                        onClick={() => onListingAction(product.id, "list_now")}
+                      >
+                        {t("listNow")}
+                      </button>
+                      <button
+                        type="button"
+                        className="secondary danger-action"
+                        disabled={busyProductId === product.id}
+                        onClick={() => onListingAction(product.id, "unlist_now")}
+                      >
+                        {t("unlistNow")}
+                      </button>
+                      <Link href={`/products/${product.id}`} className="inline-link">
+                        {t("patchProduct")}
+                      </Link>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>

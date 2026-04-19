@@ -12,7 +12,7 @@ export default function HomePage() {
   useEffect(() => {
     const existingToken = getAdminSessionToken();
     if (existingToken) {
-      router.replace("/orders");
+      router.replace("/listed-products");
     }
   }, [router]);
 
@@ -23,7 +23,7 @@ export default function HomePage() {
     }
 
     setAdminSessionToken(token.trim());
-    router.push("/orders");
+    router.push("/listed-products");
   }
 
   function onClearSession() {
