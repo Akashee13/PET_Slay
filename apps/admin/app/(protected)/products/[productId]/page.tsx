@@ -5,6 +5,8 @@ import { FormEvent, useState } from "react";
 
 import { getAdminSessionToken } from "@/src/features/auth/admin-session";
 import { type AdminProduct, updateAdminProduct } from "@/src/services/admin-api";
+import { uploadProductImages } from "@/src/services/product-image-upload";
+import { isAdminSupabaseConfigured } from "@/src/services/supabase";
 
 export default function ProductDetailPage() {
   const params = useParams<{ productId: string }>();
@@ -15,6 +17,8 @@ export default function ProductDetailPage() {
   const [availabilityStatus, setAvailabilityStatus] = useState("");
   const [isNewArrival, setIsNewArrival] = useState("");
   const [imageUrlsText, setImageUrlsText] = useState("");
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<AdminProduct | null>(null);
   const [error, setError] = useState("");
 
@@ -43,20 +47,39 @@ export default function ProductDetailPage() {
     if (moq.trim()) payload.moq = Number(moq);
     if (availabilityStatus.trim()) payload.availabilityStatus = availabilityStatus.trim();
     if (isNewArrival.trim()) payload.isNewArrival = isNewArrival === "true";
+
+    const manualImageUrls = imageUrlsText
+      .split("\n")
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .slice(0, 5);
+
+    if (manualImageUrls.length + uploadFiles.length > 5) {
+      setError("You can attach maximum 5 images per product.");
+      return;
+    }
+
     if (imageUrlsText.trim()) {
-      payload.imageUrls = imageUrlsText
-        .split("\n")
-        .map((value) => value.trim())
-        .filter(Boolean)
-        .slice(0, 5);
+      payload.imageUrls = manualImageUrls;
     }
 
     setError("");
     try {
+      setUploading(true);
+      const uploadedImageUrls = await uploadProductImages(uploadFiles, {
+        productTitleHint: title || params.productId,
+      });
+      if (manualImageUrls.length > 0 || uploadedImageUrls.length > 0) {
+        payload.imageUrls = [...manualImageUrls, ...uploadedImageUrls].slice(0, 5);
+      }
+
       const updated = await updateAdminProduct(token, params.productId, payload);
       setResult(updated);
+      setUploadFiles([]);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to update product");
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -86,11 +109,22 @@ export default function ProductDetailPage() {
           <input id="detail-arrival" placeholder="isNewArrival true|false (optional)" value={isNewArrival} onChange={(event) => setIsNewArrival(event.target.value)} />
           <label htmlFor="detail-images">Image URLs (one per line, max 5)</label>
           <textarea id="detail-images" placeholder="https://cdn.example.com/look-1.jpg" value={imageUrlsText} onChange={(event) => setImageUrlsText(event.target.value)} rows={5} />
+          <label htmlFor="detail-image-files">Upload images from device</label>
+          <input
+            id="detail-image-files"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            multiple
+            onChange={(event) => setUploadFiles(Array.from(event.target.files ?? []).slice(0, 5))}
+          />
+          {uploadFiles.length > 0 && <p className="subtle">Files selected: {uploadFiles.map((file) => file.name).join(", ")}</p>}
+          {!isAdminSupabaseConfigured() && <p className="error">Image upload needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.</p>}
           <button type="submit">Patch Product</button>
         </form>
       </section>
 
       {error && <p className="error">{error}</p>}
+      {uploading && <p className="subtle">Uploading images… please wait.</p>}
       {result && (
         <section className="panel stack">
           {result.imageUrls && result.imageUrls.length > 0 && (

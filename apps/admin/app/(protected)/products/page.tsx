@@ -10,6 +10,8 @@ import {
   listAdminProducts,
   updateAdminProduct,
 } from "@/src/services/admin-api";
+import { uploadProductImages } from "@/src/services/product-image-upload";
+import { isAdminSupabaseConfigured } from "@/src/services/supabase";
 
 type CreateForm = {
   title: string;
@@ -99,6 +101,9 @@ export default function ProductsPage() {
   const [updateForm, setUpdateForm] = useState<UpdateForm>(defaultUpdateForm);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [createUploadFiles, setCreateUploadFiles] = useState<File[]>([]);
+  const [updateUploadFiles, setUpdateUploadFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [result, setResult] = useState<AdminProduct | null>(null);
   const [error, setError] = useState("");
 
@@ -141,6 +146,19 @@ export default function ProductsPage() {
 
     setError("");
     try {
+      const manualImageUrls = normalizeImageUrls(createForm.imageUrls);
+      const filesToUpload = createUploadFiles.slice(0, 5);
+
+      if (manualImageUrls.length+ filesToUpload.length > 5) {
+        setError("You can attach maximum 5 images per product.");
+        return;
+      }
+
+      setUploading(true);
+      const uploadedImageUrls = await uploadProductImages(filesToUpload, {
+        productTitleHint: createForm.title,
+      });
+
       const created = await createAdminProduct(token, {
         title: createForm.title,
         category: createForm.category,
@@ -148,14 +166,17 @@ export default function ProductsPage() {
         baseWholesalePrice: Number(createForm.baseWholesalePrice),
         moq: Number(createForm.moq),
         availabilityStatus: createForm.availabilityStatus,
-        imageUrls: normalizeImageUrls(createForm.imageUrls),
+        imageUrls: [...manualImageUrls, ...uploadedImageUrls],
       });
       setResult(created);
       setCreateForm(defaultCreateForm);
+      setCreateUploadFiles([]);
       setUpdateForm((current) => ({ ...current, productId: created.id }));
       await loadProducts();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to create product");
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -190,17 +211,31 @@ export default function ProductsPage() {
     if (updateForm.isNewArrival.trim()) payload.isNewArrival = updateForm.isNewArrival === "true";
 
     const normalizedImageUrls = normalizeImageUrls(updateForm.imageUrls);
-    if (normalizedImageUrls.length > 0) {
-      payload.imageUrls = normalizedImageUrls;
+    const filesToUpload = updateUploadFiles.slice(0, 5);
+    if (normalizedImageUrls.length+ filesToUpload.length > 5) {
+      setError("You can attach maximum 5 images per product.");
+      return;
     }
 
     setError("");
     try {
+      setUploading(true);
+      const uploadedImageUrls = await uploadProductImages(filesToUpload, {
+        productTitleHint: updateForm.title || updateForm.productId,
+      });
+
+      if (normalizedImageUrls.length > 0 || uploadedImageUrls.length > 0) {
+        payload.imageUrls = [...normalizedImageUrls, ...uploadedImageUrls];
+      }
+
       const updated = await updateAdminProduct(token, updateForm.productId.trim(), payload);
       setResult(updated);
+      setUpdateUploadFiles([]);
       await loadProducts();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to update product");
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -280,6 +315,16 @@ export default function ProductsPage() {
                 Add another image
               </button>
             )}
+            <label htmlFor="create-image-files">Upload images from device</label>
+            <input
+              id="create-image-files"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              multiple
+              onChange={(event) => setCreateUploadFiles(Array.from(event.target.files ?? []).slice(0, 5))}
+            />
+            {createUploadFiles.length > 0 && <p className="subtle">Files selected: {createUploadFiles.map((file) => file.name).join(", ")}</p>}
+            {!isAdminSupabaseConfigured() && <p className="error">Image upload needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.</p>}
             <button type="submit">Create Product</button>
           </form>
         </article>
@@ -337,6 +382,15 @@ export default function ProductsPage() {
                 Add another image
               </button>
             )}
+            <label htmlFor="update-image-files">Upload images from device</label>
+            <input
+              id="update-image-files"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              multiple
+              onChange={(event) => setUpdateUploadFiles(Array.from(event.target.files ?? []).slice(0, 5))}
+            />
+            {updateUploadFiles.length > 0 && <p className="subtle">Files selected: {updateUploadFiles.map((file) => file.name).join(", ")}</p>}
             <button type="submit">Update Product</button>
           </form>
           {updateForm.productId && (
@@ -351,6 +405,12 @@ export default function ProductsPage() {
         <section className="panel">
           <h2>Latest Product Response</h2>
           <pre>{JSON.stringify(result, null, 2)}</pre>
+        </section>
+      )}
+
+      {uploading && (
+        <section className="panel">
+          <p className="subtle">Uploading images… please wait.</p>
         </section>
       )}
 

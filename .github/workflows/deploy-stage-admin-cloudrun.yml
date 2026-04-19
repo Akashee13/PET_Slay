@@ -50,10 +50,12 @@ jobs:
           GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           GCP_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          STAGE_SUPABASE_URL: ${{ secrets.STAGE_SUPABASE_URL }}
+          STAGE_SUPABASE_ANON_KEY: ${{ secrets.STAGE_SUPABASE_ANON_KEY }}
         run: |
           set -eu
           missing=""
-          for key in GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT_EMAIL GCP_PROJECT_ID; do
+          for key in GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT_EMAIL GCP_PROJECT_ID STAGE_SUPABASE_URL STAGE_SUPABASE_ANON_KEY; do
             eval "value=\${$key:-}"
             if [ -z "$value" ]; then
               missing="$missing $key"
@@ -78,7 +80,13 @@ jobs:
 
       - name: Build and push Admin image
         run: |
-          docker build -f apps/admin/Dockerfile -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pet-slay/pet-slay-admin:${{ env.IMAGE_TAG }} .
+          docker build \
+            --build-arg NEXT_PUBLIC_API_BASE_URL=${{ env.STAGE_API_BASE_URL }} \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ secrets.STAGE_SUPABASE_URL }} \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.STAGE_SUPABASE_ANON_KEY }} \
+            --build-arg NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET=${{ secrets.STAGE_SUPABASE_STORAGE_BUCKET || 'product-images' }} \
+            -f apps/admin/Dockerfile \
+            -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pet-slay/pet-slay-admin:${{ env.IMAGE_TAG }} .
           docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pet-slay/pet-slay-admin:${{ env.IMAGE_TAG }}
 
       - name: Deploy Admin to Cloud Run stage
@@ -90,7 +98,7 @@ jobs:
             --image "us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pet-slay/pet-slay-admin:${{ env.IMAGE_TAG }}" \
             --allow-unauthenticated \
             --port 8080 \
-            --set-env-vars "NEXT_PUBLIC_API_BASE_URL=$STAGE_API_BASE_URL"
+            --set-env-vars "NEXT_PUBLIC_API_BASE_URL=$STAGE_API_BASE_URL,NEXT_PUBLIC_SUPABASE_URL=${{ secrets.STAGE_SUPABASE_URL }},NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.STAGE_SUPABASE_ANON_KEY }},NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET=${{ secrets.STAGE_SUPABASE_STORAGE_BUCKET || 'product-images' }}"
 
       - name: Show stage URL
         run: |
