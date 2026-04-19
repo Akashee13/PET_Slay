@@ -66,9 +66,9 @@ function ProtectedLayoutInner({ children }: { children: ReactNode }) {
 
   const navItems = useMemo(
     () => [
-      { href: "/listed-products", label: t("listedProductsNav") },
-      { href: "/products", label: t("productsNav") },
-      { href: "/orders", label: t("ordersNav") },
+      { href: "/listed-products", label: t("listedProductsNav"), description: "PLP", accent: "amber" },
+      { href: "/products", label: t("productsNav"), description: "Upload", accent: "sage" },
+      { href: "/orders", label: t("ordersNav"), description: "Queue", accent: "rose" },
     ],
     [t]
   );
@@ -79,7 +79,7 @@ function ProtectedLayoutInner({ children }: { children: ReactNode }) {
 
   return (
     <div className="container stack-lg" style={{ paddingTop: 20 }}>
-      <header className="topbar spread">
+      <header className="topbar">
         <div className="brand-lockup">
           <div className="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 64 64" role="img" focusable="false">
@@ -98,12 +98,20 @@ function ProtectedLayoutInner({ children }: { children: ReactNode }) {
             <p className="subtle">{t("operationsLanguage")}</p>
           </div>
         </div>
-        <nav className="nav-row">
+        <nav className="nav-tiles" aria-label="Admin sections">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} aria-current={pathname === item.href ? "page" : undefined}>
-              {item.label}
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`nav-tile ${item.accent}`}
+              aria-current={pathname === item.href ? "page" : undefined}
+            >
+              <span>{item.label}</span>
+              <small>{item.description}</small>
             </Link>
           ))}
+        </nav>
+        <nav className="nav-row" aria-label="Admin preferences">
           <select value={language} onChange={(event) => onLanguageChange(event.target.value)} aria-label="Select language">
             {LANGUAGE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>

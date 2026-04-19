@@ -156,6 +156,10 @@ working `DATABASE_URL`:
 - `/health/ready` currently returns HTTP 503 with `databaseConfigured=false` and
 	`databaseRequired=true`.
 
+Supabase Storage setup is handled by API migrations. The `product-images` bucket
+is created as a public stage bucket with anon upload limited to the `products/`
+folder and image MIME types.
+
 ## Local Validation Before Deploy
 
 - `sh scripts/validate-stage-deployment-scripts.sh`
