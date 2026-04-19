@@ -37,5 +37,9 @@ for required in \
 	fi
 done
 
-echo "Stage deployment scripts validated."
+if grep -q "PORT=8080" "$cloudrun_workflow" "scripts/deploy-stage-api-cloudrun.sh"; then
+	echo "Cloud Run sets PORT automatically; do not pass PORT through --set-env-vars" >&2
+	exit 1
+fi
 
+echo "Stage deployment scripts validated."
