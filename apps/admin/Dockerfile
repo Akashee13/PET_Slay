@@ -4,12 +4,12 @@ RUN corepack enable
 FROM base AS builder
 WORKDIR /workspace
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY package.json pnpm-workspace.yaml turbo.json ./
 COPY apps/admin ./apps/admin
 COPY packages/config ./packages/config
 COPY packages/design-tokens ./packages/design-tokens
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 RUN pnpm --filter @pet-slay/admin build
 
 FROM node:20-alpine AS runner
