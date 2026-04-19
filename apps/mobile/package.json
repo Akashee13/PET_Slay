@@ -1,0 +1,24 @@
+{
+  "name": "@pet-slay/mobile",
+  "version": "0.1.0",
+  "private": true,
+  "main": "expo-router/entry",
+  "scripts": {
+    "dev": "expo start",
+    "build": "expo export --platform all",
+    "lint": "eslint .",
+    "test": "node -e \"console.log('mobile tests not configured yet')\"",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "clean": "rm -rf .expo dist"
+  },
+  "dependencies": {
+    "expo": "^53.0.0",
+    "expo-router": "^4.0.0",
+    "react": "^19.0.0",
+    "react-native": "^0.79.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "typescript": "^5.8.0"
+  }
+}

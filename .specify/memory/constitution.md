@@ -1,50 +1,101 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+Version change: 1.0.0 -> 1.1.0
+Modified principles:
+- II. Spec-First Decision Making -> II. Spec-First and Test-First Delivery
+Added sections:
+- None
+Removed sections:
+- None
+Templates requiring updates:
+- ✅ .specify/memory/constitution.md
+- ✅ /Users/akash/Documents/PetProjects/PET_Slay/specs/001-wholesale-fashion-platform/plan.md
+- ✅ /Users/akash/Documents/PetProjects/PET_Slay/specs/001-wholesale-fashion-platform/tasks.md
+- ✅ .specify/templates/spec-template.md (reviewed; no template change required)
+- ✅ .specify/templates/plan-template.md (reviewed; no template change required)
+- ✅ .specify/templates/tasks-template.md (reviewed; no template change required)
+- ⚠ pending .specify/templates/commands/*.md (directory not present in this scaffold)
+Follow-up TODOs:
+- Existing scaffolded code predates this amendment and has not yet been retrofitted with tests.
+-->
+# PET_Slay Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Reseller-First Product Value
+Every MVP decision MUST optimize for reseller buyer outcomes before future D2C
+ambitions. Specifications and plans MUST state the reseller problem being solved,
+the buying confidence created, and the business value expected from the change.
+Features that exist only for hypothetical future users MUST be deferred unless
+they are required to keep the platform extensible.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Spec-First and Test-First Delivery
+All meaningful feature work MUST pass through the spec-kit flow in order:
+constitution, specification, clarification when needed, planning, tasks, and
+then implementation. Specs MUST describe what and why in business terms. Plans
+MUST describe how with explicit technical tradeoffs. Open questions with product
+impact MUST be resolved before implementation begins. All implementation work
+MUST follow TDD: define or update the relevant test first, confirm it fails for
+the intended reason, then implement the production change, and finally return to
+green.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Multilingual Local-Market Readiness
+Buyer-facing experiences for the MVP MUST support English, Hindi, and Hinglish
+in the primary user journeys. Language quality MUST feel natural for North India
+reseller buyers rather than directly translated. New buyer flows, catalog
+surfaces, and notifications MUST include a localization strategy before they can
+be considered complete.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Two-Surface Platform Coherence
+The system MUST be designed as two connected surfaces: a reseller-facing client
+experience and an internal inventory/admin experience. Changes that affect one
+surface and create new operational burden on the other MUST document that impact
+in the spec or plan. Architecture SHOULD stay simple, but it MUST preserve a
+clean path for future D2C expansion without compromising MVP clarity.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Conversion-Respectful Operations
+Growth and operations features MUST improve conversion and repeat buying without
+feeling spammy, punitive, or opaque. Notifications MUST be timely, relevant, and
+language-aware. Refund and store-credit flows MUST be explicit and fair. Success
+metrics for features MUST include buyer conversion or operational efficiency, not
+just feature delivery.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Delivery Constraints
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- The MVP scope is wholesale-first for reseller buyers in women’s western and
+  South Asian fashion.
+- Product language and requirements SHOULD stay implementation-agnostic until
+  `/speckit.plan`.
+- Plans MUST call out assumptions around ordering rules, refund exceptions,
+  inventory visibility, and notification triggers when those rules affect scope.
+- Any feature involving buyer communication MUST define preference handling,
+  message intent, and abuse-prevention or spam-prevention expectations.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Workflow & Quality Gates
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Each specification MUST contain independently testable user stories ordered by
+  business priority.
+- No feature may proceed to planning while critical scope ambiguities remain
+  unresolved.
+- Tasks and implementation MUST enforce test-first sequencing for every change,
+  including API behavior, shared packages, and UI flows where automated coverage
+  is practical.
+- Plans MUST include a constitution check explaining how the design satisfies the
+  multilingual requirement, the two-surface model, and conversion-respectful
+  operations.
+- Tasks MUST be grouped so the highest-priority reseller value can be delivered
+  and validated first.
+- Reviews MUST reject work that introduces unnecessary complexity or implementation
+  detail into product specs.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution overrides ad hoc process preferences for the project. Every
+specification, plan, and task list MUST be reviewed against these principles.
+Amendments require documenting the reason for change, the semantic version bump,
+and any downstream template or process impact. Major version changes are required
+for principle removals or incompatible governance changes. Minor version changes
+are required for new principles or materially expanded rules. Patch changes are
+reserved for clarifications that do not alter project behavior.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.1.0 | **Ratified**: 2026-04-19 | **Last Amended**: 2026-04-19

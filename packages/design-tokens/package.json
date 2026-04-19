@@ -1,0 +1,18 @@
+{
+  "name": "@pet-slay/design-tokens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc --project tsconfig.json --noEmit false",
+    "lint": "eslint src --ext .ts",
+    "test": "node -e \"console.log('design token tests not configured yet')\"",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  }
+}

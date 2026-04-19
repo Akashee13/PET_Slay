@@ -1,0 +1,17 @@
+resources:
+  - namespace.yaml
+  - ../base/api-deployment.yaml
+  - ../base/api-service.yaml
+  - ../base/api-configmap.yaml
+  - ../base/api-ingress.yaml
+
+namespace: pet-slay-prod
+
+patchesStrategicMerge:
+  - api-deployment-patch.yaml
+  - api-configmap-patch.yaml
+
+images:
+  - name: pet-slay-api
+    newName: us-docker.pkg.dev/PROJECT_ID/pet-slay/pet-slay-api
+    newTag: prod-latest

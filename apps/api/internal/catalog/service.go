@@ -1,0 +1,244 @@
+package catalog
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+	"sync"
+)
+
+var ErrProductNotFound = errors.New("product not found")
+var ErrVariantNotFound = errors.New("product variant not found")
+
+type AvailabilityStatus string
+type ProductCategory string
+
+const (
+	AvailabilityInStock  AvailabilityStatus = "in_stock"
+	AvailabilityLowStock AvailabilityStatus = "low_stock"
+	AvailabilityOutStock AvailabilityStatus = "out_of_stock"
+
+	CategoryWestern    ProductCategory = "western"
+	CategorySouthAsian ProductCategory = "south_asian"
+)
+
+type ProductCard struct {
+	ID                 string             `json:"id"`
+	Title              string             `json:"title"`
+	Category           ProductCategory    `json:"category"`
+	BaseWholesalePrice float64            `json:"baseWholesalePrice"`
+	MOQ                int                `json:"moq"`
+	AvailabilityStatus AvailabilityStatus `json:"availabilityStatus"`
+	IsNewArrival       bool               `json:"isNewArrival"`
+	CoverImageURL      string             `json:"coverImageUrl,omitempty"`
+}
+
+type ProductVariant struct {
+	ID                 string             `json:"id"`
+	SizeLabel          string             `json:"sizeLabel"`
+	ColorLabel         string             `json:"colorLabel,omitempty"`
+	AvailabilityStatus AvailabilityStatus `json:"availabilityStatus"`
+}
+
+type ProductDetail struct {
+	ProductCard
+	Description string                 `json:"description,omitempty"`
+	SizeChart   map[string]interface{} `json:"sizeChart,omitempty"`
+	Variants    []ProductVariant       `json:"variants"`
+}
+
+type Service struct {
+	mu       sync.RWMutex
+	products []ProductDetail
+	nextID   int
+}
+
+func NewService() *Service {
+	return &Service{
+		nextID: 1,
+		products: []ProductDetail{
+			{
+				ProductCard: ProductCard{
+					ID:                 "prod-western-001",
+					Title:              "Floral Co-ord Set",
+					Category:           CategoryWestern,
+					BaseWholesalePrice: 799,
+					MOQ:                4,
+					AvailabilityStatus: AvailabilityInStock,
+					IsNewArrival:       true,
+					CoverImageURL:      "https://example.com/floral-coord.jpg",
+				},
+				Description: "Trend-led floral co-ord set for reseller restocks.",
+				SizeChart: map[string]interface{}{
+					"S": "34",
+					"M": "36",
+					"L": "38",
+				},
+				Variants: []ProductVariant{
+					{ID: "var-western-001-s", SizeLabel: "S", ColorLabel: "Blue", AvailabilityStatus: AvailabilityInStock},
+					{ID: "var-western-001-m", SizeLabel: "M", ColorLabel: "Blue", AvailabilityStatus: AvailabilityLowStock},
+				},
+			},
+			{
+				ProductCard: ProductCard{
+					ID:                 "prod-ethnic-001",
+					Title:              "Printed Kurta Set",
+					Category:           CategorySouthAsian,
+					BaseWholesalePrice: 899,
+					MOQ:                3,
+					AvailabilityStatus: AvailabilityInStock,
+					IsNewArrival:       false,
+					CoverImageURL:      "https://example.com/printed-kurta.jpg",
+				},
+				Description: "South Asian kurta set curated for high-repeat reseller demand.",
+				SizeChart: map[string]interface{}{
+					"M": "38",
+					"L": "40",
+					"XL": "42",
+				},
+				Variants: []ProductVariant{
+					{ID: "var-ethnic-001-m", SizeLabel: "M", ColorLabel: "Rust", AvailabilityStatus: AvailabilityInStock},
+					{ID: "var-ethnic-001-l", SizeLabel: "L", ColorLabel: "Rust", AvailabilityStatus: AvailabilityInStock},
+				},
+			},
+		},
+	}
+}
+
+func (s *Service) List(category, collection string) []ProductCard {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	filtered := make([]ProductCard, 0, len(s.products))
+
+	for _, product := range s.products {
+		if category != "" && string(product.Category) != category {
+			continue
+		}
+
+		if strings.EqualFold(collection, "new_arrivals") && !product.IsNewArrival {
+			continue
+		}
+
+		filtered = append(filtered, product.ProductCard)
+	}
+
+	return filtered
+}
+
+func (s *Service) Get(productID string) (*ProductDetail, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, product := range s.products {
+		if product.ID == productID {
+			copy := product
+			return &copy, nil
+		}
+	}
+
+	return nil, ErrProductNotFound
+}
+
+func (s *Service) FindByVariantID(variantID string) (*ProductCard, *ProductVariant, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, product := range s.products {
+		for _, variant := range product.Variants {
+			if variant.ID == variantID {
+				productCopy := product.ProductCard
+				variantCopy := variant
+				return &productCopy, &variantCopy, nil
+			}
+		}
+	}
+
+	return nil, nil, ErrVariantNotFound
+}
+
+type AdminCreateProductInput struct {
+	Title              string  `json:"title"`
+	Category           string  `json:"category"`
+	Description        string  `json:"description,omitempty"`
+	BaseWholesalePrice float64 `json:"baseWholesalePrice"`
+	MOQ                int     `json:"moq"`
+	AvailabilityStatus string  `json:"availabilityStatus,omitempty"`
+}
+
+type AdminUpdateProductInput struct {
+	Title              *string  `json:"title,omitempty"`
+	Description        *string  `json:"description,omitempty"`
+	BaseWholesalePrice *float64 `json:"baseWholesalePrice,omitempty"`
+	MOQ                *int     `json:"moq,omitempty"`
+	AvailabilityStatus *string  `json:"availabilityStatus,omitempty"`
+	IsNewArrival       *bool    `json:"isNewArrival,omitempty"`
+}
+
+func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	id := fmt.Sprintf("prod-admin-%03d", s.nextID)
+	s.nextID++
+
+	status := input.AvailabilityStatus
+	if status == "" {
+		status = string(AvailabilityInStock)
+	}
+
+	product := ProductDetail{
+		ProductCard: ProductCard{
+			ID:                 id,
+			Title:              input.Title,
+			Category:           ProductCategory(input.Category),
+			BaseWholesalePrice: input.BaseWholesalePrice,
+			MOQ:                input.MOQ,
+			AvailabilityStatus: AvailabilityStatus(status),
+			IsNewArrival:       false,
+		},
+		Description: input.Description,
+		Variants:    []ProductVariant{},
+	}
+
+	s.products = append(s.products, product)
+
+	copy := product
+	return &copy, nil
+}
+
+func (s *Service) UpdateProduct(productID string, input AdminUpdateProductInput) (*ProductDetail, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for index, product := range s.products {
+		if product.ID != productID {
+			continue
+		}
+
+		if input.Title != nil {
+			product.Title = *input.Title
+		}
+		if input.Description != nil {
+			product.Description = *input.Description
+		}
+		if input.BaseWholesalePrice != nil {
+			product.BaseWholesalePrice = *input.BaseWholesalePrice
+		}
+		if input.MOQ != nil {
+			product.MOQ = *input.MOQ
+		}
+		if input.AvailabilityStatus != nil {
+			product.AvailabilityStatus = AvailabilityStatus(*input.AvailabilityStatus)
+		}
+		if input.IsNewArrival != nil {
+			product.IsNewArrival = *input.IsNewArrival
+		}
+
+		s.products[index] = product
+		copy := product
+		return &copy, nil
+	}
+
+	return nil, ErrProductNotFound
+}

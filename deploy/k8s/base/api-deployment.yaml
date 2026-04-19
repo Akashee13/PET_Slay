@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pet-slay-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pet-slay-api
+  template:
+    metadata:
+      labels:
+        app: pet-slay-api
+    spec:
+      containers:
+        - name: api
+          image: pet-slay-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: pet-slay-api-config
+            - secretRef:
+                name: pet-slay-api-secrets
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

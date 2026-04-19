@@ -1,0 +1,438 @@
+openapi: 3.1.0
+info:
+  title: Wholesale Fashion Reseller Platform API
+  version: 0.1.0
+  summary: Shared backend contract for reseller mobile and admin web clients.
+servers:
+  - url: https://api.example.com
+paths:
+  /v1/me:
+    get:
+      summary: Get current authenticated user profile
+      tags: [Auth]
+      responses:
+        "200":
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ResellerBuyerProfile"
+                  - $ref: "#/components/schemas/AdminProfile"
+  /v1/buyers/preferences/language:
+    put:
+      summary: Update reseller preferred language
+      tags: [Buyer Preferences]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [preferredLanguage]
+              properties:
+                preferredLanguage:
+                  $ref: "#/components/schemas/Language"
+      responses:
+        "200":
+          description: Preference updated
+  /v1/catalog/products:
+    get:
+      summary: List reseller-visible products
+      tags: [Catalog]
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+            enum: [western, south_asian]
+        - in: query
+          name: collection
+          schema:
+            type: string
+            enum: [new_arrivals, trending]
+      responses:
+        "200":
+          description: Product list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProductCard"
+  /v1/catalog/products/{productId}:
+    get:
+      summary: Get reseller product detail
+      tags: [Catalog]
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetail"
+  /v1/orders:
+    post:
+      summary: Create reseller order
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+  /v1/orders/{orderId}:
+    get:
+      summary: Get order detail
+      tags: [Orders]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+  /v1/buyers/device-tokens:
+    post:
+      summary: Register buyer mobile push token
+      tags: [Buyer Notifications]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterDeviceTokenRequest"
+      responses:
+        "201":
+          description: Device token registered
+        "200":
+          description: Existing device token refreshed
+  /v1/admin/products:
+    post:
+      summary: Create product from admin app
+      tags: [Admin Catalog]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCreateProductRequest"
+      responses:
+        "201":
+          description: Product created
+  /v1/admin/products/{productId}:
+    patch:
+      summary: Update product availability, pricing, and merchandising
+      tags: [Admin Catalog]
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateProductRequest"
+      responses:
+        "200":
+          description: Product updated
+  /v1/admin/orders:
+    get:
+      summary: List reseller orders for admin review
+      tags: [Admin Orders]
+      responses:
+        "200":
+          description: Order queue
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Order"
+  /v1/admin/notification-campaigns:
+    post:
+      summary: Create notification campaign
+      tags: [Admin Notifications]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCampaignRequest"
+      responses:
+        "201":
+          description: Campaign created
+  /v1/admin/notification-campaigns/{campaignId}/send:
+    post:
+      summary: Send or schedule notification campaign
+      tags: [Admin Notifications]
+      parameters:
+        - in: path
+          name: campaignId
+          required: true
+          schema:
+            type: string
+      responses:
+        "202":
+          description: Campaign accepted for delivery
+  /v1/admin/refunds/{refundId}:
+    patch:
+      summary: Approve or reject refund decision
+      tags: [Admin Refunds]
+      parameters:
+        - in: path
+          name: refundId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefundDecisionUpdateRequest"
+      responses:
+        "200":
+          description: Refund decision updated
+
+components:
+  schemas:
+    Language:
+      type: string
+      enum: [english, hindi, hinglish]
+    AvailabilityStatus:
+      type: string
+      enum: [in_stock, low_stock, out_of_stock]
+    ResellerBuyerProfile:
+      type: object
+      required: [id, role, preferredLanguage]
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [buyer]
+        preferredLanguage:
+          $ref: "#/components/schemas/Language"
+        businessName:
+          type: string
+    AdminProfile:
+      type: object
+      required: [id, role]
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          enum: [admin]
+        name:
+          type: string
+    ProductCard:
+      type: object
+      required: [id, title, category, baseWholesalePrice, availabilityStatus, moq]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+          enum: [western, south_asian]
+        baseWholesalePrice:
+          type: number
+        moq:
+          type: integer
+        availabilityStatus:
+          $ref: "#/components/schemas/AvailabilityStatus"
+        isNewArrival:
+          type: boolean
+        coverImageUrl:
+          type: string
+          format: uri
+    ProductDetail:
+      allOf:
+        - $ref: "#/components/schemas/ProductCard"
+        - type: object
+          properties:
+            description:
+              type: string
+            sizeChart:
+              type: object
+              additionalProperties: true
+            variants:
+              type: array
+              items:
+                $ref: "#/components/schemas/ProductVariant"
+    ProductVariant:
+      type: object
+      required: [id, sizeLabel, colorLabel, availabilityStatus]
+      properties:
+        id:
+          type: string
+        sizeLabel:
+          type: string
+        colorLabel:
+          type: string
+        availabilityStatus:
+          $ref: "#/components/schemas/AvailabilityStatus"
+    CreateOrderRequest:
+      type: object
+      required: [items, shippingAddress]
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required: [productVariantId, quantity]
+            properties:
+              productVariantId:
+                type: string
+              quantity:
+                type: integer
+        shippingAddress:
+          type: object
+          additionalProperties: true
+        notes:
+          type: string
+    Order:
+      type: object
+      required: [id, status, totalAmount, items]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        totalAmount:
+          type: number
+        refundPolicy:
+          type: object
+          properties:
+            defaultMode:
+              type: string
+              enum: [store_credit]
+            adminExceptionAllowed:
+              type: boolean
+        items:
+          type: array
+          items:
+            type: object
+            required: [productId, quantity, unitPrice]
+            properties:
+              productId:
+                type: string
+              quantity:
+                type: integer
+              unitPrice:
+                type: number
+    AdminCreateProductRequest:
+      type: object
+      required: [title, category, baseWholesalePrice, moq]
+      properties:
+        title:
+          type: string
+        category:
+          type: string
+          enum: [western, south_asian]
+        description:
+          type: string
+        baseWholesalePrice:
+          type: number
+        moq:
+          type: integer
+        availabilityStatus:
+          $ref: "#/components/schemas/AvailabilityStatus"
+    AdminUpdateProductRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        baseWholesalePrice:
+          type: number
+        moq:
+          type: integer
+        availabilityStatus:
+          $ref: "#/components/schemas/AvailabilityStatus"
+        isNewArrival:
+          type: boolean
+    CreateCampaignRequest:
+      type: object
+      required: [campaignType, messageVariants, productIds]
+      properties:
+        campaignType:
+          type: string
+          enum: [new_arrival, trending, restock]
+        audienceRule:
+          type: object
+          additionalProperties: true
+        messageVariants:
+          type: array
+          items:
+            type: object
+            required: [language, title, body]
+            properties:
+              language:
+                $ref: "#/components/schemas/Language"
+              title:
+                type: string
+              body:
+                type: string
+        productIds:
+          type: array
+          items:
+            type: string
+    RegisterDeviceTokenRequest:
+      type: object
+      required: [provider, token, platform]
+      properties:
+        provider:
+          type: string
+          enum: [expo]
+        token:
+          type: string
+        platform:
+          type: string
+          enum: [ios, android]
+    RefundDecisionUpdateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected]
+        decisionType:
+          type: string
+          enum: [store_credit, payment_source]
+        reasonCode:
+          type: string
+        adminNotes:
+          type: string
