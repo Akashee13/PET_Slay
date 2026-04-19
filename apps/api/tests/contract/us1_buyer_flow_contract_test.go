@@ -101,3 +101,33 @@ func TestOrderCreateContract(t *testing.T) {
 		t.Fatalf("expected refund policy")
 	}
 }
+
+func TestBuyerOrdersListContract(t *testing.T) {
+	handler := testutil.NewHandler()
+
+	createReq := httptest.NewRequest(http.MethodPost, "/v1/orders", testutil.JSONBody(`{"items":[{"productVariantId":"var-western-001-s","quantity":4}],"shippingAddress":{"city":"Delhi"}}`))
+	createReq.Header.Set("Authorization", "Bearer dev-buyer-token")
+	createReq.Header.Set("Content-Type", "application/json")
+	createRec := httptest.NewRecorder()
+	handler.ServeHTTP(createRec, createReq)
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/orders", nil)
+	req.Header.Set("Authorization", "Bearer dev-buyer-token")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+
+	var payload struct {
+		Items []map[string]any `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(payload.Items) == 0 {
+		t.Fatalf("expected buyer order history")
+	}
+}

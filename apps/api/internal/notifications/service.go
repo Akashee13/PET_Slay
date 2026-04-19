@@ -45,12 +45,19 @@ type RegisterDeviceTokenInput struct {
 	Platform string `json:"platform"`
 }
 
+type Repository interface {
+	Create(input CreateCampaignInput) (*Campaign, error)
+	RegisterDeviceToken(input RegisterDeviceTokenInput) (*DeviceToken, bool, error)
+	MarkSent(campaignID string) (*Campaign, error)
+}
+
 type Service struct {
 	mu           sync.RWMutex
 	campaigns    map[string]Campaign
 	deviceTokens map[string]DeviceToken
 	nextID       int
 	nextTokenID  int
+	repo         Repository
 }
 
 func NewService() *Service {
@@ -62,9 +69,19 @@ func NewService() *Service {
 	}
 }
 
+func NewServiceWithRepository(repo Repository) *Service {
+	service := NewService()
+	service.repo = repo
+	return service
+}
+
 func (s *Service) Create(input CreateCampaignInput) (*Campaign, error) {
 	if err := ValidateCampaign(input); err != nil {
 		return nil, err
+	}
+
+	if s.repo != nil {
+		return s.repo.Create(input)
 	}
 
 	s.mu.Lock()
@@ -89,6 +106,10 @@ func (s *Service) Create(input CreateCampaignInput) (*Campaign, error) {
 func (s *Service) RegisterDeviceToken(input RegisterDeviceTokenInput) (*DeviceToken, bool, error) {
 	if input.BuyerID == "" || input.Provider == "" || input.Token == "" || input.Platform == "" {
 		return nil, false, ErrInvalidDeviceToken
+	}
+
+	if s.repo != nil {
+		return s.repo.RegisterDeviceToken(input)
 	}
 
 	s.mu.Lock()
@@ -119,6 +140,10 @@ func (s *Service) RegisterDeviceToken(input RegisterDeviceTokenInput) (*DeviceTo
 }
 
 func (s *Service) MarkSent(campaignID string) (*Campaign, error) {
+	if s.repo != nil {
+		return s.repo.MarkSent(campaignID)
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

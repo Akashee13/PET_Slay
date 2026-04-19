@@ -3,6 +3,7 @@ package httpserver
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/akash/pet_slay/apps/api/internal/auth"
@@ -43,9 +44,21 @@ func New() http.Handler {
 		preferenceStore = users.NewPostgresBuyerProfileStore(dbStore.DB)
 	}
 	catalogService := catalog.NewService()
+	if dbStore.Configured() {
+		catalogService = catalog.NewServiceWithRepository(catalog.NewPostgresRepository(dbStore.DB))
+	}
 	orderService := orders.NewService(catalogService)
+	if dbStore.Configured() {
+		orderService = orders.NewServiceWithRepository(catalogService, orders.NewPostgresRepository(dbStore.DB))
+	}
 	notificationService := notifications.NewService()
+	if dbStore.Configured() {
+		notificationService = notifications.NewServiceWithRepository(notifications.NewPostgresRepository(dbStore.DB))
+	}
 	refundService := refunds.NewService()
+	if dbStore.Configured() {
+		refundService = refunds.NewServiceWithRepository(refunds.NewPostgresRepository(dbStore.DB))
+	}
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -105,16 +118,23 @@ func New() http.Handler {
 		catalog.DetailHandler(catalogService).ServeHTTP(w, r)
 	})))
 	mux.Handle("/v1/orders", auth.RequireRole(verifier, auth.RoleBuyer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
+		switch r.Method {
+		case http.MethodPost:
+			orders.CreateHandler(orderService).ServeHTTP(w, r)
+		case http.MethodGet:
+			orders.ListHandler(orderService).ServeHTTP(w, r)
+		default:
 			httpresponse.Error(w, http.StatusMethodNotAllowed, "method_not_allowed")
-			return
 		}
-
-		orders.CreateHandler(orderService).ServeHTTP(w, r)
 	})))
 	mux.Handle("/v1/orders/", auth.RequireRole(verifier, auth.RoleBuyer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			httpresponse.Error(w, http.StatusMethodNotAllowed, "method_not_allowed")
+			return
+		}
+
+		if strings.HasSuffix(r.URL.Path, "/refunds") {
+			refunds.BuyerListByOrderHandler(refundService).ServeHTTP(w, r)
 			return
 		}
 
@@ -151,6 +171,14 @@ func New() http.Handler {
 		}
 
 		orders.AdminListHandler(orderService).ServeHTTP(w, r)
+	})))
+	mux.Handle("/v1/admin/orders/", auth.RequireRole(verifier, auth.RoleAdmin)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPatch {
+			httpresponse.Error(w, http.StatusMethodNotAllowed, "method_not_allowed")
+			return
+		}
+
+		orders.AdminUpdateStatusHandler(orderService).ServeHTTP(w, r)
 	})))
 	mux.Handle("/v1/admin/notification-campaigns", auth.RequireRole(verifier, auth.RoleAdmin)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {

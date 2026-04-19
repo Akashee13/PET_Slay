@@ -78,3 +78,39 @@ func TestAdminOrdersListContract(t *testing.T) {
 		t.Fatalf("expected admin order queue items")
 	}
 }
+
+func TestAdminOrderStatusUpdateContract(t *testing.T) {
+	handler := testutil.NewHandler()
+
+	createOrderReq := httptest.NewRequest(http.MethodPost, "/v1/orders", testutil.JSONBody(`{"items":[{"productVariantId":"var-western-001-s","quantity":4}],"shippingAddress":{"city":"Delhi"}}`))
+	createOrderReq.Header.Set("Authorization", "Bearer dev-buyer-token")
+	createOrderReq.Header.Set("Content-Type", "application/json")
+	createOrderRec := httptest.NewRecorder()
+	handler.ServeHTTP(createOrderRec, createOrderReq)
+
+	var created map[string]any
+	if err := json.Unmarshal(createOrderRec.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode created order: %v", err)
+	}
+	orderID, _ := created["id"].(string)
+
+	req := httptest.NewRequest(http.MethodPatch, "/v1/admin/orders/"+orderID, testutil.JSONBody(`{"status":"confirmed"}`))
+	req.Header.Set("Authorization", "Bearer dev-admin-token")
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+
+	if payload["status"] != "confirmed" {
+		t.Fatalf("expected confirmed status, got %v", payload["status"])
+	}
+}

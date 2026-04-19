@@ -47,10 +47,19 @@ type ProductDetail struct {
 	Variants    []ProductVariant       `json:"variants"`
 }
 
+type Repository interface {
+	List(category, collection string) ([]ProductCard, error)
+	Get(productID string) (*ProductDetail, error)
+	FindByVariantID(variantID string) (*ProductCard, *ProductVariant, error)
+	CreateProduct(input AdminCreateProductInput) (*ProductDetail, error)
+	UpdateProduct(productID string, input AdminUpdateProductInput) (*ProductDetail, error)
+}
+
 type Service struct {
 	mu       sync.RWMutex
 	products []ProductDetail
 	nextID   int
+	repo     Repository
 }
 
 func NewService() *Service {
@@ -105,7 +114,17 @@ func NewService() *Service {
 	}
 }
 
-func (s *Service) List(category, collection string) []ProductCard {
+func NewServiceWithRepository(repo Repository) *Service {
+	service := NewService()
+	service.repo = repo
+	return service
+}
+
+func (s *Service) List(category, collection string) ([]ProductCard, error) {
+	if s.repo != nil {
+		return s.repo.List(category, collection)
+	}
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -123,10 +142,14 @@ func (s *Service) List(category, collection string) []ProductCard {
 		filtered = append(filtered, product.ProductCard)
 	}
 
-	return filtered
+	return filtered, nil
 }
 
 func (s *Service) Get(productID string) (*ProductDetail, error) {
+	if s.repo != nil {
+		return s.repo.Get(productID)
+	}
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -141,6 +164,10 @@ func (s *Service) Get(productID string) (*ProductDetail, error) {
 }
 
 func (s *Service) FindByVariantID(variantID string) (*ProductCard, *ProductVariant, error) {
+	if s.repo != nil {
+		return s.repo.FindByVariantID(variantID)
+	}
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -176,6 +203,10 @@ type AdminUpdateProductInput struct {
 }
 
 func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, error) {
+	if s.repo != nil {
+		return s.repo.CreateProduct(input)
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -208,6 +239,10 @@ func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, 
 }
 
 func (s *Service) UpdateProduct(productID string, input AdminUpdateProductInput) (*ProductDetail, error) {
+	if s.repo != nil {
+		return s.repo.UpdateProduct(productID, input)
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

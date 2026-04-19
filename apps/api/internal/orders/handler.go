@@ -44,6 +44,20 @@ func CreateHandler(service *Service) http.HandlerFunc {
 	}
 }
 
+func ListHandler(service *Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		items, err := service.List()
+		if err != nil {
+			httpresponse.Error(w, http.StatusInternalServerError, "orders_unavailable")
+			return
+		}
+
+		httpresponse.JSON(w, http.StatusOK, map[string][]Order{
+			"items": items,
+		})
+	}
+}
+
 func DetailHandler(service *Service) http.HandlerFunc {
 	prefix := "/v1/orders/"
 

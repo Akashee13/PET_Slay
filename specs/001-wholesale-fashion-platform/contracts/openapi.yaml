@@ -81,6 +81,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/ProductDetail"
   /v1/orders:
+    get:
+      summary: List reseller buyer orders
+      tags: [Orders]
+      responses:
+        "200":
+          description: Buyer order history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Order"
     post:
       summary: Create reseller order
       tags: [Orders]
@@ -114,6 +129,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+  /v1/orders/{orderId}/refunds:
+    get:
+      summary: List buyer-visible refund decisions for an order
+      tags: [Orders]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Refund decisions for the order
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/RefundDecision"
   /v1/buyers/device-tokens:
     post:
       summary: Register buyer mobile push token
@@ -177,6 +214,29 @@ paths:
                     type: array
                     items:
                       $ref: "#/components/schemas/Order"
+  /v1/admin/orders/{orderId}:
+    patch:
+      summary: Update reseller order status
+      tags: [Admin Orders]
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateOrderStatusRequest"
+      responses:
+        "200":
+          description: Order status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
   /v1/admin/notification-campaigns:
     post:
       summary: Create notification campaign
@@ -410,6 +470,13 @@ components:
           type: array
           items:
             type: string
+    AdminUpdateOrderStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pending, confirmed, packed, shipped, completed, cancelled]
     RegisterDeviceTokenRequest:
       type: object
       required: [provider, token, platform]
@@ -426,9 +493,32 @@ components:
       type: object
       required: [status]
       properties:
+        orderId:
+          type: string
+        buyerId:
+          type: string
         status:
           type: string
           enum: [approved, rejected]
+        decisionType:
+          type: string
+          enum: [store_credit, payment_source]
+        reasonCode:
+          type: string
+        adminNotes:
+          type: string
+    RefundDecision:
+      type: object
+      required: [id, orderId, buyerId, status, decisionType]
+      properties:
+        id:
+          type: string
+        orderId:
+          type: string
+        buyerId:
+          type: string
+        status:
+          type: string
         decisionType:
           type: string
           enum: [store_credit, payment_source]

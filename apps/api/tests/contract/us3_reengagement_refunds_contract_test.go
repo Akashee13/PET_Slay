@@ -148,3 +148,48 @@ func TestAdminRefundDecisionUpdateContract(t *testing.T) {
 		t.Fatalf("expected decisionType payment_source, got %v", payload["decisionType"])
 	}
 }
+
+func TestBuyerRefundVisibilityContract(t *testing.T) {
+	handler := testutil.NewHandler()
+
+	createOrderReq := httptest.NewRequest(http.MethodPost, "/v1/orders", testutil.JSONBody(`{"items":[{"productVariantId":"var-western-001-s","quantity":4}],"shippingAddress":{"city":"Delhi"}}`))
+	createOrderReq.Header.Set("Authorization", "Bearer dev-buyer-token")
+	createOrderReq.Header.Set("Content-Type", "application/json")
+	createOrderRec := httptest.NewRecorder()
+	handler.ServeHTTP(createOrderRec, createOrderReq)
+
+	var created map[string]any
+	if err := json.Unmarshal(createOrderRec.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode created order: %v", err)
+	}
+	orderID, _ := created["id"].(string)
+
+	refundReq := httptest.NewRequest(http.MethodPatch, "/v1/admin/refunds/refund-001", testutil.JSONBody(`{"orderId":"`+orderID+`","buyerId":"buyer-dev-001","status":"approved","decisionType":"store_credit","reasonCode":"customer_request"}`))
+	refundReq.Header.Set("Authorization", "Bearer dev-admin-token")
+	refundReq.Header.Set("Content-Type", "application/json")
+	refundRec := httptest.NewRecorder()
+	handler.ServeHTTP(refundRec, refundReq)
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/orders/"+orderID+"/refunds", nil)
+	req.Header.Set("Authorization", "Bearer dev-buyer-token")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+
+	var payload struct {
+		Items []map[string]any `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(payload.Items) != 1 {
+		t.Fatalf("expected one refund decision, got %d", len(payload.Items))
+	}
+	if payload.Items[0]["decisionType"] != "store_credit" {
+		t.Fatalf("expected store_credit decision, got %v", payload.Items[0]["decisionType"])
+	}
+}

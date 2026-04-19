@@ -28,6 +28,10 @@ type CreateOrderItem struct {
 	Quantity         int    `json:"quantity"`
 }
 
+type UpdateStatusInput struct {
+	Status string `json:"status"`
+}
+
 type OrderLineItem struct {
 	ProductID  string  `json:"productId"`
 	Quantity   int     `json:"quantity"`
@@ -48,11 +52,19 @@ type Order struct {
 	} `json:"refundPolicy"`
 }
 
+type Repository interface {
+	Save(input CreateOrderRequest, order Order) error
+	Get(orderID string) (*Order, error)
+	List() ([]Order, error)
+	UpdateStatus(orderID, status string) (*Order, error)
+}
+
 type Service struct {
 	catalog *catalog.Service
 	mu      sync.RWMutex
 	orders  map[string]Order
 	nextID  int
+	repo    Repository
 }
 
 func NewService(catalogService *catalog.Service) *Service {
@@ -61,6 +73,12 @@ func NewService(catalogService *catalog.Service) *Service {
 		orders:  map[string]Order{},
 		nextID:  1,
 	}
+}
+
+func NewServiceWithRepository(catalogService *catalog.Service, repo Repository) *Service {
+	service := NewService(catalogService)
+	service.repo = repo
+	return service
 }
 
 func (s *Service) Create(input CreateOrderRequest) (*Order, error) {
@@ -112,6 +130,14 @@ func (s *Service) Create(input CreateOrderRequest) (*Order, error) {
 	order.RefundPolicy.DefaultMode = "store_credit"
 	order.RefundPolicy.AdminExceptionAllowed = true
 
+	if s.repo != nil {
+		if err := s.repo.Save(input, order); err != nil {
+			return nil, err
+		}
+		copy := order
+		return &copy, nil
+	}
+
 	s.orders[id] = order
 
 	copy := order
@@ -119,6 +145,10 @@ func (s *Service) Create(input CreateOrderRequest) (*Order, error) {
 }
 
 func (s *Service) Get(orderID string) (*Order, error) {
+	if s.repo != nil {
+		return s.repo.Get(orderID)
+	}
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -131,7 +161,11 @@ func (s *Service) Get(orderID string) (*Order, error) {
 	return &copy, nil
 }
 
-func (s *Service) List() []Order {
+func (s *Service) List() ([]Order, error) {
+	if s.repo != nil {
+		return s.repo.List()
+	}
+
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -140,5 +174,28 @@ func (s *Service) List() []Order {
 		items = append(items, order)
 	}
 
-	return items
+	return items, nil
+}
+
+func (s *Service) UpdateStatus(orderID string, input UpdateStatusInput) (*Order, error) {
+	if input.Status == "" {
+		return nil, ErrOrderNotFound
+	}
+
+	if s.repo != nil {
+		return s.repo.UpdateStatus(orderID, input.Status)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	order, ok := s.orders[orderID]
+	if !ok {
+		return nil, ErrOrderNotFound
+	}
+
+	order.Status = input.Status
+	s.orders[orderID] = order
+	copy := order
+	return &copy, nil
 }

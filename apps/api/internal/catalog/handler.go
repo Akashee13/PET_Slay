@@ -12,8 +12,14 @@ func ListHandler(service *Service) http.HandlerFunc {
 		category := strings.TrimSpace(r.URL.Query().Get("category"))
 		collection := strings.TrimSpace(r.URL.Query().Get("collection"))
 
+		items, err := service.List(category, collection)
+		if err != nil {
+			httpresponse.Error(w, http.StatusInternalServerError, "catalog_unavailable")
+			return
+		}
+
 		httpresponse.JSON(w, http.StatusOK, map[string][]ProductCard{
-			"items": service.List(category, collection),
+			"items": items,
 		})
 	}
 }

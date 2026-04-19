@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/akash/pet_slay/apps/api/internal/auth"
 	httpresponse "github.com/akash/pet_slay/apps/api/internal/http/response"
 )
 
@@ -24,7 +25,42 @@ func UpdateDecisionHandler(service *Service) http.HandlerFunc {
 			return
 		}
 
-		decision := service.Update(refundID, payload)
+		decision, err := service.Update(refundID, payload)
+		if err != nil {
+			httpresponse.Error(w, http.StatusInternalServerError, "refund_decision_not_saved")
+			return
+		}
+
 		httpresponse.JSON(w, http.StatusOK, decision)
+	}
+}
+
+func BuyerListByOrderHandler(service *Service) http.HandlerFunc {
+	prefix := "/v1/orders/"
+	suffix := "/refunds"
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		session, ok := auth.SessionFromContext(r.Context())
+		if !ok {
+			httpresponse.Error(w, http.StatusUnauthorized, auth.ErrInvalidToken.Error())
+			return
+		}
+
+		path := strings.TrimPrefix(r.URL.Path, prefix)
+		orderID := strings.TrimSuffix(path, suffix)
+		if orderID == "" || orderID == path {
+			httpresponse.Error(w, http.StatusBadRequest, "invalid_order_id")
+			return
+		}
+
+		items, err := service.ListByOrder(orderID, session.UserID)
+		if err != nil {
+			httpresponse.Error(w, http.StatusInternalServerError, "refunds_unavailable")
+			return
+		}
+
+		httpresponse.JSON(w, http.StatusOK, map[string][]Decision{
+			"items": items,
+		})
 	}
 }
