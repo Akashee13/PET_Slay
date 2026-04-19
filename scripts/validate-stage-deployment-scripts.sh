@@ -4,6 +4,7 @@ set -eu
 
 oidc_script="scripts/setup-gcp-github-oidc.sh"
 cloudrun_workflow=".github/workflows/deploy-stage-api-cloudrun.yml"
+api_dockerfile="apps/api/Dockerfile"
 
 if [ ! -f "$oidc_script" ]; then
 	echo "$oidc_script is missing" >&2
@@ -39,6 +40,11 @@ done
 
 if grep -q "PORT=8080" "$cloudrun_workflow" "scripts/deploy-stage-api-cloudrun.sh"; then
 	echo "Cloud Run sets PORT automatically; do not pass PORT through --set-env-vars" >&2
+	exit 1
+fi
+
+if ! grep -q "go.sum" "$api_dockerfile"; then
+	echo "$api_dockerfile must copy go.sum so Docker builds can verify Go modules" >&2
 	exit 1
 fi
 
