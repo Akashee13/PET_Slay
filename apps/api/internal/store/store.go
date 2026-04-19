@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	"errors"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
 var ErrDatabaseURLRequired = errors.New("database url is required")
@@ -34,10 +35,12 @@ func Open(ctx context.Context, cfg Config) (*Store, error) {
 		return New(nil), nil
 	}
 
-	db, err := sql.Open("pgx", cfg.DatabaseURL)
+	pgxConfig, err := parsePGXConfig(cfg.DatabaseURL)
 	if err != nil {
 		return nil, err
 	}
+
+	db := stdlib.OpenDB(*pgxConfig)
 
 	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()
@@ -45,6 +48,20 @@ func Open(ctx context.Context, cfg Config) (*Store, error) {
 	}
 
 	return New(db), nil
+}
+
+func parsePGXConfig(databaseURL string) (*pgx.ConnConfig, error) {
+	pgxConfig, err := pgx.ParseConfig(databaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	// Supabase's transaction pooler does not support session-scoped prepared
+	// statements. Disabling pgx's statement cache keeps migrations and API
+	// queries compatible with serverless pooled connections.
+	pgxConfig.DefaultQueryExecMode = pgx.QueryExecModeExec
+
+	return pgxConfig, nil
 }
 
 func (s *Store) Configured() bool {

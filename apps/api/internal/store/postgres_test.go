@@ -3,6 +3,8 @@ package store
 import (
 	"context"
 	"testing"
+
+	"github.com/jackc/pgx/v5"
 )
 
 func TestOpenOptionalStoreWithoutDatabaseURL(t *testing.T) {
@@ -33,3 +35,13 @@ func TestOpenRequiredStoreWithoutDatabaseURL(t *testing.T) {
 	}
 }
 
+func TestParsePGXConfigDisablesPreparedStatementCache(t *testing.T) {
+	config, err := parsePGXConfig("postgresql://user:password@example.com:5432/postgres")
+	if err != nil {
+		t.Fatalf("parse pgx config: %v", err)
+	}
+
+	if config.DefaultQueryExecMode != pgx.QueryExecModeExec {
+		t.Fatalf("expected query exec mode exec, got %v", config.DefaultQueryExecMode)
+	}
+}
