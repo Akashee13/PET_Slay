@@ -52,8 +52,10 @@ func New() http.Handler {
 		orderService = orders.NewServiceWithRepository(catalogService, orders.NewPostgresRepository(dbStore.DB))
 	}
 	notificationService := notifications.NewService()
+	deviceTokenService := notifications.NewDeviceTokenService()
 	if dbStore.Configured() {
 		notificationService = notifications.NewServiceWithRepository(notifications.NewPostgresRepository(dbStore.DB))
+		deviceTokenService = notifications.NewDeviceTokenServiceWithRepository(notifications.NewPostgresRepository(dbStore.DB))
 	}
 	refundService := refunds.NewService()
 	if dbStore.Configured() {
@@ -146,7 +148,7 @@ func New() http.Handler {
 			return
 		}
 
-		notifications.RegisterDeviceTokenHandler(notificationService).ServeHTTP(w, r)
+		notifications.RegisterDeviceTokenHandler(deviceTokenService).ServeHTTP(w, r)
 	})))
 	mux.Handle("/v1/admin/products", auth.RequireRole(verifier, auth.RoleAdmin)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -207,6 +209,7 @@ func New() http.Handler {
 
 	handler := middleware.Recoverer(mux)
 	handler = middleware.RequestLogger(handler)
+	handler = middleware.CORS(handler)
 
 	return handler
 }

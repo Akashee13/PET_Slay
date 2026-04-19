@@ -52,6 +52,45 @@ func TestAdminCanCreateAndUpdateProduct(t *testing.T) {
 	}
 }
 
+func TestAdminPreflightAllowsStageAdminOrigin(t *testing.T) {
+	handler := testutil.NewHandler()
+
+	req := httptest.NewRequest(http.MethodOptions, "/v1/admin/products", nil)
+	req.Header.Set("Origin", "https://pet-slay-admin-stage-j67sekma7a-el.a.run.app")
+	req.Header.Set("Access-Control-Request-Method", http.MethodPost)
+	req.Header.Set("Access-Control-Request-Headers", "authorization,content-type")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("expected 204 for preflight, got %d body=%s", rec.Code, rec.Body.String())
+	}
+
+	if rec.Header().Get("Access-Control-Allow-Origin") != "https://pet-slay-admin-stage-j67sekma7a-el.a.run.app" {
+		t.Fatalf("expected allow origin header for stage admin app, got %q", rec.Header().Get("Access-Control-Allow-Origin"))
+	}
+}
+
+func TestAdminOrdersResponseIncludesCORSHeadersForStageOrigin(t *testing.T) {
+	handler := testutil.NewHandler()
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/admin/orders", nil)
+	req.Header.Set("Authorization", "Bearer dev-admin-token")
+	req.Header.Set("Origin", "https://pet-slay-admin-stage-j67sekma7a-el.a.run.app")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+
+	if rec.Header().Get("Access-Control-Allow-Origin") != "https://pet-slay-admin-stage-j67sekma7a-el.a.run.app" {
+		t.Fatalf("expected allow origin header for stage admin app, got %q", rec.Header().Get("Access-Control-Allow-Origin"))
+	}
+}
+
 func TestAdminOrderQueueIncludesBuyerOrders(t *testing.T) {
 	handler := testutil.NewHandler()
 
