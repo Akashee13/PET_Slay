@@ -27,6 +27,7 @@ export interface ProductCard {
   availabilityStatus: AvailabilityStatus;
   isNewArrival: boolean;
   coverImageUrl?: string;
+  imageUrls?: string[];
 }
 
 export interface ProductVariant {

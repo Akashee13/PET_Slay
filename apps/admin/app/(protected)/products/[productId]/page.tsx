@@ -14,6 +14,7 @@ export default function ProductDetailPage() {
   const [moq, setMoq] = useState("");
   const [availabilityStatus, setAvailabilityStatus] = useState("");
   const [isNewArrival, setIsNewArrival] = useState("");
+  const [imageUrlsText, setImageUrlsText] = useState("");
   const [result, setResult] = useState<AdminProduct | null>(null);
   const [error, setError] = useState("");
 
@@ -33,6 +34,7 @@ export default function ProductDetailPage() {
       moq?: number;
       availabilityStatus?: string;
       isNewArrival?: boolean;
+      imageUrls?: string[];
     } = {};
 
     if (title.trim()) payload.title = title.trim();
@@ -41,6 +43,13 @@ export default function ProductDetailPage() {
     if (moq.trim()) payload.moq = Number(moq);
     if (availabilityStatus.trim()) payload.availabilityStatus = availabilityStatus.trim();
     if (isNewArrival.trim()) payload.isNewArrival = isNewArrival === "true";
+    if (imageUrlsText.trim()) {
+      payload.imageUrls = imageUrlsText
+        .split("\n")
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .slice(0, 5);
+    }
 
     setError("");
     try {
@@ -57,7 +66,7 @@ export default function ProductDetailPage() {
         <div>
           <p className="eyebrow">Inventory Detail</p>
           <h1 className="headline">Product {params.productId}</h1>
-          <p className="subtle">Patch fields through `/v1/admin/products/{'{productId}'}`.</p>
+          <p className="subtle">Update business details and replace image set for this product.</p>
         </div>
       </section>
 
@@ -75,12 +84,25 @@ export default function ProductDetailPage() {
           <input id="detail-status" placeholder="Availability status (optional)" value={availabilityStatus} onChange={(event) => setAvailabilityStatus(event.target.value)} />
           <label htmlFor="detail-arrival">isNewArrival true|false (optional)</label>
           <input id="detail-arrival" placeholder="isNewArrival true|false (optional)" value={isNewArrival} onChange={(event) => setIsNewArrival(event.target.value)} />
+          <label htmlFor="detail-images">Image URLs (one per line, max 5)</label>
+          <textarea id="detail-images" placeholder="https://cdn.example.com/look-1.jpg" value={imageUrlsText} onChange={(event) => setImageUrlsText(event.target.value)} rows={5} />
           <button type="submit">Patch Product</button>
         </form>
       </section>
 
       {error && <p className="error">{error}</p>}
-      {result && <pre>{JSON.stringify(result, null, 2)}</pre>}
+      {result && (
+        <section className="panel stack">
+          {result.imageUrls && result.imageUrls.length > 0 && (
+            <div className="thumb-strip">
+              {result.imageUrls.map((imageUrl) => (
+                <img key={imageUrl} src={imageUrl} alt={`${result.title} asset`} loading="lazy" referrerPolicy="no-referrer" />
+              ))}
+            </div>
+          )}
+          <pre>{JSON.stringify(result, null, 2)}</pre>
+        </section>
+      )}
     </main>
   );
 }

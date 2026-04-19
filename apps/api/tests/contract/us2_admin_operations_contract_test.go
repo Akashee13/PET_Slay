@@ -12,7 +12,7 @@ import (
 func TestAdminProductsCreateRequiresAdminAuth(t *testing.T) {
 	handler := testutil.NewHandler()
 
-	req := httptest.NewRequest(http.MethodPost, "/v1/admin/products", testutil.JSONBody(`{"title":"Stage Product","category":"western","baseWholesalePrice":999,"moq":3}`))
+	req := httptest.NewRequest(http.MethodPost, "/v1/admin/products", testutil.JSONBody(`{"title":"Stage Product","category":"western","baseWholesalePrice":999,"moq":3,"imageUrls":["https://cdn.example.com/a.jpg"]}`))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
@@ -26,7 +26,7 @@ func TestAdminProductsCreateRequiresAdminAuth(t *testing.T) {
 func TestAdminProductsCreateContract(t *testing.T) {
 	handler := testutil.NewHandler()
 
-	req := httptest.NewRequest(http.MethodPost, "/v1/admin/products", testutil.JSONBody(`{"title":"Stage Product","category":"western","baseWholesalePrice":999,"moq":3}`))
+	req := httptest.NewRequest(http.MethodPost, "/v1/admin/products", testutil.JSONBody(`{"title":"Stage Product","category":"western","baseWholesalePrice":999,"moq":3,"imageUrls":["https://cdn.example.com/a.jpg","https://cdn.example.com/b.jpg"]}`))
 	req.Header.Set("Authorization", "Bearer dev-admin-token")
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -44,6 +44,41 @@ func TestAdminProductsCreateContract(t *testing.T) {
 
 	if payload["id"] == nil {
 		t.Fatalf("expected product id")
+	}
+
+	imageURLs, ok := payload["imageUrls"].([]any)
+	if !ok || len(imageURLs) != 2 {
+		t.Fatalf("expected image urls in contract response, got %v", payload["imageUrls"])
+	}
+}
+
+func TestAdminProductsListContract(t *testing.T) {
+	handler := testutil.NewHandler()
+
+	seedReq := httptest.NewRequest(http.MethodPost, "/v1/admin/products", testutil.JSONBody(`{"title":"Listed Product","category":"western","baseWholesalePrice":899,"moq":2,"imageUrls":["https://cdn.example.com/list.jpg"]}`))
+	seedReq.Header.Set("Authorization", "Bearer dev-admin-token")
+	seedReq.Header.Set("Content-Type", "application/json")
+	seedRec := httptest.NewRecorder()
+	handler.ServeHTTP(seedRec, seedReq)
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/admin/products", nil)
+	req.Header.Set("Authorization", "Bearer dev-admin-token")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+
+	var payload struct {
+		Items []map[string]any `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+
+	if len(payload.Items) == 0 {
+		t.Fatalf("expected products list items")
 	}
 }
 

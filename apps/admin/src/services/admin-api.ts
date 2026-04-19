@@ -35,6 +35,7 @@ export type AdminProductInput = {
   baseWholesalePrice: number;
   moq: number;
   availabilityStatus?: string;
+  imageUrls?: string[];
 };
 
 export type AdminProductUpdateInput = {
@@ -44,6 +45,7 @@ export type AdminProductUpdateInput = {
   moq?: number;
   availabilityStatus?: string;
   isNewArrival?: boolean;
+  imageUrls?: string[];
 };
 
 export type AdminProduct = {
@@ -55,6 +57,8 @@ export type AdminProduct = {
   moq: number;
   availabilityStatus: string;
   isNewArrival?: boolean;
+  coverImageUrl?: string;
+  imageUrls?: string[];
 };
 
 export type AdminOrder = {
@@ -84,6 +88,15 @@ export async function updateAdminProduct(token: string, productId: string, input
     token,
     body: input,
   });
+}
+
+export async function listAdminProducts(token: string): Promise<AdminProduct[]> {
+  const payload = await adminRequest<{ items: AdminProduct[] }>("/v1/admin/products", {
+    method: "GET",
+    token,
+  });
+
+  return payload.items;
 }
 
 export async function listAdminOrders(token: string): Promise<AdminOrder[]> {

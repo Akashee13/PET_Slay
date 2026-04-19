@@ -32,6 +32,7 @@ export interface CreateProductRequest {
   baseWholesalePrice: number;
   moq: number;
   availabilityStatus?: "in_stock" | "low_stock" | "out_of_stock";
+  imageUrls?: string[];
 }
 
 export interface UpdateProductRequest extends Partial<CreateProductRequest> {

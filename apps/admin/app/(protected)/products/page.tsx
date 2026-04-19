@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { getAdminSessionToken } from "@/src/features/auth/admin-session";
 import {
   createAdminProduct,
   type AdminProduct,
+  listAdminProducts,
   updateAdminProduct,
 } from "@/src/services/admin-api";
 
@@ -17,6 +18,7 @@ type CreateForm = {
   baseWholesalePrice: string;
   moq: string;
   availabilityStatus: string;
+  imageUrls: string[];
 };
 
 type UpdateForm = {
@@ -27,6 +29,7 @@ type UpdateForm = {
   moq: string;
   availabilityStatus: string;
   isNewArrival: string;
+  imageUrls: string[];
 };
 
 const defaultCreateForm: CreateForm = {
@@ -36,6 +39,7 @@ const defaultCreateForm: CreateForm = {
   baseWholesalePrice: "",
   moq: "",
   availabilityStatus: "in_stock",
+  imageUrls: [""],
 };
 
 const defaultUpdateForm: UpdateForm = {
@@ -46,7 +50,30 @@ const defaultUpdateForm: UpdateForm = {
   moq: "",
   availabilityStatus: "",
   isNewArrival: "",
+  imageUrls: [""],
 };
+
+function normalizeImageUrls(imageUrls: string[]): string[] {
+  return imageUrls.map((imageUrl) => imageUrl.trim()).filter(Boolean).slice(0, 5);
+}
+
+function setImageAt(imageUrls: string[], index: number, value: string): string[] {
+  const next = [...imageUrls];
+  next[index] = value;
+  return next;
+}
+
+function addImageField(imageUrls: string[]): string[] {
+  if (imageUrls.length >= 5) {
+    return imageUrls;
+  }
+  return [...imageUrls, ""];
+}
+
+function removeImageField(imageUrls: string[], index: number): string[] {
+  const next = imageUrls.filter((_, currentIndex) => currentIndex != index);
+  return next.length > 0 ? next : [""];
+}
 
 const INVENTORY_AI_SHOTS = [
   {
@@ -70,8 +97,39 @@ function buildAiImageUrl(prompt: string): string {
 export default function ProductsPage() {
   const [createForm, setCreateForm] = useState<CreateForm>(defaultCreateForm);
   const [updateForm, setUpdateForm] = useState<UpdateForm>(defaultUpdateForm);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   const [result, setResult] = useState<AdminProduct | null>(null);
   const [error, setError] = useState("");
+
+  const activeProducts = useMemo(
+    () => [...products].sort((left, right) => right.id.localeCompare(left.id)),
+    [products]
+  );
+
+  async function loadProducts() {
+    const token = getAdminSessionToken();
+    if (!token) {
+      setError("Missing admin session token");
+      setProductsLoading(false);
+      return;
+    }
+
+    setProductsLoading(true);
+    setError("");
+    try {
+      const items = await listAdminProducts(token);
+      setProducts(items);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Failed to fetch product catalog");
+    } finally {
+      setProductsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadProducts();
+  }, []);
 
   async function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -90,10 +148,12 @@ export default function ProductsPage() {
         baseWholesalePrice: Number(createForm.baseWholesalePrice),
         moq: Number(createForm.moq),
         availabilityStatus: createForm.availabilityStatus,
+        imageUrls: normalizeImageUrls(createForm.imageUrls),
       });
       setResult(created);
       setCreateForm(defaultCreateForm);
       setUpdateForm((current) => ({ ...current, productId: created.id }));
+      await loadProducts();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to create product");
     }
@@ -119,6 +179,7 @@ export default function ProductsPage() {
       moq?: number;
       availabilityStatus?: string;
       isNewArrival?: boolean;
+      imageUrls?: string[];
     } = {};
 
     if (updateForm.title.trim()) payload.title = updateForm.title.trim();
@@ -128,10 +189,16 @@ export default function ProductsPage() {
     if (updateForm.availabilityStatus.trim()) payload.availabilityStatus = updateForm.availabilityStatus.trim();
     if (updateForm.isNewArrival.trim()) payload.isNewArrival = updateForm.isNewArrival === "true";
 
+    const normalizedImageUrls = normalizeImageUrls(updateForm.imageUrls);
+    if (normalizedImageUrls.length > 0) {
+      payload.imageUrls = normalizedImageUrls;
+    }
+
     setError("");
     try {
       const updated = await updateAdminProduct(token, updateForm.productId.trim(), payload);
       setResult(updated);
+      await loadProducts();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to update product");
     }
@@ -141,20 +208,21 @@ export default function ProductsPage() {
     <main className="stack-lg">
       <section className="toolbar">
         <div>
-          <p className="eyebrow">Inventory Control</p>
-          <h1 className="headline">Products Operations</h1>
-          <p className="subtle">Use this screen to operate `/v1/admin/products` and `/v1/admin/products/{'{productId}'}`.</p>
+          <p className="eyebrow">Catalog Control Center</p>
+          <h1 className="headline">Product Catalog Operations</h1>
+          <p className="subtle">Create, update, and review everything uploaded by your admin team.</p>
         </div>
+        <button type="button" onClick={loadProducts} className="secondary">Refresh Catalog</button>
       </section>
 
       <section className="hero-panel stack">
-        <h2 style={{ margin: 0 }}>Warehouse Intelligence Theme</h2>
-        <p className="subtle">Bold, operational visuals with calm contrast and data-first hierarchy for faster inventory decisions.</p>
+        <h2 style={{ margin: 0 }}>Catalog Manager Snapshot</h2>
+        <p className="subtle">Keep merchandising, stock intent, and image quality aligned before buyers place orders.</p>
         <div className="kpi-grid">
-          <div className="kpi"><strong>24h</strong><span className="subtle">Refresh cadence</span></div>
-          <div className="kpi"><strong>SKU Ops</strong><span className="subtle">Create + patch flow</span></div>
-          <div className="kpi"><strong>Mobile Ready</strong><span className="subtle">Cards and forms adapt</span></div>
-          <div className="kpi"><strong>AI Moodboard</strong><span className="subtle">Visual direction embedded</span></div>
+          <div className="kpi"><strong>{activeProducts.length}</strong><span className="subtle">Products visible</span></div>
+          <div className="kpi"><strong>5 max</strong><span className="subtle">Images per product</span></div>
+          <div className="kpi"><strong>Live</strong><span className="subtle">Stage API sync</span></div>
+          <div className="kpi"><strong>Admin Ready</strong><span className="subtle">Business-first layout</span></div>
         </div>
       </section>
 
@@ -162,8 +230,8 @@ export default function ProductsPage() {
 
       <section className="data-grid">
         <article className="panel">
-          <h2>Create Product</h2>
-          <p>Add new inventory entries with category, wholesale price, and MOQ.</p>
+          <h2>Add New Product</h2>
+          <p>Capture essential commercial details and upload up to 5 product images.</p>
           <form onSubmit={onCreate} className="field-grid">
             <label htmlFor="create-title">Title</label>
             <input id="create-title" placeholder="Title" value={createForm.title} onChange={(event) => setCreateForm((current) => ({ ...current, title: event.target.value }))} required />
@@ -177,13 +245,48 @@ export default function ProductsPage() {
             <input id="create-moq" placeholder="MOQ" type="number" value={createForm.moq} onChange={(event) => setCreateForm((current) => ({ ...current, moq: event.target.value }))} required />
             <label htmlFor="create-status">Availability status</label>
             <input id="create-status" placeholder="Availability status" value={createForm.availabilityStatus} onChange={(event) => setCreateForm((current) => ({ ...current, availabilityStatus: event.target.value }))} />
+
+            <label>Product image URLs (1 to 5)</label>
+            {createForm.imageUrls.map((imageUrl, index) => (
+              <div className="row" key={`create-image-${index}`}>
+                <input
+                  placeholder={`Image URL ${index + 1}`}
+                  value={imageUrl}
+                  onChange={(event) =>
+                    setCreateForm((current) => ({
+                      ...current,
+                      imageUrls: setImageAt(current.imageUrls, index, event.target.value),
+                    }))
+                  }
+                />
+                {createForm.imageUrls.length > 1 && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() =>
+                      setCreateForm((current) => ({
+                        ...current,
+                        imageUrls: removeImageField(current.imageUrls, index),
+                      }))
+                    }
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+            {createForm.imageUrls.length < 5 && (
+              <button type="button" className="secondary" onClick={() => setCreateForm((current) => ({ ...current, imageUrls: addImageField(current.imageUrls) }))}>
+                Add another image
+              </button>
+            )}
             <button type="submit">Create Product</button>
           </form>
         </article>
 
         <article className="panel">
-          <h2>Update Product</h2>
-          <p>Patch one or more fields on an existing product by ID.</p>
+          <h2>Update Existing Product</h2>
+          <p>Adjust merchandising details and replace image set when needed.</p>
           <form onSubmit={onUpdate} className="field-grid">
             <label htmlFor="update-product-id">Product ID (required)</label>
             <input id="update-product-id" placeholder="Product ID (required)" value={updateForm.productId} onChange={(event) => setUpdateForm((current) => ({ ...current, productId: event.target.value }))} required />
@@ -199,6 +302,41 @@ export default function ProductsPage() {
             <input id="update-status" placeholder="Availability status (optional)" value={updateForm.availabilityStatus} onChange={(event) => setUpdateForm((current) => ({ ...current, availabilityStatus: event.target.value }))} />
             <label htmlFor="update-arrival">isNewArrival true|false (optional)</label>
             <input id="update-arrival" placeholder="isNewArrival true|false (optional)" value={updateForm.isNewArrival} onChange={(event) => setUpdateForm((current) => ({ ...current, isNewArrival: event.target.value }))} />
+
+            <label>Replace image URLs (up to 5)</label>
+            {updateForm.imageUrls.map((imageUrl, index) => (
+              <div className="row" key={`update-image-${index}`}>
+                <input
+                  placeholder={`Image URL ${index + 1}`}
+                  value={imageUrl}
+                  onChange={(event) =>
+                    setUpdateForm((current) => ({
+                      ...current,
+                      imageUrls: setImageAt(current.imageUrls, index, event.target.value),
+                    }))
+                  }
+                />
+                {updateForm.imageUrls.length > 1 && (
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() =>
+                      setUpdateForm((current) => ({
+                        ...current,
+                        imageUrls: removeImageField(current.imageUrls, index),
+                      }))
+                    }
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            ))}
+            {updateForm.imageUrls.length < 5 && (
+              <button type="button" className="secondary" onClick={() => setUpdateForm((current) => ({ ...current, imageUrls: addImageField(current.imageUrls) }))}>
+                Add another image
+              </button>
+            )}
             <button type="submit">Update Product</button>
           </form>
           {updateForm.productId && (
@@ -211,14 +349,42 @@ export default function ProductsPage() {
 
       {result && (
         <section className="panel">
-          <h2>Latest Response</h2>
+          <h2>Latest Product Response</h2>
           <pre>{JSON.stringify(result, null, 2)}</pre>
         </section>
       )}
 
       <section className="panel stack">
+        <h2>All Uploaded Products</h2>
+        <p>As admin, you can review every uploaded product and its full image set here.</p>
+        {productsLoading && <p className="subtle">Loading catalog…</p>}
+        {!productsLoading && activeProducts.length === 0 && <p className="subtle">No products available yet.</p>}
+        <div className="product-admin-grid">
+          {activeProducts.map((product) => (
+            <article key={product.id} className="ai-card">
+              <img src={product.coverImageUrl || product.imageUrls?.[0] || "https://image.pollinations.ai/prompt/minimal%20fashion%20placeholder%20image?width=1280&height=720&nologo=true"} alt={product.title} loading="lazy" referrerPolicy="no-referrer" />
+              <div className="product-admin-body stack">
+                <strong>{product.title}</strong>
+                <span className="subtle">{product.id} • {product.category}</span>
+                <span className="subtle">MOQ {product.moq} • ₹{product.baseWholesalePrice}</span>
+                <span className="status-chip">{product.availabilityStatus}</span>
+                {product.imageUrls && product.imageUrls.length > 0 && (
+                  <div className="thumb-strip">
+                    {product.imageUrls.map((imageUrl) => (
+                      <img key={`${product.id}-${imageUrl}`} src={imageUrl} alt={`${product.title} asset`} loading="lazy" referrerPolicy="no-referrer" />
+                    ))}
+                  </div>
+                )}
+                <Link href={`/products/${product.id}`} className="inline-link">Open product editor</Link>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="panel stack">
         <h2>AI Visual Direction</h2>
-        <p>Prompt-driven concept frames that match the requested warehouse design language.</p>
+        <p>Prompt-driven concept frames to guide merchandising banners and launch collections.</p>
         <div className="ai-gallery">
           {INVENTORY_AI_SHOTS.map((shot) => (
             <article key={shot.label} className="ai-card">

@@ -78,7 +78,7 @@ export default function OrdersPage() {
         <div>
           <p className="eyebrow">Fulfilment Desk</p>
           <h1 className="headline">Order Queue</h1>
-          <p className="subtle">Connected to `/v1/admin/orders` and `/v1/admin/orders/{'{orderId}'}`.</p>
+          <p className="subtle">Track pending shipments, update statuses, and keep dispatch moving.</p>
         </div>
       </section>
 

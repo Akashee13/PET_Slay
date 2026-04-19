@@ -8,7 +8,7 @@ import (
 )
 
 const listProductsSQL = `
-SELECT id, title, category, base_wholesale_price, moq, availability_status, is_new_arrival, media_cover_url
+SELECT id, title, category, base_wholesale_price, moq, availability_status, is_new_arrival, media_cover_url, COALESCE(media_urls, '[]'::jsonb)
 FROM products
 WHERE availability_status <> 'inactive'
   AND ($1 = '' OR category = $1)
@@ -16,7 +16,7 @@ WHERE availability_status <> 'inactive'
 ORDER BY created_at DESC`
 
 const getProductSQL = `
-SELECT p.id, p.title, p.category, p.base_wholesale_price, p.moq, p.availability_status, p.is_new_arrival, p.media_cover_url, p.description, COALESCE(sp.measurement_chart, '{}'::jsonb)
+SELECT p.id, p.title, p.category, p.base_wholesale_price, p.moq, p.availability_status, p.is_new_arrival, p.media_cover_url, COALESCE(p.media_urls, '[]'::jsonb), p.description, COALESCE(sp.measurement_chart, '{}'::jsonb)
 FROM products p
 LEFT JOIN size_profiles sp ON sp.id = p.size_profile_id
 WHERE p.id = $1`
@@ -64,6 +64,7 @@ func (r *PostgresRepository) List(category, collection string) ([]ProductCard, e
 func (r *PostgresRepository) Get(productID string) (*ProductDetail, error) {
 	var product ProductDetail
 	var coverImage sql.NullString
+	var imageURLsBytes []byte
 	var description sql.NullString
 	var sizeChartBytes []byte
 
@@ -76,6 +77,7 @@ func (r *PostgresRepository) Get(productID string) (*ProductDetail, error) {
 		&product.AvailabilityStatus,
 		&product.IsNewArrival,
 		&coverImage,
+		&imageURLsBytes,
 		&description,
 		&sizeChartBytes,
 	)
@@ -87,6 +89,12 @@ func (r *PostgresRepository) Get(productID string) (*ProductDetail, error) {
 	}
 
 	product.CoverImageURL = coverImage.String
+	product.ImageURLs = []string{}
+	if len(imageURLsBytes) > 0 {
+		if err := json.Unmarshal(imageURLsBytes, &product.ImageURLs); err != nil {
+			return nil, err
+		}
+	}
 	product.Description = description.String
 	product.SizeChart = map[string]interface{}{}
 	if len(sizeChartBytes) > 0 {
@@ -147,11 +155,19 @@ func (r *PostgresRepository) CreateProduct(input AdminCreateProductInput) (*Prod
 	if status == "" {
 		status = string(AvailabilityInStock)
 	}
+	coverImageURL := ""
+	if len(input.ImageURLs) > 0 {
+		coverImageURL = input.ImageURLs[0]
+	}
+	imageURLsJSON, err := json.Marshal(input.ImageURLs)
+	if err != nil {
+		return nil, err
+	}
 
-	_, err := r.db.Exec(`
-		INSERT INTO products (id, sku, title, slug, category, description, base_wholesale_price, moq, availability_status)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-	`, id, sku, input.Title, strings.TrimPrefix(id, "prod-"), input.Category, input.Description, input.BaseWholesalePrice, input.MOQ, status)
+	_, err = r.db.Exec(`
+		INSERT INTO products (id, sku, title, slug, category, description, base_wholesale_price, moq, availability_status, media_cover_url, media_urls)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb)
+	`, id, sku, input.Title, strings.TrimPrefix(id, "prod-"), input.Category, input.Description, input.BaseWholesalePrice, input.MOQ, status, coverImageURL, string(imageURLsJSON))
 	if err != nil {
 		return nil, err
 	}
@@ -183,6 +199,19 @@ func (r *PostgresRepository) UpdateProduct(productID string, input AdminUpdatePr
 	if input.IsNewArrival != nil {
 		product.IsNewArrival = *input.IsNewArrival
 	}
+	if input.ImageURLs != nil {
+		product.ImageURLs = *input.ImageURLs
+	}
+	if len(product.ImageURLs) > 0 {
+		product.CoverImageURL = product.ImageURLs[0]
+	} else {
+		product.CoverImageURL = ""
+	}
+
+	imageURLsJSON, err := json.Marshal(product.ImageURLs)
+	if err != nil {
+		return nil, err
+	}
 
 	result, err := r.db.Exec(`
 		UPDATE products
@@ -192,9 +221,11 @@ func (r *PostgresRepository) UpdateProduct(productID string, input AdminUpdatePr
 		    moq = $5,
 		    availability_status = $6,
 		    is_new_arrival = $7,
+		    media_cover_url = $8,
+		    media_urls = $9::jsonb,
 		    updated_at = NOW()
 		WHERE id = $1
-	`, product.ID, product.Title, product.Description, product.BaseWholesalePrice, product.MOQ, product.AvailabilityStatus, product.IsNewArrival)
+	`, product.ID, product.Title, product.Description, product.BaseWholesalePrice, product.MOQ, product.AvailabilityStatus, product.IsNewArrival, product.CoverImageURL, string(imageURLsJSON))
 	if err != nil {
 		return nil, err
 	}
@@ -233,6 +264,7 @@ type productCardScanner interface {
 func scanProductCard(row productCardScanner) (ProductCard, error) {
 	var product ProductCard
 	var coverImage sql.NullString
+	var imageURLsBytes []byte
 	err := row.Scan(
 		&product.ID,
 		&product.Title,
@@ -242,8 +274,15 @@ func scanProductCard(row productCardScanner) (ProductCard, error) {
 		&product.AvailabilityStatus,
 		&product.IsNewArrival,
 		&coverImage,
+		&imageURLsBytes,
 	)
 	product.CoverImageURL = coverImage.String
+	product.ImageURLs = []string{}
+	if len(imageURLsBytes) > 0 {
+		if unmarshalErr := json.Unmarshal(imageURLsBytes, &product.ImageURLs); unmarshalErr != nil {
+			return ProductCard{}, unmarshalErr
+		}
+	}
 	return product, err
 }
 

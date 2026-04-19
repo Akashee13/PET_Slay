@@ -8,6 +8,20 @@ import (
 	httpresponse "github.com/akash/pet_slay/apps/api/internal/http/response"
 )
 
+func AdminListHandler(service *Service) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		items, err := service.List("", "")
+		if err != nil {
+			httpresponse.Error(w, http.StatusInternalServerError, "catalog_unavailable")
+			return
+		}
+
+		httpresponse.JSON(w, http.StatusOK, map[string][]ProductCard{
+			"items": items,
+		})
+	}
+}
+
 func AdminCreateHandler(service *Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var payload AdminCreateProductInput

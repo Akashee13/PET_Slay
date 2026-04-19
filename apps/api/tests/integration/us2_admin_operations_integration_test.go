@@ -12,7 +12,7 @@ import (
 func TestAdminCanCreateAndUpdateProduct(t *testing.T) {
 	handler := testutil.NewHandler()
 
-	createReq := httptest.NewRequest(http.MethodPost, "/v1/admin/products", testutil.JSONBody(`{"title":"Stage Product","category":"western","baseWholesalePrice":999,"moq":3}`))
+	createReq := httptest.NewRequest(http.MethodPost, "/v1/admin/products", testutil.JSONBody(`{"title":"Stage Product","category":"western","baseWholesalePrice":999,"moq":3,"imageUrls":["https://cdn.example.com/a.jpg","https://cdn.example.com/b.jpg"]}`))
 	createReq.Header.Set("Authorization", "Bearer dev-admin-token")
 	createReq.Header.Set("Content-Type", "application/json")
 	createRec := httptest.NewRecorder()
@@ -32,7 +32,12 @@ func TestAdminCanCreateAndUpdateProduct(t *testing.T) {
 		t.Fatalf("expected product id")
 	}
 
-	updateReq := httptest.NewRequest(http.MethodPatch, "/v1/admin/products/"+productID, testutil.JSONBody(`{"availabilityStatus":"low_stock","isNewArrival":true}`))
+	createdImageURLs, ok := created["imageUrls"].([]any)
+	if !ok || len(createdImageURLs) != 2 {
+		t.Fatalf("expected 2 image urls, got %v", created["imageUrls"])
+	}
+
+	updateReq := httptest.NewRequest(http.MethodPatch, "/v1/admin/products/"+productID, testutil.JSONBody(`{"availabilityStatus":"low_stock","isNewArrival":true,"imageUrls":["https://cdn.example.com/c.jpg"]}`))
 	updateReq.Header.Set("Authorization", "Bearer dev-admin-token")
 	updateReq.Header.Set("Content-Type", "application/json")
 	updateRec := httptest.NewRecorder()
@@ -49,6 +54,45 @@ func TestAdminCanCreateAndUpdateProduct(t *testing.T) {
 
 	if updated["availabilityStatus"] != "low_stock" {
 		t.Fatalf("expected availabilityStatus low_stock, got %v", updated["availabilityStatus"])
+	}
+
+	updatedImageURLs, ok := updated["imageUrls"].([]any)
+	if !ok || len(updatedImageURLs) != 1 {
+		t.Fatalf("expected 1 image url after update, got %v", updated["imageUrls"])
+	}
+}
+
+func TestAdminCanListProducts(t *testing.T) {
+	handler := testutil.NewHandler()
+
+	seedReq := httptest.NewRequest(http.MethodPost, "/v1/admin/products", testutil.JSONBody(`{"title":"Listed Product","category":"western","baseWholesalePrice":1099,"moq":2,"imageUrls":["https://cdn.example.com/listed.jpg"]}`))
+	seedReq.Header.Set("Authorization", "Bearer dev-admin-token")
+	seedReq.Header.Set("Content-Type", "application/json")
+	seedRec := httptest.NewRecorder()
+	handler.ServeHTTP(seedRec, seedReq)
+
+	if seedRec.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d body=%s", seedRec.Code, seedRec.Body.String())
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/v1/admin/products", nil)
+	req.Header.Set("Authorization", "Bearer dev-admin-token")
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", rec.Code, rec.Body.String())
+	}
+
+	var payload struct {
+		Items []map[string]any `json:"items"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+
+	if len(payload.Items) == 0 {
+		t.Fatalf("expected at least one product")
 	}
 }
 

@@ -151,12 +151,14 @@ func New() http.Handler {
 		notifications.RegisterDeviceTokenHandler(deviceTokenService).ServeHTTP(w, r)
 	})))
 	mux.Handle("/v1/admin/products", auth.RequireRole(verifier, auth.RoleAdmin)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
+		switch r.Method {
+		case http.MethodGet:
+			catalog.AdminListHandler(catalogService).ServeHTTP(w, r)
+		case http.MethodPost:
+			catalog.AdminCreateHandler(catalogService).ServeHTTP(w, r)
+		default:
 			httpresponse.Error(w, http.StatusMethodNotAllowed, "method_not_allowed")
-			return
 		}
-
-		catalog.AdminCreateHandler(catalogService).ServeHTTP(w, r)
 	})))
 	mux.Handle("/v1/admin/products/", auth.RequireRole(verifier, auth.RoleAdmin)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPatch {

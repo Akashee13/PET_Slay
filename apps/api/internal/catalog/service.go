@@ -31,6 +31,7 @@ type ProductCard struct {
 	AvailabilityStatus AvailabilityStatus `json:"availabilityStatus"`
 	IsNewArrival       bool               `json:"isNewArrival"`
 	CoverImageURL      string             `json:"coverImageUrl,omitempty"`
+	ImageURLs          []string           `json:"imageUrls,omitempty"`
 }
 
 type ProductVariant struct {
@@ -191,6 +192,7 @@ type AdminCreateProductInput struct {
 	BaseWholesalePrice float64 `json:"baseWholesalePrice"`
 	MOQ                int     `json:"moq"`
 	AvailabilityStatus string  `json:"availabilityStatus,omitempty"`
+	ImageURLs          []string `json:"imageUrls,omitempty"`
 }
 
 type AdminUpdateProductInput struct {
@@ -200,9 +202,37 @@ type AdminUpdateProductInput struct {
 	MOQ                *int     `json:"moq,omitempty"`
 	AvailabilityStatus *string  `json:"availabilityStatus,omitempty"`
 	IsNewArrival       *bool    `json:"isNewArrival,omitempty"`
+	ImageURLs          *[]string `json:"imageUrls,omitempty"`
+}
+
+func normalizeImageURLs(imageURLs []string) ([]string, error) {
+	if len(imageURLs) > 5 {
+		return nil, errors.New("maximum_5_images_allowed")
+	}
+
+	normalized := make([]string, 0, len(imageURLs))
+	for _, imageURL := range imageURLs {
+		trimmed := strings.TrimSpace(imageURL)
+		if trimmed == "" {
+			continue
+		}
+		normalized = append(normalized, trimmed)
+	}
+
+	if len(normalized) > 5 {
+		return nil, errors.New("maximum_5_images_allowed")
+	}
+
+	return normalized, nil
 }
 
 func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, error) {
+	imageURLs, err := normalizeImageURLs(input.ImageURLs)
+	if err != nil {
+		return nil, err
+	}
+	input.ImageURLs = imageURLs
+
 	if s.repo != nil {
 		return s.repo.CreateProduct(input)
 	}
@@ -227,9 +257,13 @@ func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, 
 			MOQ:                input.MOQ,
 			AvailabilityStatus: AvailabilityStatus(status),
 			IsNewArrival:       false,
+			ImageURLs:          imageURLs,
 		},
 		Description: input.Description,
 		Variants:    []ProductVariant{},
+	}
+	if len(imageURLs) > 0 {
+		product.CoverImageURL = imageURLs[0]
 	}
 
 	s.products = append(s.products, product)
@@ -239,6 +273,14 @@ func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, 
 }
 
 func (s *Service) UpdateProduct(productID string, input AdminUpdateProductInput) (*ProductDetail, error) {
+	if input.ImageURLs != nil {
+		imageURLs, err := normalizeImageURLs(*input.ImageURLs)
+		if err != nil {
+			return nil, err
+		}
+		input.ImageURLs = &imageURLs
+	}
+
 	if s.repo != nil {
 		return s.repo.UpdateProduct(productID, input)
 	}
@@ -268,6 +310,14 @@ func (s *Service) UpdateProduct(productID string, input AdminUpdateProductInput)
 		}
 		if input.IsNewArrival != nil {
 			product.IsNewArrival = *input.IsNewArrival
+		}
+		if input.ImageURLs != nil {
+			product.ImageURLs = *input.ImageURLs
+			if len(product.ImageURLs) > 0 {
+				product.CoverImageURL = product.ImageURLs[0]
+			} else {
+				product.CoverImageURL = ""
+			}
 		}
 
 		s.products[index] = product

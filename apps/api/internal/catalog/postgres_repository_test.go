@@ -18,8 +18,8 @@ func TestPostgresRepositoryListsProductsWithFilters(t *testing.T) {
 	mock.ExpectQuery(regexp.QuoteMeta(listProductsSQL)).
 		WithArgs("western", "new_arrivals").
 		WillReturnRows(sqlmock.NewRows([]string{
-			"id", "title", "category", "base_wholesale_price", "moq", "availability_status", "is_new_arrival", "media_cover_url",
-		}).AddRow("prod-001", "Floral Co-ord Set", "western", 799.00, 4, "in_stock", true, "https://example.com/floral.jpg"))
+			"id", "title", "category", "base_wholesale_price", "moq", "availability_status", "is_new_arrival", "media_cover_url", "media_urls",
+		}).AddRow("prod-001", "Floral Co-ord Set", "western", 799.00, 4, "in_stock", true, "https://example.com/floral.jpg", []byte(`["https://example.com/floral-1.jpg","https://example.com/floral-2.jpg"]`)))
 
 	items, err := repo.List("western", "new_arrivals")
 	if err != nil {
@@ -51,8 +51,8 @@ func TestPostgresRepositoryGetsProductDetailWithVariants(t *testing.T) {
 	mock.ExpectQuery(regexp.QuoteMeta(getProductSQL)).
 		WithArgs("prod-001").
 		WillReturnRows(sqlmock.NewRows([]string{
-			"id", "title", "category", "base_wholesale_price", "moq", "availability_status", "is_new_arrival", "media_cover_url", "description", "measurement_chart",
-		}).AddRow("prod-001", "Floral Co-ord Set", "western", 799.00, 4, "in_stock", true, "https://example.com/floral.jpg", "Fresh western style", []byte(`{"S":"34"}`)))
+			"id", "title", "category", "base_wholesale_price", "moq", "availability_status", "is_new_arrival", "media_cover_url", "media_urls", "description", "measurement_chart",
+		}).AddRow("prod-001", "Floral Co-ord Set", "western", 799.00, 4, "in_stock", true, "https://example.com/floral.jpg", []byte(`["https://example.com/floral-1.jpg"]`), "Fresh western style", []byte(`{"S":"34"}`)))
 	mock.ExpectQuery(regexp.QuoteMeta(listVariantsSQL)).
 		WithArgs("prod-001").
 		WillReturnRows(sqlmock.NewRows([]string{
