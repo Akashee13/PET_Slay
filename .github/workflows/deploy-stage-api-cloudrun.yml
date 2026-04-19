@@ -70,6 +70,18 @@ jobs:
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: apps/api/go.mod
+
+      - name: Run stage database migrations
+        working-directory: apps/api
+        env:
+          DATABASE_URL: ${{ secrets.STAGE_DATABASE_URL }}
+        run: |
+          go run ./cmd/migrate
+
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker us-docker.pkg.dev --quiet
 
@@ -87,7 +99,7 @@ jobs:
             --image "us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pet-slay/pet-slay-api:${{ env.IMAGE_TAG }}" \
             --allow-unauthenticated \
             --port 8080 \
-            --set-env-vars "APP_ENV=stage,DATABASE_URL=${{ secrets.STAGE_DATABASE_URL }},SUPABASE_URL=${{ secrets.STAGE_SUPABASE_URL }},SUPABASE_ANON_KEY=${{ secrets.STAGE_SUPABASE_ANON_KEY }},SUPABASE_SERVICE_ROLE_KEY=${{ secrets.STAGE_SUPABASE_SERVICE_ROLE_KEY }}"
+            --set-env-vars "APP_ENV=stage,DATABASE_REQUIRED=true,DATABASE_URL=${{ secrets.STAGE_DATABASE_URL }},SUPABASE_URL=${{ secrets.STAGE_SUPABASE_URL }},SUPABASE_ANON_KEY=${{ secrets.STAGE_SUPABASE_ANON_KEY }},SUPABASE_SERVICE_ROLE_KEY=${{ secrets.STAGE_SUPABASE_SERVICE_ROLE_KEY }},STAGE_ADMIN_BEARER_TOKEN=${{ secrets.STAGE_ADMIN_BEARER_TOKEN }}"
 
       - name: Show stage URL
         run: |
