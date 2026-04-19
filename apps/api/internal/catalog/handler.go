@@ -34,7 +34,7 @@ func DetailHandler(service *Service) http.HandlerFunc {
 			return
 		}
 
-		product, err := service.Get(productID)
+		product, err := service.GetVisible(productID)
 		if err != nil {
 			httpresponse.Error(w, http.StatusNotFound, ErrProductNotFound.Error())
 			return

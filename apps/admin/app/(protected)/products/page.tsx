@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { getAdminSessionToken } from "@/src/features/auth/admin-session";
+import { useAdminLanguage } from "@/src/features/i18n/admin-language";
 import {
   createAdminProduct,
   type AdminProduct,
@@ -97,6 +98,7 @@ function buildAiImageUrl(prompt: string): string {
 }
 
 export default function ProductsPage() {
+  const { t } = useAdminLanguage();
   const [createForm, setCreateForm] = useState<CreateForm>(defaultCreateForm);
   const [updateForm, setUpdateForm] = useState<UpdateForm>(defaultUpdateForm);
   const [products, setProducts] = useState<AdminProduct[]>([]);
@@ -243,18 +245,18 @@ export default function ProductsPage() {
     <main className="stack-lg">
       <section className="toolbar">
         <div>
-          <p className="eyebrow">Catalog Control Center</p>
-          <h1 className="headline">Product Catalog Operations</h1>
-          <p className="subtle">Create, update, and review everything uploaded by your admin team.</p>
+          <p className="eyebrow">{t("addProductEyebrow")}</p>
+          <h1 className="headline">{t("addProductTitle")}</h1>
+          <p className="subtle">{t("addProductSubtitle")}</p>
         </div>
-        <button type="button" onClick={loadProducts} className="secondary">Refresh Catalog</button>
+        <Link href="/listed-products" className="button-link">{t("listedProductsNav")}</Link>
       </section>
 
       <section className="hero-panel stack">
         <h2 style={{ margin: 0 }}>Catalog Manager Snapshot</h2>
         <p className="subtle">Keep merchandising, stock intent, and image quality aligned before buyers place orders.</p>
         <div className="kpi-grid">
-          <div className="kpi"><strong>{activeProducts.length}</strong><span className="subtle">Products visible</span></div>
+          <div className="kpi"><strong>{activeProducts.length}</strong><span className="subtle">Products in admin table</span></div>
           <div className="kpi"><strong>5 max</strong><span className="subtle">Images per product</span></div>
           <div className="kpi"><strong>Live</strong><span className="subtle">Stage API sync</span></div>
           <div className="kpi"><strong>Admin Ready</strong><span className="subtle">Business-first layout</span></div>
@@ -416,7 +418,7 @@ export default function ProductsPage() {
 
       <section className="panel stack">
         <h2>All Uploaded Products</h2>
-        <p>As admin, you can review every uploaded product and its full image set here.</p>
+        <p>For list, unlist, and patch actions, use the dedicated listed-products table.</p>
         {productsLoading && <p className="subtle">Loading catalog…</p>}
         {!productsLoading && activeProducts.length === 0 && <p className="subtle">No products available yet.</p>}
         <div className="product-admin-grid">
@@ -435,7 +437,7 @@ export default function ProductsPage() {
                     ))}
                   </div>
                 )}
-                <Link href={`/products/${product.id}`} className="inline-link">Open product editor</Link>
+                <Link href="/listed-products" className="inline-link">Open listed-products table</Link>
               </div>
             </article>
           ))}

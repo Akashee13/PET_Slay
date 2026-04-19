@@ -5,32 +5,34 @@ import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useMemo, useState } from "react";
 
 import { clearAdminSessionToken, getAdminSessionToken } from "@/src/features/auth/admin-session";
+import { AdminLanguageProvider, isAdminLanguage, useAdminLanguage, type AdminLanguage } from "@/src/features/i18n/admin-language";
 
 type ThemeMode = "light" | "dusk";
-type LanguageCode = "english" | "hindi" | "hinglish";
 
-const LANGUAGE_OPTIONS: Array<{ value: LanguageCode; label: string }> = [
+const LANGUAGE_OPTIONS: Array<{ value: AdminLanguage; label: string }> = [
   { value: "english", label: "English" },
   { value: "hindi", label: "हिन्दी" },
   { value: "hinglish", label: "Hinglish" },
 ];
-
-const LANGUAGE_BADGE: Record<LanguageCode, string> = {
-  english: "Operations Language: English",
-  hindi: "ऑपरेशन भाषा: हिन्दी",
-  hinglish: "Operations Language: Hinglish",
-};
 
 function applyTheme(themeMode: ThemeMode) {
   document.documentElement.setAttribute("data-theme", themeMode);
 }
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
+  return (
+    <AdminLanguageProvider>
+      <ProtectedLayoutInner>{children}</ProtectedLayoutInner>
+    </AdminLanguageProvider>
+  );
+}
+
+function ProtectedLayoutInner({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { language, setLanguage, t } = useAdminLanguage();
   const [ready, setReady] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>("dusk");
-  const [languageCode, setLanguageCode] = useState<LanguageCode>("english");
 
   useEffect(() => {
     const token = getAdminSessionToken();
@@ -44,11 +46,6 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
     setThemeMode(nextTheme);
     applyTheme(nextTheme);
 
-    const savedLanguage = window.localStorage.getItem("pet_slay_admin_language");
-    if (savedLanguage === "hindi" || savedLanguage === "hinglish" || savedLanguage === "english") {
-      setLanguageCode(savedLanguage);
-    }
-
     setReady(true);
   }, [router]);
 
@@ -60,20 +57,20 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
   }
 
   function onLanguageChange(nextLanguage: string) {
-    if (nextLanguage !== "english" && nextLanguage !== "hindi" && nextLanguage !== "hinglish") {
+    if (!isAdminLanguage(nextLanguage)) {
       return;
     }
 
-    setLanguageCode(nextLanguage);
-    window.localStorage.setItem("pet_slay_admin_language", nextLanguage);
+    setLanguage(nextLanguage);
   }
 
   const navItems = useMemo(
     () => [
-      { href: "/orders", label: "Order Operations" },
-      { href: "/products", label: "Catalog Operations" },
+      { href: "/orders", label: t("ordersNav") },
+      { href: "/products", label: t("productsNav") },
+      { href: "/listed-products", label: t("listedProductsNav") },
     ],
-    []
+    [t]
   );
 
   if (!ready) {
@@ -98,7 +95,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
           </div>
           <div>
             <strong>PET_Slay Command Desk</strong>
-            <p className="subtle">{LANGUAGE_BADGE[languageCode]}</p>
+            <p className="subtle">{t("operationsLanguage")}</p>
           </div>
         </div>
         <nav className="nav-row">
@@ -107,7 +104,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
               {item.label}
             </Link>
           ))}
-          <select value={languageCode} onChange={(event) => onLanguageChange(event.target.value)} aria-label="Select language">
+          <select value={language} onChange={(event) => onLanguageChange(event.target.value)} aria-label="Select language">
             {LANGUAGE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -125,7 +122,7 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
               router.push("/");
             }}
           >
-            Sign Out
+            {t("signOut")}
           </button>
         </nav>
       </header>

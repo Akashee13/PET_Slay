@@ -12,7 +12,7 @@ import (
 func TestAdminCanCreateAndSendCampaign(t *testing.T) {
 	handler := testutil.NewHandler()
 
-	createReq := httptest.NewRequest(http.MethodPost, "/v1/admin/notification-campaigns", testutil.JSONBody(`{"campaignType":"new_arrival","messageVariants":[{"language":"english","title":"Fresh drop","body":"New styles live"},{"language":"hinglish","title":"Fresh drop","body":"New styles ab live hain"}],"productIds":["prod-western-001"]}`))
+	createReq := httptest.NewRequest(http.MethodPost, "/v1/admin/notification-campaigns", testutil.JSONBody(`{"campaignType":"new_arrival","messageVariants":[{"language":"english","title":"Fresh wholesale drop","body":"New styles are live now with fast dispatch for resellers."},{"language":"hinglish","title":"Fresh stock live hai","body":"New styles ab live hain with fast dispatch for resellers."}],"productIds":["prod-western-001"]}`))
 	createReq.Header.Set("Authorization", "Bearer dev-admin-token")
 	createReq.Header.Set("Content-Type", "application/json")
 	createRec := httptest.NewRecorder()

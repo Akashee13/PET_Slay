@@ -96,6 +96,78 @@ func TestAdminCanListProducts(t *testing.T) {
 	}
 }
 
+func TestAdminCanUnlistAndRelistProducts(t *testing.T) {
+	handler := testutil.NewHandler()
+
+	createReq := httptest.NewRequest(http.MethodPost, "/v1/admin/products", testutil.JSONBody(`{"title":"Lifecycle Product","category":"western","baseWholesalePrice":999,"moq":2}`))
+	createReq.Header.Set("Authorization", "Bearer dev-admin-token")
+	createReq.Header.Set("Content-Type", "application/json")
+	createRec := httptest.NewRecorder()
+	handler.ServeHTTP(createRec, createReq)
+
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d body=%s", createRec.Code, createRec.Body.String())
+	}
+
+	var created struct {
+		ID            string `json:"id"`
+		ListingStatus string `json:"listingStatus"`
+		VisibleUntil  string `json:"visibleUntil"`
+	}
+	if err := json.Unmarshal(createRec.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode created product: %v", err)
+	}
+	if created.ListingStatus != "listed" {
+		t.Fatalf("expected listed product by default, got %s", created.ListingStatus)
+	}
+	if created.VisibleUntil == "" {
+		t.Fatal("expected default 60-day visibleUntil timestamp")
+	}
+
+	unlistReq := httptest.NewRequest(http.MethodPatch, "/v1/admin/products/"+created.ID, testutil.JSONBody(`{"listingAction":"unlist_now"}`))
+	unlistReq.Header.Set("Authorization", "Bearer dev-admin-token")
+	unlistReq.Header.Set("Content-Type", "application/json")
+	unlistRec := httptest.NewRecorder()
+	handler.ServeHTTP(unlistRec, unlistReq)
+
+	if unlistRec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", unlistRec.Code, unlistRec.Body.String())
+	}
+
+	buyerListReq := httptest.NewRequest(http.MethodGet, "/v1/catalog/products", nil)
+	buyerListReq.Header.Set("Authorization", "Bearer dev-buyer-token")
+	buyerListRec := httptest.NewRecorder()
+	handler.ServeHTTP(buyerListRec, buyerListReq)
+
+	if buyerListRec.Code != http.StatusOK {
+		t.Fatalf("expected buyer catalog 200, got %d body=%s", buyerListRec.Code, buyerListRec.Body.String())
+	}
+	if containsProductID(buyerListRec.Body.Bytes(), created.ID) {
+		t.Fatalf("expected unlisted product %s to be hidden from buyer catalog", created.ID)
+	}
+
+	adminListReq := httptest.NewRequest(http.MethodGet, "/v1/admin/products", nil)
+	adminListReq.Header.Set("Authorization", "Bearer dev-admin-token")
+	adminListRec := httptest.NewRecorder()
+	handler.ServeHTTP(adminListRec, adminListReq)
+	if !containsProductID(adminListRec.Body.Bytes(), created.ID) {
+		t.Fatalf("expected unlisted product %s to remain visible to admin table", created.ID)
+	}
+
+	relistReq := httptest.NewRequest(http.MethodPatch, "/v1/admin/products/"+created.ID, testutil.JSONBody(`{"listingAction":"list_now"}`))
+	relistReq.Header.Set("Authorization", "Bearer dev-admin-token")
+	relistReq.Header.Set("Content-Type", "application/json")
+	relistRec := httptest.NewRecorder()
+	handler.ServeHTTP(relistRec, relistReq)
+
+	if relistRec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d body=%s", relistRec.Code, relistRec.Body.String())
+	}
+	if !containsProductID(relistRec.Body.Bytes(), created.ID) {
+		t.Fatalf("expected relisted product response to include %s", created.ID)
+	}
+}
+
 func TestAdminPreflightAllowsStageAdminOrigin(t *testing.T) {
 	handler := testutil.NewHandler()
 
@@ -114,6 +186,27 @@ func TestAdminPreflightAllowsStageAdminOrigin(t *testing.T) {
 	if rec.Header().Get("Access-Control-Allow-Origin") != "https://pet-slay-admin-stage-j67sekma7a-el.a.run.app" {
 		t.Fatalf("expected allow origin header for stage admin app, got %q", rec.Header().Get("Access-Control-Allow-Origin"))
 	}
+}
+
+func containsProductID(payload []byte, productID string) bool {
+	var decoded struct {
+		Items []struct {
+			ID string `json:"id"`
+		} `json:"items"`
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(payload, &decoded); err != nil {
+		return false
+	}
+	if decoded.ID == productID {
+		return true
+	}
+	for _, item := range decoded.Items {
+		if item.ID == productID {
+			return true
+		}
+	}
+	return false
 }
 
 func TestAdminOrdersResponseIncludesCORSHeadersForStageOrigin(t *testing.T) {

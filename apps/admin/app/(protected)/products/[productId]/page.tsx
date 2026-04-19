@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 
 import { getAdminSessionToken } from "@/src/features/auth/admin-session";
-import { type AdminProduct, updateAdminProduct } from "@/src/services/admin-api";
+import { type AdminProduct, updateAdminProduct, updateProductListing } from "@/src/services/admin-api";
 import { uploadProductImages } from "@/src/services/product-image-upload";
 import { isAdminSupabaseConfigured } from "@/src/services/supabase";
 
@@ -19,6 +19,7 @@ export default function ProductDetailPage() {
   const [imageUrlsText, setImageUrlsText] = useState("");
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [listingBusy, setListingBusy] = useState(false);
   const [result, setResult] = useState<AdminProduct | null>(null);
   const [error, setError] = useState("");
 
@@ -83,6 +84,24 @@ export default function ProductDetailPage() {
     }
   }
 
+  async function onListingAction(action: "list_now" | "unlist_now") {
+    const token = getAdminSessionToken();
+    if (!token) {
+      setError("Missing admin session token");
+      return;
+    }
+
+    setListingBusy(true);
+    setError("");
+    try {
+      setResult(await updateProductListing(token, params.productId, action));
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Failed to update listing");
+    } finally {
+      setListingBusy(false);
+    }
+  }
+
   return (
     <main className="stack-lg">
       <section className="toolbar">
@@ -91,6 +110,15 @@ export default function ProductDetailPage() {
           <h1 className="headline">Product {params.productId}</h1>
           <p className="subtle">Update business details and replace image set for this product.</p>
         </div>
+      </section>
+
+      <section className="panel row">
+        <button type="button" className="secondary" disabled={listingBusy} onClick={() => onListingAction("list_now")}>
+          List now for 60 days
+        </button>
+        <button type="button" className="secondary danger-action" disabled={listingBusy} onClick={() => onListingAction("unlist_now")}>
+          Unlist now
+        </button>
       </section>
 
       <section className="panel">

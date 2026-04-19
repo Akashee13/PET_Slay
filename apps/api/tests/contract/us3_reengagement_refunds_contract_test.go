@@ -12,7 +12,7 @@ import (
 func TestAdminNotificationCampaignCreateRequiresAdminAuth(t *testing.T) {
 	handler := testutil.NewHandler()
 
-	req := httptest.NewRequest(http.MethodPost, "/v1/admin/notification-campaigns", testutil.JSONBody(`{"campaignType":"new_arrival","messageVariants":[{"language":"english","title":"Fresh drop","body":"New styles live"}],"productIds":["prod-western-001"]}`))
+	req := httptest.NewRequest(http.MethodPost, "/v1/admin/notification-campaigns", testutil.JSONBody(`{"campaignType":"new_arrival","messageVariants":[{"language":"english","title":"Fresh wholesale drop","body":"New styles are live now with fast dispatch for resellers."}],"productIds":["prod-western-001"]}`))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
@@ -67,7 +67,7 @@ func TestBuyerDeviceTokenRegistrationContract(t *testing.T) {
 func TestAdminNotificationCampaignCreateContract(t *testing.T) {
 	handler := testutil.NewHandler()
 
-	req := httptest.NewRequest(http.MethodPost, "/v1/admin/notification-campaigns", testutil.JSONBody(`{"campaignType":"new_arrival","messageVariants":[{"language":"english","title":"Fresh drop","body":"New styles live"}],"productIds":["prod-western-001"]}`))
+	req := httptest.NewRequest(http.MethodPost, "/v1/admin/notification-campaigns", testutil.JSONBody(`{"campaignType":"new_arrival","messageVariants":[{"language":"english","title":"Fresh wholesale drop","body":"New styles are live now with fast dispatch for resellers."}],"productIds":["prod-western-001"]}`))
 	req.Header.Set("Authorization", "Bearer dev-admin-token")
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -91,7 +91,7 @@ func TestAdminNotificationCampaignCreateContract(t *testing.T) {
 func TestAdminNotificationCampaignRequiresCatalogContext(t *testing.T) {
 	handler := testutil.NewHandler()
 
-	req := httptest.NewRequest(http.MethodPost, "/v1/admin/notification-campaigns", testutil.JSONBody(`{"campaignType":"trending","messageVariants":[{"language":"english","title":"Trending now","body":"Fast moving styles"}],"productIds":[]}`))
+	req := httptest.NewRequest(http.MethodPost, "/v1/admin/notification-campaigns", testutil.JSONBody(`{"campaignType":"trending","messageVariants":[{"language":"english","title":"Trending styles live","body":"Fast-moving styles are available now for wholesale buyers."}],"productIds":[]}`))
 	req.Header.Set("Authorization", "Bearer dev-admin-token")
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()

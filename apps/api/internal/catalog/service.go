@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 )
 
 var ErrProductNotFound = errors.New("product not found")
@@ -12,6 +13,7 @@ var ErrVariantNotFound = errors.New("product variant not found")
 
 type AvailabilityStatus string
 type ProductCategory string
+type ListingStatus string
 
 const (
 	AvailabilityInStock  AvailabilityStatus = "in_stock"
@@ -20,6 +22,11 @@ const (
 
 	CategoryWestern    ProductCategory = "western"
 	CategorySouthAsian ProductCategory = "south_asian"
+
+	ListingListed   ListingStatus = "listed"
+	ListingUnlisted ListingStatus = "unlisted"
+
+	defaultListingWindow = 60 * 24 * time.Hour
 )
 
 type ProductCard struct {
@@ -32,6 +39,8 @@ type ProductCard struct {
 	IsNewArrival       bool               `json:"isNewArrival"`
 	CoverImageURL      string             `json:"coverImageUrl,omitempty"`
 	ImageURLs          []string           `json:"imageUrls,omitempty"`
+	ListingStatus      ListingStatus      `json:"listingStatus"`
+	VisibleUntil       *time.Time         `json:"visibleUntil,omitempty"`
 }
 
 type ProductVariant struct {
@@ -50,7 +59,9 @@ type ProductDetail struct {
 
 type Repository interface {
 	List(category, collection string) ([]ProductCard, error)
+	AdminList() ([]ProductCard, error)
 	Get(productID string) (*ProductDetail, error)
+	GetVisible(productID string) (*ProductDetail, error)
 	FindByVariantID(variantID string) (*ProductCard, *ProductVariant, error)
 	CreateProduct(input AdminCreateProductInput) (*ProductDetail, error)
 	UpdateProduct(productID string, input AdminUpdateProductInput) (*ProductDetail, error)
@@ -64,6 +75,7 @@ type Service struct {
 }
 
 func NewService() *Service {
+	defaultVisibleUntil := time.Now().UTC().Add(defaultListingWindow)
 	return &Service{
 		nextID: 1,
 		products: []ProductDetail{
@@ -77,6 +89,8 @@ func NewService() *Service {
 					AvailabilityStatus: AvailabilityInStock,
 					IsNewArrival:       true,
 					CoverImageURL:      "https://example.com/floral-coord.jpg",
+					ListingStatus:      ListingListed,
+					VisibleUntil:       &defaultVisibleUntil,
 				},
 				Description: "Trend-led floral co-ord set for reseller restocks.",
 				SizeChart: map[string]interface{}{
@@ -99,11 +113,13 @@ func NewService() *Service {
 					AvailabilityStatus: AvailabilityInStock,
 					IsNewArrival:       false,
 					CoverImageURL:      "https://example.com/printed-kurta.jpg",
+					ListingStatus:      ListingListed,
+					VisibleUntil:       &defaultVisibleUntil,
 				},
 				Description: "South Asian kurta set curated for high-repeat reseller demand.",
 				SizeChart: map[string]interface{}{
-					"M": "38",
-					"L": "40",
+					"M":  "38",
+					"L":  "40",
 					"XL": "42",
 				},
 				Variants: []ProductVariant{
@@ -132,6 +148,9 @@ func (s *Service) List(category, collection string) ([]ProductCard, error) {
 	filtered := make([]ProductCard, 0, len(s.products))
 
 	for _, product := range s.products {
+		if !productVisible(product.ProductCard) {
+			continue
+		}
 		if category != "" && string(product.Category) != category {
 			continue
 		}
@@ -144,6 +163,22 @@ func (s *Service) List(category, collection string) ([]ProductCard, error) {
 	}
 
 	return filtered, nil
+}
+
+func (s *Service) AdminList() ([]ProductCard, error) {
+	if s.repo != nil {
+		return s.repo.AdminList()
+	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	items := make([]ProductCard, 0, len(s.products))
+	for _, product := range s.products {
+		items = append(items, product.ProductCard)
+	}
+
+	return items, nil
 }
 
 func (s *Service) Get(productID string) (*ProductDetail, error) {
@@ -162,6 +197,22 @@ func (s *Service) Get(productID string) (*ProductDetail, error) {
 	}
 
 	return nil, ErrProductNotFound
+}
+
+func (s *Service) GetVisible(productID string) (*ProductDetail, error) {
+	if s.repo != nil {
+		return s.repo.GetVisible(productID)
+	}
+
+	product, err := s.Get(productID)
+	if err != nil {
+		return nil, err
+	}
+	if !productVisible(product.ProductCard) {
+		return nil, ErrProductNotFound
+	}
+
+	return product, nil
 }
 
 func (s *Service) FindByVariantID(variantID string) (*ProductCard, *ProductVariant, error) {
@@ -186,23 +237,25 @@ func (s *Service) FindByVariantID(variantID string) (*ProductCard, *ProductVaria
 }
 
 type AdminCreateProductInput struct {
-	Title              string  `json:"title"`
-	Category           string  `json:"category"`
-	Description        string  `json:"description,omitempty"`
-	BaseWholesalePrice float64 `json:"baseWholesalePrice"`
-	MOQ                int     `json:"moq"`
-	AvailabilityStatus string  `json:"availabilityStatus,omitempty"`
+	Title              string   `json:"title"`
+	Category           string   `json:"category"`
+	Description        string   `json:"description,omitempty"`
+	BaseWholesalePrice float64  `json:"baseWholesalePrice"`
+	MOQ                int      `json:"moq"`
+	AvailabilityStatus string   `json:"availabilityStatus,omitempty"`
 	ImageURLs          []string `json:"imageUrls,omitempty"`
 }
 
 type AdminUpdateProductInput struct {
-	Title              *string  `json:"title,omitempty"`
-	Description        *string  `json:"description,omitempty"`
-	BaseWholesalePrice *float64 `json:"baseWholesalePrice,omitempty"`
-	MOQ                *int     `json:"moq,omitempty"`
-	AvailabilityStatus *string  `json:"availabilityStatus,omitempty"`
-	IsNewArrival       *bool    `json:"isNewArrival,omitempty"`
+	Title              *string   `json:"title,omitempty"`
+	Description        *string   `json:"description,omitempty"`
+	BaseWholesalePrice *float64  `json:"baseWholesalePrice,omitempty"`
+	MOQ                *int      `json:"moq,omitempty"`
+	AvailabilityStatus *string   `json:"availabilityStatus,omitempty"`
+	IsNewArrival       *bool     `json:"isNewArrival,omitempty"`
 	ImageURLs          *[]string `json:"imageUrls,omitempty"`
+	ListingStatus      *string   `json:"listingStatus,omitempty"`
+	ListingAction      *string   `json:"listingAction,omitempty"`
 }
 
 func normalizeImageURLs(imageURLs []string) ([]string, error) {
@@ -247,6 +300,7 @@ func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, 
 	if status == "" {
 		status = string(AvailabilityInStock)
 	}
+	visibleUntil := time.Now().UTC().Add(defaultListingWindow)
 
 	product := ProductDetail{
 		ProductCard: ProductCard{
@@ -258,6 +312,8 @@ func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, 
 			AvailabilityStatus: AvailabilityStatus(status),
 			IsNewArrival:       false,
 			ImageURLs:          imageURLs,
+			ListingStatus:      ListingListed,
+			VisibleUntil:       &visibleUntil,
 		},
 		Description: input.Description,
 		Variants:    []ProductVariant{},
@@ -311,6 +367,12 @@ func (s *Service) UpdateProduct(productID string, input AdminUpdateProductInput)
 		if input.IsNewArrival != nil {
 			product.IsNewArrival = *input.IsNewArrival
 		}
+		if input.ListingStatus != nil {
+			product.ListingStatus = ListingStatus(*input.ListingStatus)
+		}
+		if input.ListingAction != nil {
+			applyListingAction(&product.ProductCard, *input.ListingAction)
+		}
 		if input.ImageURLs != nil {
 			product.ImageURLs = *input.ImageURLs
 			if len(product.ImageURLs) > 0 {
@@ -326,4 +388,25 @@ func (s *Service) UpdateProduct(productID string, input AdminUpdateProductInput)
 	}
 
 	return nil, ErrProductNotFound
+}
+
+func productVisible(product ProductCard) bool {
+	if product.ListingStatus != ListingListed {
+		return false
+	}
+	if product.VisibleUntil == nil {
+		return true
+	}
+	return product.VisibleUntil.After(time.Now().UTC())
+}
+
+func applyListingAction(product *ProductCard, action string) {
+	switch strings.TrimSpace(action) {
+	case "list_now":
+		visibleUntil := time.Now().UTC().Add(defaultListingWindow)
+		product.ListingStatus = ListingListed
+		product.VisibleUntil = &visibleUntil
+	case "unlist_now":
+		product.ListingStatus = ListingUnlisted
+	}
 }

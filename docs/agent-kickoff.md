@@ -38,7 +38,8 @@
 - GitHub Actions deploy to Cloud Run is working via OIDC.
 - Supabase stage project exists and stage secrets are configured in GitHub Actions.
 - Backend has progressed from in-memory scaffolding to mostly Postgres-backed repositories.
-- Stage deploy pipeline now includes DB migration execution and readiness enforcement flags, but current live stage still reports `databaseConfigured=false` and `databaseRequired=false` until the new workflow run is applied.
+- Stage deploy pipeline includes DB migration execution and readiness enforcement flags.
+- Current live stage readiness reports `databaseConfigured=false` and `databaseRequired=true`, which means stage API is still not connected to a live database DSN.
 
 ## What Is Already Done
 
@@ -77,14 +78,48 @@
   - `scripts/deploy-stage-admin-cloudrun.sh`
   - `scripts/verify-stage-admin-web.sh`
 - Added responsive admin global styles in `apps/admin/app/globals.css` for mobile and desktop layouts.
+- Upgraded admin UI to dusk-first command-desk language with:
+  - default dusk theme and persisted theme toggle
+  - creative PET_Slay logo mark
+  - language selector (English/Hindi/Hinglish)
+  - business-facing copy for catalog and order operations
+- Added admin product visibility/listing endpoint support and UI section to review all uploaded products.
+- Added product media persistence support in API with `imageUrls` and `coverImageUrl`:
+  - migration: `apps/api/db/migrations/0002_add_product_media_urls.sql`
+  - repository/service updates for create/update/list/get
+  - integration + contract test updates
+- Added direct image file upload from admin product forms via Supabase Storage:
+  - service: `apps/admin/src/services/product-image-upload.ts`
+  - create/update/detail upload inputs wired in products pages
+  - upload validation for max 5 images and supported file types
+- Updated admin deploy path to inject Supabase public env values during build/runtime:
+  - `.github/workflows/deploy-stage-admin-cloudrun.yml`
+  - `apps/admin/Dockerfile`
+  - `scripts/deploy-stage-admin-cloudrun.sh`
+- Added strict stage DB URL validation:
+  - `scripts/validate-stage-database-url.sh`
+  - API deploy workflow and local deploy script now fail early for placeholder/non-live DB URLs instead of silently skipping migrations.
+- Completed campaign relevance safeguards and multilingual validation (`T050`):
+  - API rejects unsupported campaign types, missing product context, unsupported languages, duplicate languages, and generic short copy.
+  - Admin helper mirrors these rules in `apps/admin/src/features/campaigns/campaign-validation.ts`.
+- Started `T052` security hardening:
+  - `dev-buyer-token` and `dev-admin-token` are now local/test-only.
+  - Stage/prod can still use `STAGE_ADMIN_BEARER_TOKEN` until Supabase admin auth is wired.
+- Added product listing lifecycle and admin table UX:
+  - Products default to `listed` with a 60-day `visibleUntil` window.
+  - Buyer catalog hides unlisted or expired products.
+  - Admin list remains all-products and can `list_now` or `unlist_now`.
+  - New admin tab `/listed-products` shows a product table with list/unlist/patch actions.
+  - Admin language selector now drives visible nav/page copy through React context.
 
 ## Next Recommended Work
 
-1. Trigger stage deploy workflow and confirm migration step succeeds with stage secrets.
-2. Run `scripts/verify-stage-api.sh` and confirm `/health/ready` reports `databaseConfigured=true` and `databaseRequired=true`.
-3. Run `apps/api/scripts/seed-stage-catalog.sh` with stage `DATABASE_URL`.
-4. Re-run `scripts/verify-stage-api.sh` with `BUYER_BEARER_TOKEN` to verify DB-backed catalog endpoint.
-5. Execute `Deploy Stage Admin (Cloud Run)` workflow and verify `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app` returns 200 (currently returns 404 until first deploy).
+1. Confirm `STAGE_DATABASE_URL` in GitHub is a live Supabase pooler/direct Postgres DSN with the actual password, not `[YOUR-PASSWORD]`.
+2. Trigger `Deploy Stage API (Cloud Run)` and confirm migrations run successfully.
+3. Verify `GET /health/ready` shows `databaseConfigured=true` and `databaseRequired=true`.
+4. Ensure Supabase Storage bucket (default `product-images`) and policies allow admin-side upload and public read.
+5. Smoke test admin product create/update and `/listed-products` list/unlist actions on `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app`.
+6. Continue `T052` across admin/mobile auth boundaries, then move to `T053` payload/image/deep-link optimization.
 
 ## Milestone Refresh Rule
 

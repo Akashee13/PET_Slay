@@ -27,6 +27,8 @@ if [ -z "${STAGE_SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
   exit 1
 fi
 
+scripts/validate-stage-database-url.sh
+
 STAGE_ADMIN_BEARER_TOKEN="${STAGE_ADMIN_BEARER_TOKEN:-}"
 
 CLOUD_RUN_REGION="${CLOUD_RUN_REGION:-asia-south1}"

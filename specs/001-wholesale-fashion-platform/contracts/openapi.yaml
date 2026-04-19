@@ -167,6 +167,21 @@ paths:
         "200":
           description: Existing device token refreshed
   /v1/admin/products:
+    get:
+      summary: List all products for admin listing operations
+      tags: [Admin Catalog]
+      responses:
+        "200":
+          description: Product table rows
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProductCard"
     post:
       summary: Create product from admin app
       tags: [Admin Catalog]
@@ -291,6 +306,9 @@ components:
     AvailabilityStatus:
       type: string
       enum: [in_stock, low_stock, out_of_stock]
+    ListingStatus:
+      type: string
+      enum: [listed, unlisted]
     ResellerBuyerProfile:
       type: object
       required: [id, role, preferredLanguage]
@@ -337,6 +355,17 @@ components:
         coverImageUrl:
           type: string
           format: uri
+        imageUrls:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+            format: uri
+        listingStatus:
+          $ref: "#/components/schemas/ListingStatus"
+        visibleUntil:
+          type: string
+          format: date-time
     ProductDetail:
       allOf:
         - $ref: "#/components/schemas/ProductCard"
@@ -429,6 +458,12 @@ components:
           type: integer
         availabilityStatus:
           $ref: "#/components/schemas/AvailabilityStatus"
+        imageUrls:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+            format: uri
     AdminUpdateProductRequest:
       type: object
       properties:
@@ -444,6 +479,17 @@ components:
           $ref: "#/components/schemas/AvailabilityStatus"
         isNewArrival:
           type: boolean
+        imageUrls:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+            format: uri
+        listingStatus:
+          $ref: "#/components/schemas/ListingStatus"
+        listingAction:
+          type: string
+          enum: [list_now, unlist_now]
     CreateCampaignRequest:
       type: object
       required: [campaignType, messageVariants, productIds]

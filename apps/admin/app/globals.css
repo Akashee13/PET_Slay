@@ -138,6 +138,25 @@ button.secondary {
   color: var(--text);
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  padding: 10px 15px;
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow: var(--shadow-sm);
+}
+
 button:hover {
   background: var(--primary-strong);
 }
@@ -381,6 +400,23 @@ html[data-theme="dusk"] .ai-card img {
   text-transform: capitalize;
 }
 
+.status-chip.success {
+  border-color: #bbf7d0;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-chip.danger {
+  border-color: #fecaca;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.danger-action {
+  border-color: #fecaca !important;
+  color: #991b1b !important;
+}
+
 .inline-link {
   color: var(--primary-strong);
   font-weight: 600;
@@ -394,6 +430,57 @@ html[data-theme="dusk"] .ai-card img {
 .grid-two {
   display: grid;
   gap: 16px;
+}
+
+.table-shell {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.product-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
+}
+
+.product-table th,
+.product-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.product-table th {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.table-thumb {
+  width: 58px;
+  height: 58px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
+
+.table-meta {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin-top: 2px;
+}
+
+.action-stack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .order-list {

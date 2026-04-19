@@ -80,6 +80,10 @@ Optional:
 
 If any of these are missing, the workflow now fails immediately before build/deploy.
 
+The workflow also validates that `STAGE_DATABASE_URL` is a live-looking Postgres
+DSN before migrations or deploy. Placeholder values such as `[YOUR-PASSWORD]`,
+`placeholder`, `example.com`, `localhost`, or non-Postgres URLs fail early.
+
 ## One-Time Cloud Run Setup
 
 ### Recommended Scripted Setup
@@ -146,9 +150,16 @@ for Actions.
 - `curl "$(gcloud run services describe pet-slay-api-stage --region=asia-south1 --format='value(status.url)')/health"`
 - `STAGE_ADMIN_URL="$(gcloud run services describe pet-slay-admin-stage --region=asia-south1 --format='value(status.url)')" scripts/verify-stage-admin-web.sh`
 
+The current live API is reachable, but readiness fails until Cloud Run receives a
+working `DATABASE_URL`:
+
+- `/health/ready` currently returns HTTP 503 with `databaseConfigured=false` and
+	`databaseRequired=true`.
+
 ## Local Validation Before Deploy
 
 - `sh scripts/validate-stage-deployment-scripts.sh`
+- `STAGE_DATABASE_URL='postgresql://user:password@host:6543/postgres' sh scripts/validate-stage-database-url.sh`
 - `env GOCACHE=/tmp/go-build-cache GOMODCACHE=/tmp/go-mod-cache go test ./...` from `apps/api`
 
 ## Optional Later Upgrade: Kubernetes

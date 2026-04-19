@@ -13,6 +13,7 @@ fi
 
 sh -n "$oidc_script"
 sh -n "scripts/deploy-stage-api-cloudrun.sh"
+sh -n "scripts/validate-stage-database-url.sh"
 
 for required in \
 	"GCP_WORKLOAD_IDENTITY_PROVIDER" \
@@ -45,6 +46,16 @@ fi
 
 if ! grep -q "go.sum" "$api_dockerfile"; then
 	echo "$api_dockerfile must copy go.sum so Docker builds can verify Go modules" >&2
+	exit 1
+fi
+
+if grep -q "Skipping migrations because STAGE_DATABASE_URL" "$cloudrun_workflow"; then
+	echo "$cloudrun_workflow must fail on invalid stage database URLs instead of skipping migrations" >&2
+	exit 1
+fi
+
+if ! grep -q "validate-stage-database-url.sh" "$cloudrun_workflow" "scripts/deploy-stage-api-cloudrun.sh"; then
+	echo "Stage deploy paths must validate STAGE_DATABASE_URL before migration/deploy" >&2
 	exit 1
 fi
 

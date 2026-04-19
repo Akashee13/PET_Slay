@@ -1,6 +1,9 @@
 package auth
 
-import "os"
+import (
+	"os"
+	"strings"
+)
 
 // StaticVerifier is a temporary development-safe verifier used until the real
 // Supabase-backed verifier is wired in.
@@ -20,6 +23,10 @@ func (v *StaticVerifier) VerifyBearerToken(token string) (*Session, error) {
 		}, nil
 	}
 
+	if !devTokensAllowed() {
+		return nil, ErrInvalidToken
+	}
+
 	switch token {
 	case "dev-buyer-token":
 		return &Session{
@@ -35,5 +42,18 @@ func (v *StaticVerifier) VerifyBearerToken(token string) (*Session, error) {
 		}, nil
 	default:
 		return nil, ErrInvalidToken
+	}
+}
+
+func devTokensAllowed() bool {
+	if strings.EqualFold(os.Getenv("ALLOW_DEV_TOKENS"), "true") {
+		return true
+	}
+
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV"))) {
+	case "", "local", "dev", "development", "test":
+		return true
+	default:
+		return false
 	}
 }

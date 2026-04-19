@@ -46,6 +46,8 @@ export type AdminProductUpdateInput = {
   availabilityStatus?: string;
   isNewArrival?: boolean;
   imageUrls?: string[];
+  listingAction?: "list_now" | "unlist_now";
+  listingStatus?: "listed" | "unlisted";
 };
 
 export type AdminProduct = {
@@ -59,6 +61,8 @@ export type AdminProduct = {
   isNewArrival?: boolean;
   coverImageUrl?: string;
   imageUrls?: string[];
+  listingStatus: "listed" | "unlisted";
+  visibleUntil?: string;
 };
 
 export type AdminOrder = {
@@ -88,6 +92,10 @@ export async function updateAdminProduct(token: string, productId: string, input
     token,
     body: input,
   });
+}
+
+export async function updateProductListing(token: string, productId: string, listingAction: "list_now" | "unlist_now"): Promise<AdminProduct> {
+  return updateAdminProduct(token, productId, { listingAction });
 }
 
 export async function listAdminProducts(token: string): Promise<AdminProduct[]> {

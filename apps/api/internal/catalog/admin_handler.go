@@ -10,7 +10,7 @@ import (
 
 func AdminListHandler(service *Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		items, err := service.List("", "")
+		items, err := service.AdminList()
 		if err != nil {
 			httpresponse.Error(w, http.StatusInternalServerError, "catalog_unavailable")
 			return
