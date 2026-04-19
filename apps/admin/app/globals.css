@@ -15,6 +15,21 @@
   --shadow-md: 0 8px 24px rgba(16, 24, 40, 0.08);
 }
 
+html[data-theme="dusk"] {
+  --bg: #0b1020;
+  --surface: #111827;
+  --surface-muted: #1f2937;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --border: #334155;
+  --primary: #60a5fa;
+  --primary-strong: #3b82f6;
+  --accent: #2dd4bf;
+  --ring: rgba(96, 165, 250, 0.32);
+  --shadow-sm: 0 1px 2px rgba(2, 6, 23, 0.4);
+  --shadow-md: 0 12px 28px rgba(2, 6, 23, 0.45);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -29,6 +44,10 @@ body {
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: radial-gradient(circle at top right, #e9eefb 0%, var(--bg) 42%);
   color: var(--text);
+}
+
+html[data-theme="dusk"] .app-body {
+  background: radial-gradient(circle at top right, #1f2a44 0%, var(--bg) 38%);
 }
 
 .container {
@@ -203,6 +222,77 @@ pre {
   box-shadow: var(--shadow-sm);
 }
 
+.hero-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: linear-gradient(120deg, rgba(23, 92, 211, 0.1), rgba(15, 118, 110, 0.08) 45%, var(--surface) 70%);
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+}
+
+.hero-panel::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  right: -60px;
+  top: -40px;
+  background: radial-gradient(circle, rgba(23, 92, 211, 0.35), transparent 68%);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.kpi strong {
+  display: block;
+  font-size: 1.1rem;
+}
+
+.ai-gallery {
+  display: grid;
+  gap: 12px;
+}
+
+.ai-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.ai-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: linear-gradient(120deg, #dbeafe, #bfdbfe);
+}
+
+html[data-theme="dusk"] .ai-card img {
+  background: linear-gradient(120deg, #1d4ed8, #0f172a);
+}
+
+.ai-caption {
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
 .panel h2 {
   margin-top: 0;
   margin-bottom: 8px;
@@ -273,5 +363,13 @@ pre {
 
   .data-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .ai-gallery {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

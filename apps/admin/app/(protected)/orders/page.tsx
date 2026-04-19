@@ -8,6 +8,25 @@ import { listAdminOrders, type AdminOrder, updateAdminOrderStatus } from "@/src/
 
 const ORDER_STATUSES = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
 
+const OPERATIONS_AI_SHOTS = [
+  {
+    label: "Fulfilment route planner",
+    prompt: "warehouse fulfilment dashboard ui, route planner, packages and shelves, premium enterprise design"
+  },
+  {
+    label: "Dispatch status board",
+    prompt: "order dispatch control center screen, ecommerce warehouse, modern cards, blue dark theme"
+  },
+  {
+    label: "Quality check station",
+    prompt: "fashion warehouse quality check workflow ui, clean app design, realistic operations context"
+  }
+] as const;
+
+function buildAiImageUrl(prompt: string): string {
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1280&height=720&nologo=true&enhance=true`;
+}
+
 export default function OrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [error, setError] = useState("");
@@ -63,6 +82,17 @@ export default function OrdersPage() {
         </div>
       </section>
 
+      <section className="hero-panel stack">
+        <h2 style={{ margin: 0 }}>Shipment Workflow Theme</h2>
+        <p className="subtle">Command-center feel with quick status controls and high-contrast operational readability.</p>
+        <div className="kpi-grid">
+          <div className="kpi"><strong>{orders.length}</strong><span className="subtle">Orders loaded</span></div>
+          <div className="kpi"><strong>{ORDER_STATUSES.length}</strong><span className="subtle">Lifecycle states</span></div>
+          <div className="kpi"><strong>Live API</strong><span className="subtle">Stage-connected queue</span></div>
+          <div className="kpi"><strong>AI Scene Kit</strong><span className="subtle">Fulfilment references</span></div>
+        </div>
+      </section>
+
       <div className="row">
         <button type="button" onClick={loadOrders}>
           Refresh Orders
@@ -110,6 +140,19 @@ export default function OrdersPage() {
           </article>
         ))}
       </div>
+
+      <section className="panel stack">
+        <h2>AI Visual Direction</h2>
+        <p>Generated concept scenes for fulfilment and dispatch flows.</p>
+        <div className="ai-gallery">
+          {OPERATIONS_AI_SHOTS.map((shot) => (
+            <article key={shot.label} className="ai-card">
+              <img src={buildAiImageUrl(shot.prompt)} alt={shot.label} loading="lazy" referrerPolicy="no-referrer" />
+              <p className="ai-caption">{shot.label}</p>
+            </article>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }

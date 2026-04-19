@@ -48,6 +48,25 @@ const defaultUpdateForm: UpdateForm = {
   isNewArrival: "",
 };
 
+const INVENTORY_AI_SHOTS = [
+  {
+    label: "Aisle intelligence dashboard",
+    prompt: "warehouse inventory dashboard ui, clean glassmorphism cards, fashion boxes, blue teal palette, cinematic lighting"
+  },
+  {
+    label: "SKU scanning operations",
+    prompt: "mobile warehouse sku scanner interface, premium ux, modern warehouse environment, neon accents"
+  },
+  {
+    label: "Realtime stock command center",
+    prompt: "realtime stock monitoring admin panel, logistics map, elegant data visualization, high-end product ui"
+  }
+] as const;
+
+function buildAiImageUrl(prompt: string): string {
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1280&height=720&nologo=true&enhance=true`;
+}
+
 export default function ProductsPage() {
   const [createForm, setCreateForm] = useState<CreateForm>(defaultCreateForm);
   const [updateForm, setUpdateForm] = useState<UpdateForm>(defaultUpdateForm);
@@ -128,6 +147,17 @@ export default function ProductsPage() {
         </div>
       </section>
 
+      <section className="hero-panel stack">
+        <h2 style={{ margin: 0 }}>Warehouse Intelligence Theme</h2>
+        <p className="subtle">Bold, operational visuals with calm contrast and data-first hierarchy for faster inventory decisions.</p>
+        <div className="kpi-grid">
+          <div className="kpi"><strong>24h</strong><span className="subtle">Refresh cadence</span></div>
+          <div className="kpi"><strong>SKU Ops</strong><span className="subtle">Create + patch flow</span></div>
+          <div className="kpi"><strong>Mobile Ready</strong><span className="subtle">Cards and forms adapt</span></div>
+          <div className="kpi"><strong>AI Moodboard</strong><span className="subtle">Visual direction embedded</span></div>
+        </div>
+      </section>
+
       {error && <p className="error">{error}</p>}
 
       <section className="data-grid">
@@ -185,6 +215,19 @@ export default function ProductsPage() {
           <pre>{JSON.stringify(result, null, 2)}</pre>
         </section>
       )}
+
+      <section className="panel stack">
+        <h2>AI Visual Direction</h2>
+        <p>Prompt-driven concept frames that match the requested warehouse design language.</p>
+        <div className="ai-gallery">
+          {INVENTORY_AI_SHOTS.map((shot) => (
+            <article key={shot.label} className="ai-card">
+              <img src={buildAiImageUrl(shot.prompt)} alt={shot.label} loading="lazy" referrerPolicy="no-referrer" />
+              <p className="ai-caption">{shot.label}</p>
+            </article>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }
