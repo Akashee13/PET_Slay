@@ -2,6 +2,11 @@
   "extends": "../../packages/config/tsconfig.base.json",
   "compilerOptions": {
     "jsx": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@pet-slay/design-tokens": ["../../packages/design-tokens/src/index.ts"]
+    },
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "allowJs": false,
     "incremental": true,

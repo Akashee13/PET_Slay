@@ -1,0 +1,100 @@
+name: Deploy Stage Admin (Cloud Run)
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Optional image tag override (defaults to commit SHA)"
+        required: false
+        type: string
+      region:
+        description: "Cloud Run region"
+        required: false
+        default: "asia-south1"
+        type: string
+      service:
+        description: "Cloud Run service name"
+        required: false
+        default: "pet-slay-admin-stage"
+        type: string
+      stage_api_base_url:
+        description: "Stage API base URL"
+        required: false
+        default: "https://pet-slay-api-stage-j67sekma7a-el.a.run.app"
+        type: string
+  push:
+    branches:
+      - 001-wholesale-fashion-platform
+    paths:
+      - "apps/admin/**"
+      - "packages/design-tokens/**"
+      - ".github/workflows/deploy-stage-admin-cloudrun.yml"
+
+jobs:
+  deploy-stage-admin-cloudrun:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      IMAGE_TAG: ${{ github.event.inputs.image_tag || github.sha }}
+      CLOUD_RUN_REGION: ${{ github.event.inputs.region || secrets.GCP_REGION || 'asia-south1' }}
+      CLOUD_RUN_SERVICE: ${{ github.event.inputs.service || secrets.CLOUD_RUN_ADMIN_SERVICE_STAGE || 'pet-slay-admin-stage' }}
+      STAGE_API_BASE_URL: ${{ github.event.inputs.stage_api_base_url || secrets.STAGE_API_BASE_URL || 'https://pet-slay-api-stage-j67sekma7a-el.a.run.app' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        env:
+          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          GCP_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          set -eu
+          missing=""
+          for key in GCP_WORKLOAD_IDENTITY_PROVIDER GCP_SERVICE_ACCOUNT_EMAIL GCP_PROJECT_ID; do
+            eval "value=\${$key:-}"
+            if [ -z "$value" ]; then
+              missing="$missing $key"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "Missing required GitHub secrets:$missing" >&2
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker us-docker.pkg.dev --quiet
+
+      - name: Build and push Admin image
+        run: |
+          docker build -f apps/admin/Dockerfile -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pet-slay/pet-slay-admin:${{ env.IMAGE_TAG }} .
+          docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pet-slay/pet-slay-admin:${{ env.IMAGE_TAG }}
+
+      - name: Deploy Admin to Cloud Run stage
+        run: |
+          gcloud run deploy "$CLOUD_RUN_SERVICE" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --region "$CLOUD_RUN_REGION" \
+            --platform managed \
+            --image "us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pet-slay/pet-slay-admin:${{ env.IMAGE_TAG }}" \
+            --allow-unauthenticated \
+            --port 8080 \
+            --set-env-vars "NEXT_PUBLIC_API_BASE_URL=$STAGE_API_BASE_URL"
+
+      - name: Show stage URL
+        run: |
+          gcloud run services describe "$CLOUD_RUN_SERVICE" \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --region "$CLOUD_RUN_REGION" \
+            --format='value(status.url)'
