@@ -1,6 +1,7 @@
 package users
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"sync"
@@ -17,6 +18,11 @@ type BuyerProfile struct {
 	BusinessName      string    `json:"businessName,omitempty"`
 }
 
+type BuyerProfileStore interface {
+	GetLanguage(ctx context.Context, userID string) string
+	SetLanguage(ctx context.Context, session *auth.Session, language string) error
+}
+
 type PreferenceStore struct {
 	languages sync.Map
 }
@@ -25,7 +31,7 @@ func NewPreferenceStore() *PreferenceStore {
 	return &PreferenceStore{}
 }
 
-func (s *PreferenceStore) GetLanguage(userID string) string {
+func (s *PreferenceStore) GetLanguage(_ context.Context, userID string) string {
 	if value, ok := s.languages.Load(userID); ok {
 		if language, valid := value.(string); valid {
 			return language
@@ -35,11 +41,12 @@ func (s *PreferenceStore) GetLanguage(userID string) string {
 	return "english"
 }
 
-func (s *PreferenceStore) SetLanguage(userID, language string) {
-	s.languages.Store(userID, language)
+func (s *PreferenceStore) SetLanguage(_ context.Context, session *auth.Session, language string) error {
+	s.languages.Store(session.UserID, language)
+	return nil
 }
 
-func BuyerProfileFromSession(session *auth.Session, store *PreferenceStore) (*BuyerProfile, error) {
+func BuyerProfileFromSession(ctx context.Context, session *auth.Session, store BuyerProfileStore) (*BuyerProfile, error) {
 	if session == nil {
 		return nil, ErrNoSession
 	}
@@ -48,7 +55,7 @@ func BuyerProfileFromSession(session *auth.Session, store *PreferenceStore) (*Bu
 		ID:                session.UserID,
 		Role:              session.Role,
 		Email:             session.Email,
-		PreferredLanguage: store.GetLanguage(session.UserID),
+		PreferredLanguage: store.GetLanguage(ctx, session.UserID),
 	}
 
 	if session.Role == auth.RoleBuyer {
@@ -58,7 +65,7 @@ func BuyerProfileFromSession(session *auth.Session, store *PreferenceStore) (*Bu
 	return profile, nil
 }
 
-func CurrentBuyerHandler(store *PreferenceStore) http.HandlerFunc {
+func CurrentBuyerHandler(store BuyerProfileStore) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		session, ok := auth.SessionFromContext(r.Context())
 		if !ok {
@@ -66,7 +73,7 @@ func CurrentBuyerHandler(store *PreferenceStore) http.HandlerFunc {
 			return
 		}
 
-		profile, err := BuyerProfileFromSession(session, store)
+		profile, err := BuyerProfileFromSession(r.Context(), session, store)
 		if err != nil {
 			httpresponse.Error(w, http.StatusUnauthorized, err.Error())
 			return
@@ -76,7 +83,7 @@ func CurrentBuyerHandler(store *PreferenceStore) http.HandlerFunc {
 	}
 }
 
-func UpdateLanguageHandler(store *PreferenceStore) http.HandlerFunc {
+func UpdateLanguageHandler(store BuyerProfileStore) http.HandlerFunc {
 	type updateLanguageRequest struct {
 		PreferredLanguage string `json:"preferredLanguage"`
 	}
@@ -101,9 +108,12 @@ func UpdateLanguageHandler(store *PreferenceStore) http.HandlerFunc {
 			return
 		}
 
-		store.SetLanguage(session.UserID, payload.PreferredLanguage)
+		if err := store.SetLanguage(r.Context(), session, payload.PreferredLanguage); err != nil {
+			httpresponse.Error(w, http.StatusInternalServerError, "language_preference_not_saved")
+			return
+		}
 
-		profile, err := BuyerProfileFromSession(session, store)
+		profile, err := BuyerProfileFromSession(r.Context(), session, store)
 		if err != nil {
 			httpresponse.Error(w, http.StatusUnauthorized, err.Error())
 			return

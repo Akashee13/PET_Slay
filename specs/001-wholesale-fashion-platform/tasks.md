@@ -145,6 +145,25 @@ description: "Task list for Wholesale Fashion Reseller Platform MVP"
 
 ---
 
+## Phase 7: Backend Persistence and UI Flow Derivation
+
+**Purpose**: Move the backend from in-memory MVP scaffolding toward Postgres-backed services while deriving frontend user flows from the product requirements.
+
+- [X] T055 [P] Derive reseller and admin user flows with UI-to-API responsibilities in `/Users/akash/Documents/PetProjects/PET_Slay/specs/001-wholesale-fashion-platform/user-flows.md`
+- [X] T056 [P] Document backend persistence strategy and repository boundaries in `/Users/akash/Documents/PetProjects/PET_Slay/specs/001-wholesale-fashion-platform/backend-persistence.md`
+- [X] T057 [P] Add database configuration, optional/required readiness tests, and `/health/ready` behavior in `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/config/`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/store/`, and `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/tests/contract/health_readiness_contract_test.go`
+- [X] T058 [US1] Implement Postgres-backed buyer language preference repository with memory fallback in `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/users/postgres_repository.go` and `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/users/profile.go`
+- [X] T059 [P] Implement Go migration loader and migration command in `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/store/migrations.go`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/cmd/migrate/main.go`, and `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/scripts/migrate.sh`
+- [ ] T060 [US1] Implement Postgres-backed catalog repository for product listing, detail, variant lookup, and admin product create/update in `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/catalog/`
+- [ ] T061 [US1] Implement Postgres-backed order repository with transactional order and order item creation in `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/orders/`
+- [ ] T062 [US3] Implement Postgres-backed notification repository for device token upsert, campaign creation, and campaign sent state in `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/notifications/`
+- [ ] T063 [US3] Implement Postgres-backed refund repository for store-credit default and payment-source admin override in `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/refunds/`
+- [ ] T064 [US2] Add admin order status update contract, tests, and implementation in `/Users/akash/Documents/PetProjects/PET_Slay/specs/001-wholesale-fashion-platform/contracts/openapi.yaml` and `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/orders/`
+- [ ] T065 [US1] Add buyer order list and refund visibility contracts, tests, and implementation in `/Users/akash/Documents/PetProjects/PET_Slay/specs/001-wholesale-fashion-platform/contracts/openapi.yaml` and `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/orders/`
+- [ ] T066 Run migrations against stage Postgres once Supabase stage credentials are available and update GitHub Actions secrets in `/Users/akash/Documents/PetProjects/PET_Slay/docs/stage-live-plan.md`
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

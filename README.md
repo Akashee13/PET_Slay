@@ -38,6 +38,22 @@ Use a **local-light, remote-managed** workflow.
 - Prefer deploying the Go API remotely once real endpoints exist
 - Run mobile/admin locally only when needed
 
+## API Database Mode
+
+The Go API now has a Postgres connection layer and can run in two modes:
+
+- `DATABASE_REQUIRED=false`: API boots with in-memory fallback when
+  `DATABASE_URL` is empty. This is useful for early local and placeholder stage
+  deployments.
+- `DATABASE_REQUIRED=true`: `/health/ready` fails unless a configured database
+  is reachable. Use this for production and later stage once Supabase Postgres is
+  provisioned.
+
+Health endpoints:
+
+- `GET /health`: liveness, does not require database
+- `GET /health/ready`: readiness, checks database only when required
+
 See:
 
 - [docs/development-workflow.md](/Users/akash/Documents/PetProjects/PET_Slay/docs/development-workflow.md)

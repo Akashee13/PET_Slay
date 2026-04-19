@@ -1,7 +1,9 @@
 package httpserver
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/akash/pet_slay/apps/api/internal/auth"
 	"github.com/akash/pet_slay/apps/api/internal/catalog"
@@ -11,6 +13,7 @@ import (
 	"github.com/akash/pet_slay/apps/api/internal/notifications"
 	"github.com/akash/pet_slay/apps/api/internal/orders"
 	"github.com/akash/pet_slay/apps/api/internal/refunds"
+	"github.com/akash/pet_slay/apps/api/internal/store"
 	"github.com/akash/pet_slay/apps/api/internal/users"
 )
 
@@ -20,10 +23,25 @@ type healthResponse struct {
 	Env     string `json:"env"`
 }
 
+type readinessResponse struct {
+	Status             string `json:"status"`
+	Service            string `json:"service"`
+	Env                string `json:"env"`
+	DatabaseConfigured bool   `json:"databaseConfigured"`
+	DatabaseRequired   bool   `json:"databaseRequired"`
+}
+
 func New() http.Handler {
 	cfg := config.Load()
+	dbStore, _ := store.Open(context.Background(), store.Config{
+		DatabaseURL:      cfg.DatabaseURL,
+		DatabaseRequired: cfg.DatabaseRequired,
+	})
 	verifier := auth.NewStaticVerifier()
-	preferenceStore := users.NewPreferenceStore()
+	var preferenceStore users.BuyerProfileStore = users.NewPreferenceStore()
+	if dbStore.Configured() {
+		preferenceStore = users.NewPostgresBuyerProfileStore(dbStore.DB)
+	}
 	catalogService := catalog.NewService()
 	orderService := orders.NewService(catalogService)
 	notificationService := notifications.NewService()
@@ -35,6 +53,29 @@ func New() http.Handler {
 			Status:  "ok",
 			Service: "pet-slay-api",
 			Env:     cfg.AppEnv,
+		})
+	})
+	mux.HandleFunc("/health/ready", func(w http.ResponseWriter, r *http.Request) {
+		databaseConfigured := dbStore.Configured()
+		status := "ready"
+		httpStatus := http.StatusOK
+
+		if cfg.DatabaseRequired {
+			ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+			defer cancel()
+
+			if !databaseConfigured || dbStore.Ping(ctx) != nil {
+				status = "not_ready"
+				httpStatus = http.StatusServiceUnavailable
+			}
+		}
+
+		httpresponse.JSON(w, httpStatus, readinessResponse{
+			Status:             status,
+			Service:            "pet-slay-api",
+			Env:                cfg.AppEnv,
+			DatabaseConfigured: databaseConfigured,
+			DatabaseRequired:   cfg.DatabaseRequired,
 		})
 	})
 
