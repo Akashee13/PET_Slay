@@ -224,6 +224,9 @@
 - Mobile auth hardening toward `T052`:
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/state/session-store.ts` only returns `dev-buyer-token` by default for local/dev/test profiles.
   - stage/prod-like mobile profiles now require `EXPO_PUBLIC_BUYER_BEARER_TOKEN` or the future OAuth token exchange.
+- Mobile OAuth callback scaffold:
+  - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(auth)/callback.tsx` extracts callback tokens and bootstraps the buyer session.
+  - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/auth/social-auth-controller.ts` includes callback token extraction tests.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
@@ -243,7 +246,7 @@
 ## Best Next Technical Path
 
 1. Smoke test the Expo buyer flow against a working buyer token: auth -> language -> PLP -> PDP -> checkout -> order detail/refund status.
-2. Replace the manual/dev token mobile auth gate with Supabase Google/Facebook/Instagram token exchange once provider setup is ready.
+2. Replace the manual/dev token mobile auth gate with proper Supabase Google/Facebook/Instagram token exchange once provider setup is ready; `/auth/callback` scaffold exists.
 3. Continue mobile localization by moving social-provider labels and remaining backend error strings into shared English/Hindi/Hinglish resources.
 4. Wire a real Expo push token provider behind `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/notifications/notification-controller.ts`.
 5. Add real admin UI/component tests for image file selection, loading overlays,

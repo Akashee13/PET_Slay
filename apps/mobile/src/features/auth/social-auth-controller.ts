@@ -36,3 +36,29 @@ export function buildSupabaseOAuthUrl(provider: SocialAuthProvider, config: Soci
   const baseUrl = config.supabaseUrl.replace(/\/$/, "");
   return `${baseUrl}/auth/v1/authorize?provider=${encodeURIComponent(provider)}&redirect_to=${encodeURIComponent(config.redirectTo)}`;
 }
+
+export function extractBearerTokenFromCallback(input: string | Record<string, string | string[] | undefined>): string | null {
+  if (typeof input !== "string") {
+    const token = input.access_token ?? input.token;
+    return Array.isArray(token) ? token[0] ?? null : token ?? null;
+  }
+
+  const normalized = input.replace("#", "?");
+  const queryStart = normalized.indexOf("?");
+  if (queryStart === -1) {
+    return null;
+  }
+
+  const params = normalized
+    .slice(queryStart + 1)
+    .split("&")
+    .map((pair) => pair.split("="))
+    .reduce<Record<string, string>>((accumulator, [key, value]) => {
+      if (key) {
+        accumulator[decodeURIComponent(key)] = decodeURIComponent(value ?? "");
+      }
+      return accumulator;
+    }, {});
+
+  return params.access_token ?? params.token ?? null;
+}

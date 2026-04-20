@@ -9,7 +9,7 @@ import { FALLBACK_PRODUCT_IMAGE, getProductImageUrls } from "../src/features/cat
 import { createLanguageController } from "../src/features/language/language-controller.ts";
 import { createOrderController } from "../src/features/orders/order-controller.ts";
 import { formatInr, formatOrderStatus } from "../src/features/orders/order-presenter.ts";
-import { buildSupabaseOAuthUrl, createSocialAuthOptions } from "../src/features/auth/social-auth-controller.ts";
+import { buildSupabaseOAuthUrl, createSocialAuthOptions, extractBearerTokenFromCallback } from "../src/features/auth/social-auth-controller.ts";
 import { createRecordingAnalytics } from "../src/services/analytics.ts";
 import { createSessionStore, getDefaultBuyerToken } from "../src/state/session-store.ts";
 import { translationResources } from "../../../packages/design-tokens/src/i18n/resources.ts";
@@ -160,6 +160,8 @@ describe("US1 buyer mobile flow", () => {
       redirectTo: "petslay://auth/callback",
     });
     assert.equal(googleUrl, "https://stage.supabase.co/auth/v1/authorize?provider=google&redirect_to=petslay%3A%2F%2Fauth%2Fcallback");
+    assert.equal(extractBearerTokenFromCallback("petslay://auth/callback#access_token=buyer-oauth-token"), "buyer-oauth-token");
+    assert.equal(extractBearerTokenFromCallback({ access_token: "buyer-param-token" }), "buyer-param-token");
   });
 
   it("loads catalog and product detail for the PLP-to-PDP journey", async () => {
@@ -216,6 +218,7 @@ describe("US1 buyer mobile flow", () => {
     assert.equal(translationResources.hinglish.arrivalAlertsBody, "Sirf relevant new-arrival prompts milenge jab device notifications ready honge.");
     assert.equal(translationResources.hindi.authTitle, "PET_Slay ke saath jaldi restock karein");
     assert.equal(translationResources.hinglish.startWholesaleOrder, "Wholesale order start karo");
+    assert.equal(translationResources.english.missingCallbackToken, "Sign-in callback did not include a buyer token. Please try again.");
   });
 
   it("formats order status and totals for buyer-facing screens", () => {
