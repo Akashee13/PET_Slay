@@ -32,7 +32,7 @@ function ProtectedLayoutInner({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { language, setLanguage, t } = useAdminLanguage();
   const [ready, setReady] = useState(false);
-  const [themeMode, setThemeMode] = useState<ThemeMode>("dusk");
+  const [themeMode, setThemeMode] = useState<ThemeMode>("light");
 
   useEffect(() => {
     const token = getAdminSessionToken();
@@ -42,7 +42,7 @@ function ProtectedLayoutInner({ children }: { children: ReactNode }) {
     }
 
     const savedTheme = window.localStorage.getItem("pet_slay_admin_theme");
-    const nextTheme = savedTheme === "light" ? "light" : "dusk";
+    const nextTheme = savedTheme === "dusk" ? "dusk" : "light";
     setThemeMode(nextTheme);
     applyTheme(nextTheme);
 

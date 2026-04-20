@@ -140,7 +140,7 @@
   - `/Users/akash/Documents/PetProjects/PET_Slay/scripts/deploy-stage-admin-cloudrun.sh`
   - `/Users/akash/Documents/PetProjects/PET_Slay/scripts/verify-stage-admin-web.sh`
 - Admin command-desk UX upgrades now live on stage:
-  - dusk-first default theme
+  - light default theme with persisted light/dusk toggle
   - PET_Slay logo mark in top bar
   - language selector (English/Hindi/Hinglish)
   - business-facing copy and KPI framing

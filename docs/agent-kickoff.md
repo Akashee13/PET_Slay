@@ -79,8 +79,8 @@
   - `scripts/deploy-stage-admin-cloudrun.sh`
   - `scripts/verify-stage-admin-web.sh`
 - Added responsive admin global styles in `apps/admin/app/globals.css` for mobile and desktop layouts.
-- Upgraded admin UI to dusk-first command-desk language with:
-  - default dusk theme and persisted theme toggle
+- Upgraded admin UI command-desk language with:
+  - default light theme and persisted light/dusk theme toggle
   - creative PET_Slay logo mark
   - language selector (English/Hindi/Hinglish)
   - business-facing copy for catalog and order operations
