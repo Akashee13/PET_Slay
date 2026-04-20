@@ -120,15 +120,17 @@
   - Product upload controls now accumulate multiple selected image files, support remove-before-submit chips, and keep the 5-image product cap.
   - Product creation requires at least one device-uploaded image; manual image URL fields are hidden from admin forms for now.
   - Product create/update and detail patch/list actions show disabled button states, spinner feedback, and full-page progress overlays for long-running operations.
-  - Listed product cards show multiple product images in a horizontal, swipeable, auto-scrolling gallery.
+  - Listed product cards show multiple product images in a discrete step carousel with smoother transitions and no helper copy.
 - Amended the project constitution to v1.3.0 with an anxiety-reducing UX and consistent design language principle.
+- Added localization provider guidance in `docs/localization-provider-options.md`: static dictionaries for UI, provider-backed cached translations only for dynamic product/campaign copy.
 
 ## Next Recommended Work
 
 1. Smoke test admin product create/update with multiple selected files on `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app`.
 2. Smoke test `/listed-products` image carousel, list/unlist, and patch actions after the admin deployment finishes.
-3. Add real admin UI tests for file selection, loading overlays, disabled duplicate actions, and PLP image rendering; current admin `npm test` is only a placeholder.
-4. Continue `T052` across admin/mobile auth boundaries, then move to `T053` payload/image/deep-link optimization.
+3. Add `packages/i18n` or equivalent shared dictionaries for English, Hindi, and Hinglish UI labels before wiring any external translation provider.
+4. Add real admin UI tests for file selection, loading overlays, disabled duplicate actions, and PLP image rendering; current admin `npm test` is only a placeholder.
+5. Continue `T052` across admin/mobile auth boundaries, then move to `T053` payload/image/deep-link optimization.
 
 ## Milestone Refresh Rule
 

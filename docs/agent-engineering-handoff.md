@@ -161,9 +161,13 @@
   - product detail patch form: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/products/[productId]/page.tsx`
   - create product now requires at least one device-uploaded image, hides manual image URL fields for operators, and shows custom selected-file count/chips instead of native file-input text.
   - long-running create/update/detail operations now show disabled duplicate actions, inline button spinners, and full-page progress overlays.
-- Admin listed-products PLP now renders multiple images per product in a horizontal, swipeable, auto-scrolling gallery:
+- Admin listed-products PLP now renders multiple images per product in a discrete step carousel:
   - page: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/listed-products/page.tsx`
   - styles: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/globals.css`
+  - gallery helper copy has been removed; images advance by timed slide index with a short eased transition instead of a slow marquee pull.
+- Localization provider guidance is captured in:
+  - `/Users/akash/Documents/PetProjects/PET_Slay/docs/localization-provider-options.md`
+  - use static dictionaries for UI labels; use external translation APIs only for cached, admin-reviewed dynamic product/campaign copy.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
@@ -183,9 +187,10 @@
 
 1. Validate admin product persistence and multi-image upload end-to-end on stage.
 2. Validate `/listed-products` PLP carousel, list/unlist, and patch actions on stage.
-3. Add real admin UI/component tests for image file selection, loading overlays,
+3. Create shared localization dictionaries for English, Hindi, and Hinglish UI labels before adding any runtime translation dependency.
+4. Add real admin UI/component tests for image file selection, loading overlays,
    disabled duplicate actions, and gallery rendering.
-4. Continue API hardening tasks in order: `T052` (security/role boundary hardening), `T053` (catalog payload optimization).
+5. Continue API hardening tasks in order: `T052` (security/role boundary hardening), `T053` (catalog payload optimization).
 
 ## Working Style
 

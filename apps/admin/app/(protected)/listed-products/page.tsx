@@ -43,6 +43,46 @@ function getProductImages(product: AdminProduct): string[] {
   return uniqueImages.size > 0 ? Array.from(uniqueImages) : [PRODUCT_PLACEHOLDER_IMAGE];
 }
 
+function ProductImageCarousel({ images, product }: { images: string[]; product: AdminProduct }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveIndex(0);
+
+    if (images.length <= 1) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setActiveIndex((currentIndex) => (currentIndex + 1) % images.length);
+    }, 2600);
+
+    return () => window.clearInterval(intervalId);
+  }, [images.length]);
+
+  return (
+    <div className="plp-carousel" aria-label={`${product.title} image gallery`}>
+      <div className="plp-carousel-track" style={{ transform: `translateX(-${activeIndex * 100}%)` }}>
+        {images.map((imageUrl, index) => (
+          <Link
+            href={`/products/${product.id}`}
+            className="plp-carousel-slide"
+            aria-label={`Patch ${product.title}`}
+            key={`${product.id}-${imageUrl}-${index}`}
+          >
+            <img
+              src={imageUrl}
+              alt={`${product.title} look ${index + 1}`}
+              loading="lazy"
+              referrerPolicy="no-referrer"
+            />
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ListedProductsPage() {
   const { t } = useAdminLanguage();
   const [products, setProducts] = useState<AdminProduct[]>([]);
@@ -167,29 +207,9 @@ export default function ListedProductsPage() {
               const expired = isExpired(product);
               const listed = product.listingStatus === "listed" && !expired;
               const productImages = getProductImages(product);
-              const carouselImages = productImages.length > 1 ? [...productImages, ...productImages] : productImages;
               return (
                 <article key={product.id} className="plp-card">
-                  <div className="plp-carousel" aria-label={`${product.title} image gallery`}>
-                    <div className={`plp-carousel-track ${productImages.length > 1 ? "auto-scroll" : ""}`}>
-                      {carouselImages.map((imageUrl, index) => (
-                        <Link
-                          href={`/products/${product.id}`}
-                          className="plp-carousel-slide"
-                          aria-label={`Patch ${product.title}`}
-                          key={`${product.id}-${imageUrl}-${index}`}
-                        >
-                          <img
-                            src={imageUrl}
-                            alt={`${product.title} look ${(index % productImages.length) + 1}`}
-                            loading="lazy"
-                            referrerPolicy="no-referrer"
-                          />
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                  {productImages.length > 1 && <p className="plp-image-hint">Auto-scrolls · swipe to inspect {productImages.length} images</p>}
+                  <ProductImageCarousel images={productImages} product={product} />
                   <div className="plp-card-body">
                     <div className="plp-card-copy">
                       <p>{product.category.replace("_", " ")}</p>
