@@ -22,6 +22,8 @@
 - Languages: English, Hindi, Hinglish.
 - Refunds: store credit by default, admin override to source payment.
 - Notifications: new arrivals + trend prompts, must feel relevant rather than spammy.
+- UX/UI: every human-facing flow must reduce user anxiety with clear loading,
+  success, error, and recovery states and consistent design language.
 
 ## Infra and Stage
 
@@ -157,9 +159,15 @@
   - create/update form: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/products/page.tsx`
   - product detail patch form: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/products/[productId]/page.tsx`
   - create product now requires at least one device-uploaded image, hides manual image URL fields for operators, and shows custom selected-file count/chips instead of native file-input text.
+  - long-running create/update/detail operations now show disabled duplicate actions, inline button spinners, and full-page progress overlays.
 - Admin listed-products PLP now renders multiple images per product in a horizontal, swipeable, auto-scrolling gallery:
   - page: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/listed-products/page.tsx`
   - styles: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/globals.css`
+- Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
+  - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
+  - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
+  - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/spec-template.md`
+  - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/tasks-template.md`
 
 ## Known Caveats
 
@@ -174,7 +182,8 @@
 
 1. Validate admin product persistence and multi-image upload end-to-end on stage.
 2. Validate `/listed-products` PLP carousel, list/unlist, and patch actions on stage.
-3. Add real admin UI/component tests for image file selection and gallery rendering.
+3. Add real admin UI/component tests for image file selection, loading overlays,
+   disabled duplicate actions, and gallery rendering.
 4. Continue API hardening tasks in order: `T052` (security/role boundary hardening), `T053` (catalog payload optimization).
 
 ## Working Style

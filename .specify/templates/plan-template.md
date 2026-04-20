@@ -31,7 +31,12 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+- **Reseller-First Product Value**: [PASS/FAIL with reseller problem and confidence/value created]
+- **Spec-First and Test-First Delivery**: [PASS/FAIL with test-first plan and unresolved questions]
+- **Multilingual Local-Market Readiness**: [PASS/FAIL with English/Hindi/Hinglish strategy if buyer-facing]
+- **Two-Surface Platform Coherence**: [PASS/FAIL with client/admin impact and shared-rule ownership]
+- **Conversion-Respectful Operations**: [PASS/FAIL with relevance, fairness, and non-spam safeguards]
+- **Anxiety-Reducing UX and Consistent Design Language**: [PASS/FAIL with loading, disabled duplicate actions, empty/error/success/recovery states, and consistency with existing UI patterns]
 
 ## Project Structure
 

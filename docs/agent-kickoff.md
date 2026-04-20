@@ -31,6 +31,7 @@
 - Follow spec-kit workflow for new scope: spec -> plan -> tasks -> implementation.
 - TDD is required for implementation work.
 - Backend and DevOps work should be treated with the same spec-driven discipline as product features.
+- UX/UI must deeply reduce user anxiety with clear loading, success, error, and recovery states while preserving consistent platform design language.
 
 ## Current System Status
 
@@ -117,13 +118,15 @@
   - Listed-products page uses a PLP-style card grid inspired by lightweight fashion collection pages.
   - Product upload controls now accumulate multiple selected image files, support remove-before-submit chips, and keep the 5-image product cap.
   - Product creation requires at least one device-uploaded image; manual image URL fields are hidden from admin forms for now.
+  - Product create/update and detail patch/list actions show disabled button states, spinner feedback, and full-page progress overlays for long-running operations.
   - Listed product cards show multiple product images in a horizontal, swipeable, auto-scrolling gallery.
+- Amended the project constitution to v1.3.0 with an anxiety-reducing UX and consistent design language principle.
 
 ## Next Recommended Work
 
 1. Smoke test admin product create/update with multiple selected files on `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app`.
 2. Smoke test `/listed-products` image carousel, list/unlist, and patch actions after the admin deployment finishes.
-3. Add real admin UI tests for file selection and PLP image rendering; current admin `npm test` is only a placeholder.
+3. Add real admin UI tests for file selection, loading overlays, disabled duplicate actions, and PLP image rendering; current admin `npm test` is only a placeholder.
 4. Continue `T052` across admin/mobile auth boundaries, then move to `T053` payload/image/deep-link optimization.
 
 ## Milestone Refresh Rule

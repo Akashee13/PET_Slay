@@ -8,7 +8,7 @@ description: "Task list template for feature implementation"
 **Input**: Design documents from `/specs/[###-feature-name]/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: Tests are mandatory for implementation work because the project constitution requires TDD. Include test tasks before implementation tasks wherever automated coverage is practical. If a UI behavior cannot yet be automated, include an explicit manual verification task and explain the automation gap.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -94,6 +94,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
 - [ ] T016 [US1] Add validation and error handling
 - [ ] T017 [US1] Add logging for user story 1 operations
+- [ ] T018 [US1] Add anxiety-reducing UX states for loading, disabled duplicate actions, success, error, and recovery in [UI path]
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -116,6 +117,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T021 [US2] Implement [Service] in src/services/[service].py
 - [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
 - [ ] T023 [US2] Integrate with User Story 1 components (if needed)
+- [ ] T024 [US2] Verify UI state consistency with established platform patterns for [surface]
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -155,6 +157,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX Performance optimization across all stories
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
+- [ ] TXXX UX consistency pass for loading, empty, error, success, and recovery states across impacted surfaces
 - [ ] TXXX Run quickstart.md validation
 
 ---

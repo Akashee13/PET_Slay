@@ -43,6 +43,10 @@ credit with admin-controlled payment-source exceptions.
   and admin web surfaces while keeping shared business rules in the API layer.
 - **Conversion-Respectful Operations**: PASS. Notification design is curated and
   relevant, and refund logic is explicit with store-credit-first defaults.
+- **Anxiety-Reducing UX and Consistent Design Language**: PASS. Human-facing
+  workflows must expose loading, duplicate-action prevention, empty/error/success
+  states, and recovery cues while reusing established mobile/admin visual
+  patterns.
 
 ## Project Structure
 

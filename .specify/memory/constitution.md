@@ -1,19 +1,18 @@
 <!--
 Sync Impact Report
-Version change: 1.1.0 -> 1.2.0
+Version change: 1.2.0 -> 1.3.0
 Modified principles:
-- II. Spec-First and Test-First Delivery (expanded quality gate)
+- Added VI. Anxiety-Reducing UX and Consistent Design Language
 Added sections:
-- None
+- Core Principle VI
 Removed sections:
 - None
 Templates requiring updates:
 - ✅ .specify/memory/constitution.md
+- ✅ .specify/templates/spec-template.md
+- ✅ .specify/templates/plan-template.md
+- ✅ .specify/templates/tasks-template.md
 - ✅ /Users/akash/Documents/PetProjects/PET_Slay/specs/001-wholesale-fashion-platform/plan.md
-- ✅ /Users/akash/Documents/PetProjects/PET_Slay/specs/001-wholesale-fashion-platform/tasks.md
-- ✅ .specify/templates/spec-template.md (reviewed; no template change required)
-- ✅ .specify/templates/plan-template.md (reviewed; no template change required)
-- ✅ .specify/templates/tasks-template.md (reviewed; no template change required)
 - ⚠ pending .specify/templates/commands/*.md (directory not present in this scaffold)
 Follow-up TODOs:
 - Existing scaffolded code predates this amendment and has not yet been retrofitted with tests.
@@ -60,6 +59,16 @@ language-aware. Refund and store-credit flows MUST be explicit and fair. Success
 metrics for features MUST include buyer conversion or operational efficiency, not
 just feature delivery.
 
+### VI. Anxiety-Reducing UX and Consistent Design Language
+Every buyer and admin workflow MUST reduce user anxiety by making system state,
+progress, success, failure, and recovery paths visible at the moment they matter.
+Long-running actions MUST provide clear loading feedback, disabled duplicate
+actions, and reassuring copy that explains what is happening. UI changes MUST
+preserve a consistent design language across mobile, web, and admin surfaces so
+users do not need to relearn patterns between flows. Designs that introduce
+ambiguous empty states, silent waits, or inconsistent interaction patterns MUST
+be revised before implementation is considered complete.
+
 ## Delivery Constraints
 
 - The MVP scope is wholesale-first for reseller buyers in women’s western and
@@ -70,6 +79,10 @@ just feature delivery.
   inventory visibility, and notification triggers when those rules affect scope.
 - Any feature involving buyer communication MUST define preference handling,
   message intent, and abuse-prevention or spam-prevention expectations.
+- Any user-facing or operator-facing workflow MUST define loading, empty, error,
+  success, and recovery states before implementation.
+- UI design SHOULD reuse established visual language and interaction patterns
+  unless the spec explains why a new pattern reduces confusion or anxiety.
 
 ## Workflow & Quality Gates
 
@@ -86,6 +99,9 @@ just feature delivery.
 - Plans MUST include a constitution check explaining how the design satisfies the
   multilingual requirement, the two-surface model, and conversion-respectful
   operations.
+- Plans MUST include a UX anxiety check for loading feedback, disabled duplicate
+  actions, empty/error/success states, and consistency with existing platform
+  patterns.
 - Tasks MUST be grouped so the highest-priority reseller value can be delivered
   and validated first.
 - Reviews MUST reject work that introduces unnecessary complexity or implementation
@@ -101,4 +117,4 @@ for principle removals or incompatible governance changes. Minor version changes
 are required for new principles or materially expanded rules. Patch changes are
 reserved for clarifications that do not alter project behavior.
 
-**Version**: 1.2.0 | **Ratified**: 2026-04-19 | **Last Amended**: 2026-04-19
+**Version**: 1.3.0 | **Ratified**: 2026-04-19 | **Last Amended**: 2026-04-20

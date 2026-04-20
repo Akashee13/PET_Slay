@@ -9,6 +9,18 @@ import { type AdminProduct, updateAdminProduct, updateProductListing } from "@/s
 import { uploadProductImages } from "@/src/services/product-image-upload";
 import { isAdminSupabaseConfigured } from "@/src/services/supabase";
 
+function BusyOverlay({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="busy-overlay" role="status" aria-live="assertive" aria-label={title}>
+      <div className="busy-card">
+        <span className="spinner large" aria-hidden="true" />
+        <h2>{title}</h2>
+        <p>{detail}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductDetailPage() {
   const params = useParams<{ productId: string }>();
   const [title, setTitle] = useState("");
@@ -23,6 +35,11 @@ export default function ProductDetailPage() {
   const [listingBusy, setListingBusy] = useState(false);
   const [result, setResult] = useState<AdminProduct | null>(null);
   const [error, setError] = useState("");
+  const isBusy = uploading || listingBusy;
+  const busyTitle = uploading ? "Patching product" : "Updating listing";
+  const busyDetail = uploading
+    ? "Uploading replacement images and saving product details. Please keep this tab open."
+    : "Applying the listing action and refreshing product state. This usually takes a moment.";
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -104,7 +121,8 @@ export default function ProductDetailPage() {
   }
 
   return (
-    <main className="stack-lg">
+    <main className="stack-lg" aria-busy={isBusy}>
+      {isBusy && <BusyOverlay title={busyTitle} detail={busyDetail} />}
       <section className="toolbar">
         <div>
           <p className="eyebrow">Inventory Detail</p>
@@ -114,28 +132,30 @@ export default function ProductDetailPage() {
       </section>
 
       <section className="panel row">
-        <button type="button" className="secondary" disabled={listingBusy} onClick={() => onListingAction("list_now")}>
-          List now for 60 days
+        <button type="button" className="secondary" disabled={isBusy} onClick={() => onListingAction("list_now")}>
+          {listingBusy && <span className="spinner" aria-hidden="true" />}
+          {listingBusy ? "Updating listing..." : "List now for 60 days"}
         </button>
-        <button type="button" className="secondary danger-action" disabled={listingBusy} onClick={() => onListingAction("unlist_now")}>
-          Unlist now
+        <button type="button" className="secondary danger-action" disabled={isBusy} onClick={() => onListingAction("unlist_now")}>
+          {listingBusy && <span className="spinner" aria-hidden="true" />}
+          {listingBusy ? "Updating listing..." : "Unlist now"}
         </button>
       </section>
 
       <section className="panel">
         <form onSubmit={onSubmit} className="field-grid">
           <label htmlFor="detail-title">Title (optional)</label>
-          <input id="detail-title" placeholder="Title (optional)" value={title} onChange={(event) => setTitle(event.target.value)} />
+          <input id="detail-title" placeholder="Title (optional)" value={title} onChange={(event) => setTitle(event.target.value)} disabled={isBusy} />
           <label htmlFor="detail-description">Description (optional)</label>
-          <textarea id="detail-description" placeholder="Description (optional)" value={description} onChange={(event) => setDescription(event.target.value)} />
+          <textarea id="detail-description" placeholder="Description (optional)" value={description} onChange={(event) => setDescription(event.target.value)} disabled={isBusy} />
           <label htmlFor="detail-price">Base wholesale price (optional)</label>
-          <input id="detail-price" placeholder="Base wholesale price (optional)" type="number" step="0.01" value={baseWholesalePrice} onChange={(event) => setBaseWholesalePrice(event.target.value)} />
+          <input id="detail-price" placeholder="Base wholesale price (optional)" type="number" step="0.01" value={baseWholesalePrice} onChange={(event) => setBaseWholesalePrice(event.target.value)} disabled={isBusy} />
           <label htmlFor="detail-moq">MOQ (optional)</label>
-          <input id="detail-moq" placeholder="MOQ (optional)" type="number" value={moq} onChange={(event) => setMoq(event.target.value)} />
+          <input id="detail-moq" placeholder="MOQ (optional)" type="number" value={moq} onChange={(event) => setMoq(event.target.value)} disabled={isBusy} />
           <label htmlFor="detail-status">Availability status (optional)</label>
-          <input id="detail-status" placeholder="Availability status (optional)" value={availabilityStatus} onChange={(event) => setAvailabilityStatus(event.target.value)} />
+          <input id="detail-status" placeholder="Availability status (optional)" value={availabilityStatus} onChange={(event) => setAvailabilityStatus(event.target.value)} disabled={isBusy} />
           <label htmlFor="detail-arrival">isNewArrival true|false (optional)</label>
-          <input id="detail-arrival" placeholder="isNewArrival true|false (optional)" value={isNewArrival} onChange={(event) => setIsNewArrival(event.target.value)} />
+          <input id="detail-arrival" placeholder="isNewArrival true|false (optional)" value={isNewArrival} onChange={(event) => setIsNewArrival(event.target.value)} disabled={isBusy} />
           <div className="file-picker-card">
             <div>
               <label htmlFor="detail-image-files">Replace images from device</label>
@@ -147,12 +167,12 @@ export default function ProductDetailPage() {
               type="file"
               accept="image/png,image/jpeg,image/webp"
               multiple
+              disabled={isBusy}
               onChange={(event) => {
                 setUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
-                event.currentTarget.value = "";
               }}
             />
-            <label className="file-picker-button" htmlFor="detail-image-files">
+            <label className={`file-picker-button ${isBusy ? "disabled" : ""}`} htmlFor="detail-image-files">
               Choose replacement images
             </label>
             <strong className="file-selection-summary">
@@ -163,7 +183,7 @@ export default function ProductDetailPage() {
                 {uploadFiles.map((file, index) => (
                   <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
                     {file.name}
-                    <button type="button" onClick={() => setUploadFiles((current) => removeSelectedProductImage(current, index))}>
+                    <button type="button" disabled={isBusy} onClick={() => setUploadFiles((current) => removeSelectedProductImage(current, index))}>
                       Remove
                     </button>
                   </span>
@@ -172,12 +192,14 @@ export default function ProductDetailPage() {
             )}
           </div>
           {!isAdminSupabaseConfigured() && <p className="error">Image upload needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.</p>}
-          <button type="submit">Patch Product</button>
+          <button type="submit" disabled={isBusy}>
+            {uploading && <span className="spinner" aria-hidden="true" />}
+            {uploading ? "Patching product..." : "Patch Product"}
+          </button>
         </form>
       </section>
 
       {error && <p className="error">{error}</p>}
-      {uploading && <p className="subtle">Uploading images… please wait.</p>}
       {result && (
         <section className="panel stack">
           {result.imageUrls && result.imageUrls.length > 0 && (

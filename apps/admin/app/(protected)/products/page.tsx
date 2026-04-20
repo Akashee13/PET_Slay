@@ -36,6 +36,8 @@ type UpdateForm = {
   imageUrls: string[];
 };
 
+type BusyOperation = "create" | "update" | "";
+
 const defaultCreateForm: CreateForm = {
   title: "",
   category: "western",
@@ -98,6 +100,18 @@ function buildAiImageUrl(prompt: string): string {
   return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1280&height=720&nologo=true&enhance=true`;
 }
 
+function BusyOverlay({ title, detail }: { title: string; detail: string }) {
+  return (
+    <div className="busy-overlay" role="status" aria-live="assertive" aria-label={title}>
+      <div className="busy-card">
+        <span className="spinner large" aria-hidden="true" />
+        <h2>{title}</h2>
+        <p>{detail}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductsPage() {
   const { t } = useAdminLanguage();
   const [createForm, setCreateForm] = useState<CreateForm>(defaultCreateForm);
@@ -106,9 +120,14 @@ export default function ProductsPage() {
   const [productsLoading, setProductsLoading] = useState(true);
   const [createUploadFiles, setCreateUploadFiles] = useState<File[]>([]);
   const [updateUploadFiles, setUpdateUploadFiles] = useState<File[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const [busyOperation, setBusyOperation] = useState<BusyOperation>("");
   const [result, setResult] = useState<AdminProduct | null>(null);
   const [error, setError] = useState("");
+  const isBusy = busyOperation !== "";
+  const busyTitle = busyOperation === "create" ? "Creating product" : "Updating product";
+  const busyDetail = busyOperation === "create"
+    ? "Uploading product images and publishing the catalog item. Please keep this tab open."
+    : "Saving product updates and replacing images if selected. Please keep this tab open.";
 
   const activeProducts = useMemo(
     () => [...products].sort((left, right) => right.id.localeCompare(left.id)),
@@ -162,7 +181,7 @@ export default function ProductsPage() {
         return;
       }
 
-      setUploading(true);
+      setBusyOperation("create");
       const uploadedImageUrls = await uploadProductImages(filesToUpload, {
         productTitleHint: createForm.title,
       });
@@ -184,7 +203,7 @@ export default function ProductsPage() {
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to create product");
     } finally {
-      setUploading(false);
+      setBusyOperation("");
     }
   }
 
@@ -227,7 +246,7 @@ export default function ProductsPage() {
 
     setError("");
     try {
-      setUploading(true);
+      setBusyOperation("update");
       const uploadedImageUrls = await uploadProductImages(filesToUpload, {
         productTitleHint: updateForm.title || updateForm.productId,
       });
@@ -243,12 +262,13 @@ export default function ProductsPage() {
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to update product");
     } finally {
-      setUploading(false);
+      setBusyOperation("");
     }
   }
 
   return (
-    <main className="stack-lg">
+    <main className="stack-lg" aria-busy={isBusy}>
+      {isBusy && <BusyOverlay title={busyTitle} detail={busyDetail} />}
       <section className="toolbar">
         <div>
           <p className="eyebrow">{t("addProductEyebrow")}</p>
@@ -277,11 +297,11 @@ export default function ProductsPage() {
           <p>Capture essential commercial details and upload up to 5 product images.</p>
           <form onSubmit={onCreate} className="field-grid">
             <label htmlFor="create-title">Title</label>
-            <input id="create-title" placeholder="Title" value={createForm.title} onChange={(event) => setCreateForm((current) => ({ ...current, title: event.target.value }))} required />
+            <input id="create-title" placeholder="Title" value={createForm.title} onChange={(event) => setCreateForm((current) => ({ ...current, title: event.target.value }))} required disabled={isBusy} />
             <label htmlFor="create-category">Category</label>
-            <input id="create-category" placeholder="Category (western/south_asian etc.)" value={createForm.category} onChange={(event) => setCreateForm((current) => ({ ...current, category: event.target.value }))} required />
+            <input id="create-category" placeholder="Category (western/south_asian etc.)" value={createForm.category} onChange={(event) => setCreateForm((current) => ({ ...current, category: event.target.value }))} required disabled={isBusy} />
             <label htmlFor="create-description">Description</label>
-            <textarea id="create-description" placeholder="Description" value={createForm.description} onChange={(event) => setCreateForm((current) => ({ ...current, description: event.target.value }))} />
+            <textarea id="create-description" placeholder="Description" value={createForm.description} onChange={(event) => setCreateForm((current) => ({ ...current, description: event.target.value }))} disabled={isBusy} />
             <div className="file-picker-card">
               <div>
                 <label htmlFor="create-image-files">Product images from device <span className="required-mark">*</span></label>
@@ -293,12 +313,12 @@ export default function ProductsPage() {
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 multiple
+                disabled={isBusy}
                 onChange={(event) => {
                   setCreateUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
-                  event.currentTarget.value = "";
                 }}
               />
-              <label className="file-picker-button" htmlFor="create-image-files">
+              <label className={`file-picker-button ${isBusy ? "disabled" : ""}`} htmlFor="create-image-files">
                 Choose product images
               </label>
               <strong className="file-selection-summary">
@@ -309,7 +329,7 @@ export default function ProductsPage() {
                   {createUploadFiles.map((file, index) => (
                     <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
                       {file.name}
-                      <button type="button" onClick={() => setCreateUploadFiles((current) => removeSelectedProductImage(current, index))}>
+                      <button type="button" disabled={isBusy} onClick={() => setCreateUploadFiles((current) => removeSelectedProductImage(current, index))}>
                         Remove
                       </button>
                     </span>
@@ -318,14 +338,17 @@ export default function ProductsPage() {
               )}
             </div>
             <label htmlFor="create-base-price">Base wholesale price</label>
-            <input id="create-base-price" placeholder="Base wholesale price" type="number" step="0.01" value={createForm.baseWholesalePrice} onChange={(event) => setCreateForm((current) => ({ ...current, baseWholesalePrice: event.target.value }))} required />
+            <input id="create-base-price" placeholder="Base wholesale price" type="number" step="0.01" value={createForm.baseWholesalePrice} onChange={(event) => setCreateForm((current) => ({ ...current, baseWholesalePrice: event.target.value }))} required disabled={isBusy} />
             <label htmlFor="create-moq">MOQ</label>
-            <input id="create-moq" placeholder="MOQ" type="number" value={createForm.moq} onChange={(event) => setCreateForm((current) => ({ ...current, moq: event.target.value }))} required />
+            <input id="create-moq" placeholder="MOQ" type="number" value={createForm.moq} onChange={(event) => setCreateForm((current) => ({ ...current, moq: event.target.value }))} required disabled={isBusy} />
             <label htmlFor="create-status">Availability status</label>
-            <input id="create-status" placeholder="Availability status" value={createForm.availabilityStatus} onChange={(event) => setCreateForm((current) => ({ ...current, availabilityStatus: event.target.value }))} />
+            <input id="create-status" placeholder="Availability status" value={createForm.availabilityStatus} onChange={(event) => setCreateForm((current) => ({ ...current, availabilityStatus: event.target.value }))} disabled={isBusy} />
 
             {!isAdminSupabaseConfigured() && <p className="error">Image upload needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.</p>}
-            <button type="submit">Create Product</button>
+            <button type="submit" disabled={isBusy}>
+              {busyOperation === "create" && <span className="spinner" aria-hidden="true" />}
+              {busyOperation === "create" ? "Creating product..." : "Create Product"}
+            </button>
           </form>
         </article>
 
@@ -334,19 +357,19 @@ export default function ProductsPage() {
           <p>Adjust merchandising details and replace image set when needed.</p>
           <form onSubmit={onUpdate} className="field-grid">
             <label htmlFor="update-product-id">Product ID (required)</label>
-            <input id="update-product-id" placeholder="Product ID (required)" value={updateForm.productId} onChange={(event) => setUpdateForm((current) => ({ ...current, productId: event.target.value }))} required />
+            <input id="update-product-id" placeholder="Product ID (required)" value={updateForm.productId} onChange={(event) => setUpdateForm((current) => ({ ...current, productId: event.target.value }))} required disabled={isBusy} />
             <label htmlFor="update-title">Title (optional)</label>
-            <input id="update-title" placeholder="Title (optional)" value={updateForm.title} onChange={(event) => setUpdateForm((current) => ({ ...current, title: event.target.value }))} />
+            <input id="update-title" placeholder="Title (optional)" value={updateForm.title} onChange={(event) => setUpdateForm((current) => ({ ...current, title: event.target.value }))} disabled={isBusy} />
             <label htmlFor="update-description">Description (optional)</label>
-            <textarea id="update-description" placeholder="Description (optional)" value={updateForm.description} onChange={(event) => setUpdateForm((current) => ({ ...current, description: event.target.value }))} />
+            <textarea id="update-description" placeholder="Description (optional)" value={updateForm.description} onChange={(event) => setUpdateForm((current) => ({ ...current, description: event.target.value }))} disabled={isBusy} />
             <label htmlFor="update-base-price">Base wholesale price (optional)</label>
-            <input id="update-base-price" placeholder="Base wholesale price (optional)" type="number" step="0.01" value={updateForm.baseWholesalePrice} onChange={(event) => setUpdateForm((current) => ({ ...current, baseWholesalePrice: event.target.value }))} />
+            <input id="update-base-price" placeholder="Base wholesale price (optional)" type="number" step="0.01" value={updateForm.baseWholesalePrice} onChange={(event) => setUpdateForm((current) => ({ ...current, baseWholesalePrice: event.target.value }))} disabled={isBusy} />
             <label htmlFor="update-moq">MOQ (optional)</label>
-            <input id="update-moq" placeholder="MOQ (optional)" type="number" value={updateForm.moq} onChange={(event) => setUpdateForm((current) => ({ ...current, moq: event.target.value }))} />
+            <input id="update-moq" placeholder="MOQ (optional)" type="number" value={updateForm.moq} onChange={(event) => setUpdateForm((current) => ({ ...current, moq: event.target.value }))} disabled={isBusy} />
             <label htmlFor="update-status">Availability status (optional)</label>
-            <input id="update-status" placeholder="Availability status (optional)" value={updateForm.availabilityStatus} onChange={(event) => setUpdateForm((current) => ({ ...current, availabilityStatus: event.target.value }))} />
+            <input id="update-status" placeholder="Availability status (optional)" value={updateForm.availabilityStatus} onChange={(event) => setUpdateForm((current) => ({ ...current, availabilityStatus: event.target.value }))} disabled={isBusy} />
             <label htmlFor="update-arrival">isNewArrival true|false (optional)</label>
-            <input id="update-arrival" placeholder="isNewArrival true|false (optional)" value={updateForm.isNewArrival} onChange={(event) => setUpdateForm((current) => ({ ...current, isNewArrival: event.target.value }))} />
+            <input id="update-arrival" placeholder="isNewArrival true|false (optional)" value={updateForm.isNewArrival} onChange={(event) => setUpdateForm((current) => ({ ...current, isNewArrival: event.target.value }))} disabled={isBusy} />
 
             <div className="file-picker-card">
               <div>
@@ -359,12 +382,12 @@ export default function ProductsPage() {
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 multiple
+                disabled={isBusy}
                 onChange={(event) => {
                   setUpdateUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
-                  event.currentTarget.value = "";
                 }}
               />
-              <label className="file-picker-button" htmlFor="update-image-files">
+              <label className={`file-picker-button ${isBusy ? "disabled" : ""}`} htmlFor="update-image-files">
                 Choose replacement images
               </label>
               <strong className="file-selection-summary">
@@ -375,7 +398,7 @@ export default function ProductsPage() {
                   {updateUploadFiles.map((file, index) => (
                     <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
                       {file.name}
-                      <button type="button" onClick={() => setUpdateUploadFiles((current) => removeSelectedProductImage(current, index))}>
+                      <button type="button" disabled={isBusy} onClick={() => setUpdateUploadFiles((current) => removeSelectedProductImage(current, index))}>
                         Remove
                       </button>
                     </span>
@@ -383,7 +406,10 @@ export default function ProductsPage() {
                 </div>
               )}
             </div>
-            <button type="submit">Update Product</button>
+            <button type="submit" disabled={isBusy}>
+              {busyOperation === "update" && <span className="spinner" aria-hidden="true" />}
+              {busyOperation === "update" ? "Updating product..." : "Update Product"}
+            </button>
           </form>
           {updateForm.productId && (
             <p style={{ marginBottom: 0 }}>
@@ -397,12 +423,6 @@ export default function ProductsPage() {
         <section className="panel">
           <h2>Latest Product Response</h2>
           <pre>{JSON.stringify(result, null, 2)}</pre>
-        </section>
-      )}
-
-      {uploading && (
-        <section className="panel">
-          <p className="subtle">Uploading images… please wait.</p>
         </section>
       )}
 
