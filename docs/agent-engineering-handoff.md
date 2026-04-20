@@ -221,6 +221,9 @@
 - Mobile order presentation polish:
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/orders/order-presenter.ts` formats order statuses and INR totals.
   - order list/detail/checkout screens now show formatted totals/statuses and avoid exposing raw deep-link route strings to buyers.
+- Mobile auth hardening toward `T052`:
+  - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/state/session-store.ts` only returns `dev-buyer-token` by default for local/dev/test profiles.
+  - stage/prod-like mobile profiles now require `EXPO_PUBLIC_BUYER_BEARER_TOKEN` or the future OAuth token exchange.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
@@ -245,7 +248,7 @@
 4. Wire a real Expo push token provider behind `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/notifications/notification-controller.ts`.
 5. Add real admin UI/component tests for image file selection, loading overlays,
    disabled duplicate actions, and gallery rendering.
-6. Continue API hardening tasks in order: `T052` (security/role boundary hardening), finish API-side `T053` catalog payload optimization.
+6. Continue remaining non-mobile `T052` security/role boundary hardening, then finish API-side `T053` catalog payload optimization.
 
 ## Working Style
 

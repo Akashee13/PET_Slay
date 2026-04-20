@@ -11,7 +11,7 @@ import { createOrderController } from "../src/features/orders/order-controller.t
 import { formatInr, formatOrderStatus } from "../src/features/orders/order-presenter.ts";
 import { buildSupabaseOAuthUrl, createSocialAuthOptions } from "../src/features/auth/social-auth-controller.ts";
 import { createRecordingAnalytics } from "../src/services/analytics.ts";
-import { createSessionStore } from "../src/state/session-store.ts";
+import { createSessionStore, getDefaultBuyerToken } from "../src/state/session-store.ts";
 import { translationResources } from "../../../packages/design-tokens/src/i18n/resources.ts";
 
 function createTransport(): { transport: ApiTransport; calls: Array<{ path: string; init: RequestInit }> } {
@@ -112,6 +112,28 @@ function createTransport(): { transport: ApiTransport; calls: Array<{ path: stri
 }
 
 describe("US1 buyer mobile flow", () => {
+  it("only falls back to the dev buyer token in local-like profiles", () => {
+    const originalProfile = process.env.EXPO_PUBLIC_APP_PROFILE;
+    const originalEnv = process.env.EXPO_PUBLIC_APP_ENV;
+    const originalToken = process.env.EXPO_PUBLIC_BUYER_BEARER_TOKEN;
+
+    try {
+      delete process.env.EXPO_PUBLIC_BUYER_BEARER_TOKEN;
+      process.env.EXPO_PUBLIC_APP_PROFILE = "local";
+      assert.equal(getDefaultBuyerToken(), "dev-buyer-token");
+
+      process.env.EXPO_PUBLIC_APP_PROFILE = "stage";
+      assert.equal(getDefaultBuyerToken(), "");
+
+      process.env.EXPO_PUBLIC_BUYER_BEARER_TOKEN = "stage-buyer-token";
+      assert.equal(getDefaultBuyerToken(), "stage-buyer-token");
+    } finally {
+      restoreEnv("EXPO_PUBLIC_APP_PROFILE", originalProfile);
+      restoreEnv("EXPO_PUBLIC_APP_ENV", originalEnv);
+      restoreEnv("EXPO_PUBLIC_BUYER_BEARER_TOKEN", originalToken);
+    }
+  });
+
   it("bootstraps a buyer session and persists language preference", async () => {
     const { transport, calls } = createTransport();
     const sessionStore = createSessionStore({ initialToken: "buyer-token" });
@@ -225,3 +247,12 @@ describe("US1 buyer mobile flow", () => {
   });
 
 });
+
+function restoreEnv(key: string, value: string | undefined) {
+  if (value === undefined) {
+    delete process.env[key];
+    return;
+  }
+
+  process.env[key] = value;
+}

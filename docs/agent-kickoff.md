@@ -160,13 +160,16 @@
 - Cleaned buyer order status presentation:
   - mobile order screens now format backend statuses and INR totals for humans.
   - order detail no longer exposes raw internal deep-link routes to buyers.
+- Hardened mobile dev-token behavior:
+  - `dev-buyer-token` is now only the default for local/dev/test profiles.
+  - stage/prod-like mobile builds require an explicit buyer token or real OAuth flow.
 
 ## Next Recommended Work
 
 1. Run the Expo app locally against a working buyer token and smoke test auth -> language -> PLP -> PDP -> checkout.
 2. Replace dev/manual buyer token entry with Supabase social auth token exchange once provider setup is ready.
 3. Continue mobile localization by moving social-provider labels and remaining backend error strings into shared English/Hindi/Hinglish copy resources.
-4. Continue `T052` auth/role-boundary hardening and finish the API side of `T053` catalog payload/image/deep-link optimization.
+4. Continue non-mobile `T052` auth/role-boundary hardening and finish the API side of `T053` catalog payload/image/deep-link optimization.
 5. Add real admin UI tests for file selection, loading overlays, disabled duplicate actions, and PLP image rendering; current admin `npm test` is only a placeholder.
 
 ## Milestone Refresh Rule

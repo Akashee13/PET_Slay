@@ -27,7 +27,16 @@ export type SessionStoreOptions = {
 };
 
 export function getDefaultBuyerToken(): string {
-  return process.env.EXPO_PUBLIC_BUYER_BEARER_TOKEN ?? "dev-buyer-token";
+  if (process.env.EXPO_PUBLIC_BUYER_BEARER_TOKEN) {
+    return process.env.EXPO_PUBLIC_BUYER_BEARER_TOKEN;
+  }
+
+  return allowsLocalDevToken() ? "dev-buyer-token" : "";
+}
+
+function allowsLocalDevToken(): boolean {
+  const profile = process.env.EXPO_PUBLIC_APP_PROFILE ?? process.env.EXPO_PUBLIC_APP_ENV ?? "local";
+  return ["dev", "development", "local", "test"].includes(profile.toLowerCase());
 }
 
 export function createSessionStore(options?: SessionStoreOptions): SessionStore {
