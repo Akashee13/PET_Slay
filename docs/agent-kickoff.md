@@ -138,13 +138,14 @@
   - implemented Expo routes for auth token entry, reseller PLP, language selection, product detail, and checkout.
   - added mobile buyer API client, session store, catalog/language/order controllers, and shared screen/button components.
   - pinned Expo SDK-compatible `react-native-screens` and `react-native-safe-area-context` so iOS/Android export succeeds.
+  - added mobile buyer analytics/error hooks for catalog load, product detail, MOQ rejection, order submission, and flow failures.
 
 ## Next Recommended Work
 
 1. Run the Expo app locally against a working buyer token and smoke test auth -> language -> PLP -> PDP -> checkout.
 2. Replace dev/manual buyer token entry with Supabase social auth once provider setup is ready.
 3. Expand mobile UI localization strings beyond the first catalog headline and wire Hindi/Hinglish copy across every mobile screen.
-4. Continue `T028` buyer analytics/error logging and `T052` auth/role-boundary hardening.
+4. Continue `T052` auth/role-boundary hardening and `T053` catalog payload/image/deep-link optimization.
 5. Add real admin UI tests for file selection, loading overlays, disabled duplicate actions, and PLP image rendering; current admin `npm test` is only a placeholder.
 
 ## Milestone Refresh Rule

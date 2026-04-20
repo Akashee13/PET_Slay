@@ -7,6 +7,7 @@ import { BuyerApiClient, type ApiTransport } from "../src/services/buyer-api.ts"
 import { createCatalogController } from "../src/features/catalog/catalog-controller.ts";
 import { createLanguageController } from "../src/features/language/language-controller.ts";
 import { createOrderController } from "../src/features/orders/order-controller.ts";
+import { createRecordingAnalytics } from "../src/services/analytics.ts";
 import { createSessionStore } from "../src/state/session-store.ts";
 
 function createTransport(): { transport: ApiTransport; calls: Array<{ path: string; init: RequestInit }> } {
@@ -97,9 +98,10 @@ describe("US1 buyer mobile flow", () => {
 
   it("loads catalog and product detail for the PLP-to-PDP journey", async () => {
     const { transport } = createTransport();
+    const analytics = createRecordingAnalytics();
     const sessionStore = createSessionStore({ initialToken: "buyer-token" });
     const api = new BuyerApiClient({ baseUrl: "https://api.example.com", getToken: sessionStore.getToken, transport });
-    const catalog = createCatalogController({ api });
+    const catalog = createCatalogController({ api, analytics });
 
     const products = await catalog.loadProducts();
     assert.equal(products[0].title, "Jeans Top Set");
@@ -107,13 +109,15 @@ describe("US1 buyer mobile flow", () => {
 
     const detail = await catalog.loadProductDetail("prod-western-001");
     assert.equal(detail.variants[0].id, "var-western-001-s");
+    assert.deepEqual(analytics.events.map((event) => event.name), ["catalog_loaded", "product_detail_opened"]);
   });
 
   it("submits a valid wholesale order and blocks quantities below MOQ", async () => {
     const { transport } = createTransport();
+    const analytics = createRecordingAnalytics();
     const sessionStore = createSessionStore({ initialToken: "buyer-token" });
     const api = new BuyerApiClient({ baseUrl: "https://api.example.com", getToken: sessionStore.getToken, transport });
-    const orders = createOrderController({ api });
+    const orders = createOrderController({ api, analytics });
 
     assert.throws(
       () => orders.validateWholesaleQuantity({ quantity: 20, moq: 200 }),
@@ -128,5 +132,6 @@ describe("US1 buyer mobile flow", () => {
 
     assert.equal(order.id, "ord-001");
     assert.equal(order.totalAmount, 62000);
+    assert.deepEqual(analytics.events.map((event) => event.name), ["order_quantity_rejected", "order_submitted"]);
   });
 });

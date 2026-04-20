@@ -129,12 +129,13 @@
   - `T025`
   - `T026`
   - `T027`
+  - `T028`
 - Started, not complete:
   - `T052`
 - Still open and most immediate:
   - `T066` validate migration job + readiness in live stage environment and finalize DB activation
-- Remaining API-app implementation tasks (from `tasks.md`): `T028`, `T038`, `T052`, `T053` (and `T066` for stage ops completion)
-- Mobile US1 now has a demoable buyer journey; remaining mobile work is mainly analytics, auth hardening, notification/refund visibility, and richer localization.
+- Remaining API-app implementation tasks (from `tasks.md`): `T038`, `T052`, `T053` (and `T066` for stage ops completion)
+- Mobile US1 now has a demoable buyer journey; remaining mobile work is mainly auth hardening, notification/refund visibility, and richer localization.
 - Most admin UI tasks remain open in Phases 3-5.
 - Admin web now has a minimal operational slice implemented and build-verified for stage usage:
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/page.tsx`
@@ -193,6 +194,7 @@
   - Expo routes: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(auth)/index.tsx`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/index.tsx`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/language.tsx`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/products/[productId].tsx`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/checkout.tsx`
   - Expo config: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app.json` limits platforms to iOS/Android, matching product direction.
   - `react-native-screens@~4.11.1` and `react-native-safe-area-context@5.4.0` are direct mobile dependencies because Expo SDK 53 export failed with the newer transitive `react-native-screens`.
+  - analytics/error hooks: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/services/analytics.ts` records catalog load/detail, MOQ rejection, order submission, and failure events through injectable analytics.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`

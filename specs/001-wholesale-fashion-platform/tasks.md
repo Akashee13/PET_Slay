@@ -74,7 +74,7 @@ description: "Task list for Wholesale Fashion Reseller Platform MVP"
 - [X] T025 [P] [US1] Implement mobile language selection and localization plumbing in `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/language/`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/i18n/resources/`, and `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/language.tsx`
 - [X] T026 [P] [US1] Implement mobile catalog browse and product detail flows in `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/catalog/`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/index.tsx`, and `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/products/[productId].tsx`
 - [X] T027 [US1] Implement mobile order creation flow and submission feedback in `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/orders/` and `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/checkout.tsx`
-- [ ] T028 [US1] Add buyer-facing analytics and error logging hooks for the P1 flow in `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/services/analytics.ts` and `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/src/common/logging/`
+- [X] T028 [US1] Add buyer-facing analytics and error logging hooks for the P1 flow in `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/services/analytics.ts` and `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/src/common/logging/`
 
 **Checkpoint**: User Story 1 should be fully functional and demoable as the MVP reseller buying flow.
 
