@@ -212,6 +212,10 @@
 - Mobile buyer localization has been expanded:
   - `/Users/akash/Documents/PetProjects/PET_Slay/packages/design-tokens/src/i18n/resources.ts` now includes buyer catalog, checkout, orders, refund, loading, and notification readiness copy in English/Hindi/Hinglish.
   - mobile catalog, language, checkout, order list, and order-detail screens consume those shared copy keys.
+- Mobile auth is provider-ready but not fully OAuth-complete:
+  - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/auth/social-auth-controller.ts` builds Google/Facebook/Instagram Supabase OAuth options.
+  - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(auth)/index.tsx` renders provider buttons and keeps them disabled until Supabase OAuth config exists.
+  - The next auth step is adding the deep-link callback/token exchange once real provider setup is complete.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
@@ -231,7 +235,7 @@
 ## Best Next Technical Path
 
 1. Smoke test the Expo buyer flow against a working buyer token: auth -> language -> PLP -> PDP -> checkout -> order detail/refund status.
-2. Replace the manual/dev token mobile auth gate with Supabase Google/Facebook/Instagram-ready auth once provider setup is ready.
+2. Replace the manual/dev token mobile auth gate with Supabase Google/Facebook/Instagram token exchange once provider setup is ready.
 3. Continue mobile localization by moving remaining long-form auth/product-detail/refund-policy paragraphs into shared English/Hindi/Hinglish resources.
 4. Wire a real Expo push token provider behind `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/notifications/notification-controller.ts`.
 5. Add real admin UI/component tests for image file selection, loading overlays,

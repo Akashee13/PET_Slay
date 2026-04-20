@@ -8,6 +8,7 @@ import { createCatalogController } from "../src/features/catalog/catalog-control
 import { FALLBACK_PRODUCT_IMAGE, getProductImageUrls } from "../src/features/catalog/product-images.ts";
 import { createLanguageController } from "../src/features/language/language-controller.ts";
 import { createOrderController } from "../src/features/orders/order-controller.ts";
+import { buildSupabaseOAuthUrl, createSocialAuthOptions } from "../src/features/auth/social-auth-controller.ts";
 import { createRecordingAnalytics } from "../src/services/analytics.ts";
 import { createSessionStore } from "../src/state/session-store.ts";
 import { translationResources } from "../../../packages/design-tokens/src/i18n/resources.ts";
@@ -124,6 +125,18 @@ describe("US1 buyer mobile flow", () => {
     assert.equal(updated.preferredLanguage, "hinglish" satisfies Language);
     assert.equal(sessionStore.getSnapshot().language, "hinglish");
     assert.equal(calls[1].path, "/v1/buyers/preferences/language");
+  });
+
+  it("prepares provider-ready social auth options without enabling unfinished OAuth", () => {
+    const pendingOptions = createSocialAuthOptions({ supabaseUrl: "", redirectTo: "petslay://auth/callback" });
+    assert.equal(pendingOptions.every((option) => !option.enabled), true);
+    assert.equal(pendingOptions[0].setupHint, "Supabase OAuth setup pending");
+
+    const googleUrl = buildSupabaseOAuthUrl("google", {
+      supabaseUrl: "https://stage.supabase.co/",
+      redirectTo: "petslay://auth/callback",
+    });
+    assert.equal(googleUrl, "https://stage.supabase.co/auth/v1/authorize?provider=google&redirect_to=petslay%3A%2F%2Fauth%2Fcallback");
   });
 
   it("loads catalog and product detail for the PLP-to-PDP journey", async () => {

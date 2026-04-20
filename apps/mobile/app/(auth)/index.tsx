@@ -4,6 +4,8 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../../src/components/ActionButton";
 import { mobileTheme, Screen } from "../../src/components/Screen";
+import { createSocialAuthOptions } from "../../src/features/auth/social-auth-controller";
+import { getMobileSupabaseConfig } from "../../src/services/supabase";
 import { useBuyerApp, useSessionSnapshot } from "../../src/state/buyer-app-context";
 import { getDefaultBuyerToken } from "../../src/state/session-store";
 
@@ -12,6 +14,10 @@ export default function AuthScreen() {
   const { api, sessionStore } = useBuyerApp();
   const session = useSessionSnapshot();
   const [token, setToken] = useState(getDefaultBuyerToken());
+  const socialOptions = createSocialAuthOptions({
+    supabaseUrl: getMobileSupabaseConfig().url,
+    redirectTo: "petslay://auth/callback",
+  });
 
   useEffect(() => {
     if (session.status === "authenticated") {
@@ -50,8 +56,12 @@ export default function AuthScreen() {
       </View>
 
       <View style={styles.providerGrid}>
-        <ActionButton label="Continue with Google soon" variant="secondary" disabled />
-        <ActionButton label="Instagram/Facebook soon" variant="secondary" disabled />
+        {socialOptions.map((option) => (
+          <View key={option.provider} style={styles.providerCard}>
+            <ActionButton label={option.enabled ? option.label : `${option.label} soon`} variant="secondary" disabled={!option.enabled} />
+            {option.setupHint && <Text style={styles.providerHint}>{option.setupHint}</Text>}
+          </View>
+        ))}
       </View>
     </Screen>
   );
@@ -92,5 +102,11 @@ const styles = StyleSheet.create({
   providerGrid: {
     gap: 10,
   },
+  providerCard: {
+    gap: 6,
+  },
+  providerHint: {
+    color: mobileTheme.muted,
+    fontSize: 12,
+  },
 });
-

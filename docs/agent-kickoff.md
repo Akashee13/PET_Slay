@@ -151,11 +151,15 @@
 - Expanded mobile buyer localization:
   - shared design-token copy now covers catalog, alerts, checkout, orders, refund status, and core loading states in English, Hindi, and Hinglish.
   - buyer screens now pull operational labels from the shared copy resources instead of hardcoding English-only text.
+- Added mobile social-auth scaffold:
+  - auth screen now renders Google, Facebook, and Instagram provider options from a provider-ready controller.
+  - provider buttons stay disabled with setup guidance until Supabase OAuth env/config is available.
+  - OAuth URL construction is covered by mobile tests for the future Supabase provider handoff.
 
 ## Next Recommended Work
 
 1. Run the Expo app locally against a working buyer token and smoke test auth -> language -> PLP -> PDP -> checkout.
-2. Replace dev/manual buyer token entry with Supabase social auth once provider setup is ready.
+2. Replace dev/manual buyer token entry with Supabase social auth token exchange once provider setup is ready.
 3. Continue mobile localization by moving remaining long-form auth/product-detail/refund-policy paragraphs into shared English/Hindi/Hinglish copy resources.
 4. Continue `T052` auth/role-boundary hardening and finish the API side of `T053` catalog payload/image/deep-link optimization.
 5. Add real admin UI tests for file selection, loading overlays, disabled duplicate actions, and PLP image rendering; current admin `npm test` is only a placeholder.
