@@ -173,6 +173,12 @@
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/globals.css` now gives dusk mode proper dark surfaces, tile backgrounds, and contrast instead of light topbar cards with light text.
   - hidden file inputs use clipped visually-hidden styling instead of `left: -9999px`, which was a likely cause of mobile horizontal page scroll after selecting/submitting images.
   - product response `<pre>` payloads and file chips wrap safely to prevent URL/filename overflow on mobile.
+- Admin listing workflow correction:
+  - `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/catalog/service.go` and Postgres repository now accept optional `listingStatus` on product create.
+  - create default remains `listed` with a 60-day `visibleUntil`; explicit `listingStatus: "unlisted"` creates hidden inventory with no `visibleUntil`.
+  - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/products/page.tsx` has a default-checked list-immediately checkbox.
+  - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/listed-products/page.tsx` now shows one contextual list/unlist button and an edit-product tile.
+  - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/products/[productId]/page.tsx` is now edit-only; listing controls stay centralized on PLP.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
@@ -190,8 +196,8 @@
 
 ## Best Next Technical Path
 
-1. Validate admin product persistence and multi-image upload end-to-end on stage.
-2. Validate `/products` mobile post-submit layout and dusk mode contrast on stage.
+1. Validate admin product create with list-immediately checked and unchecked on stage.
+2. Validate `/listed-products` contextual list/unlist and edit tile actions on stage.
 3. Create shared localization dictionaries for English, Hindi, and Hinglish UI labels before adding any runtime translation dependency.
 4. Add real admin UI/component tests for image file selection, loading overlays,
    disabled duplicate actions, and gallery rendering.

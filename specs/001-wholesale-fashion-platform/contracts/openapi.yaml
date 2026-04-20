@@ -363,6 +363,8 @@ components:
             format: uri
         listingStatus:
           $ref: "#/components/schemas/ListingStatus"
+        listingStatus:
+          $ref: "#/components/schemas/ListingStatus"
         visibleUntil:
           type: string
           format: date-time

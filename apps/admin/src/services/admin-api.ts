@@ -36,6 +36,7 @@ export type AdminProductInput = {
   moq: number;
   availabilityStatus?: string;
   imageUrls?: string[];
+  listingStatus?: "listed" | "unlisted";
 };
 
 export type AdminProductUpdateInput = {

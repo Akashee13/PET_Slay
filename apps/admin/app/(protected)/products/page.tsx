@@ -23,6 +23,7 @@ type CreateForm = {
   moq: string;
   availabilityStatus: string;
   imageUrls: string[];
+  listImmediately: boolean;
 };
 
 type UpdateForm = {
@@ -46,6 +47,7 @@ const defaultCreateForm: CreateForm = {
   moq: "",
   availabilityStatus: "in_stock",
   imageUrls: [""],
+  listImmediately: true,
 };
 
 const defaultUpdateForm: UpdateForm = {
@@ -194,6 +196,7 @@ export default function ProductsPage() {
         moq: Number(createForm.moq),
         availabilityStatus: createForm.availabilityStatus,
         imageUrls: [...manualImageUrls, ...uploadedImageUrls],
+        listingStatus: createForm.listImmediately ? "listed" : "unlisted",
       });
       setResult(created);
       setCreateForm(defaultCreateForm);
@@ -343,6 +346,19 @@ export default function ProductsPage() {
             <input id="create-moq" placeholder="MOQ" type="number" value={createForm.moq} onChange={(event) => setCreateForm((current) => ({ ...current, moq: event.target.value }))} required disabled={isBusy} />
             <label htmlFor="create-status">Availability status</label>
             <input id="create-status" placeholder="Availability status" value={createForm.availabilityStatus} onChange={(event) => setCreateForm((current) => ({ ...current, availabilityStatus: event.target.value }))} disabled={isBusy} />
+            <label className="checkbox-card" htmlFor="create-list-immediately">
+              <input
+                id="create-list-immediately"
+                type="checkbox"
+                checked={createForm.listImmediately}
+                onChange={(event) => setCreateForm((current) => ({ ...current, listImmediately: event.target.checked }))}
+                disabled={isBusy}
+              />
+              <span>
+                <strong>List immediately to resellers</strong>
+                <small>Default selected. Uncheck to onboard as unlisted and manually list later from PLP.</small>
+              </span>
+            </label>
 
             {!isAdminSupabaseConfigured() && <p className="error">Image upload needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.</p>}
             <button type="submit" disabled={isBusy}>
@@ -374,7 +390,7 @@ export default function ProductsPage() {
             <div className="file-picker-card">
               <div>
                 <label htmlFor="update-image-files">Replace images from device</label>
-                <p className="file-help">Optional for patching. Select up to 5 images at once, or choose again to add more.</p>
+                <p className="file-help">Optional for editing. Select up to 5 images at once, or choose again to add more.</p>
               </div>
               <input
                 id="update-image-files"
@@ -428,7 +444,7 @@ export default function ProductsPage() {
 
       <section className="panel stack">
         <h2>All Uploaded Products</h2>
-        <p>For list, unlist, and patch actions, use the dedicated listed-products table.</p>
+        <p>For list, unlist, and edit actions, use the dedicated listed-products table.</p>
         {productsLoading && <p className="subtle">Loading catalog…</p>}
         {!productsLoading && activeProducts.length === 0 && <p className="subtle">No products available yet.</p>}
         <div className="product-admin-grid">

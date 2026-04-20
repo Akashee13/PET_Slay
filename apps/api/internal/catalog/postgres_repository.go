@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 )
 
 const listProductsSQL = `
@@ -214,7 +213,7 @@ func (r *PostgresRepository) CreateProduct(input AdminCreateProductInput) (*Prod
 	if len(input.ImageURLs) > 0 {
 		coverImageURL = input.ImageURLs[0]
 	}
-	visibleUntil := time.Now().UTC().Add(defaultListingWindow)
+	listingStatus, visibleUntil := createListingState(input.ListingStatus)
 	imageURLsJSON, err := json.Marshal(input.ImageURLs)
 	if err != nil {
 		return nil, err
@@ -223,7 +222,7 @@ func (r *PostgresRepository) CreateProduct(input AdminCreateProductInput) (*Prod
 	_, err = r.db.Exec(`
 		INSERT INTO products (id, sku, title, slug, category, description, base_wholesale_price, moq, availability_status, media_cover_url, media_urls, listing_status, visible_until)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12, $13)
-	`, id, sku, input.Title, strings.TrimPrefix(id, "prod-"), input.Category, input.Description, input.BaseWholesalePrice, input.MOQ, status, coverImageURL, string(imageURLsJSON), ListingListed, visibleUntil)
+	`, id, sku, input.Title, strings.TrimPrefix(id, "prod-"), input.Category, input.Description, input.BaseWholesalePrice, input.MOQ, status, coverImageURL, string(imageURLsJSON), listingStatus, visibleUntil)
 	if err != nil {
 		return nil, err
 	}

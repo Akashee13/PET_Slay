@@ -128,11 +128,16 @@
   - hidden file inputs no longer sit at offscreen `left: -9999px`, preventing mobile horizontal page scroll after image selection/submission.
   - long product response payloads and image filename chips wrap safely on narrow screens.
 - Localization guidance now prefers Google Cloud Translation for dynamic text because it stays in the GCP ecosystem and has high default quotas; static UI labels should still stay in dictionaries.
+- Corrected admin listing workflow:
+  - product onboarding includes a default-selected "list immediately to resellers" checkbox.
+  - admins can uncheck it to create an unlisted product and list it later from PLP.
+  - PLP cards show one contextual list/unlist button instead of two competing actions.
+  - "Patch product" is now an "Edit product" tile-style action.
 
 ## Next Recommended Work
 
-1. Smoke test admin product create/update with multiple selected files on `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app`.
-2. Smoke test dusk mode and post-submit mobile layout on `/products` after the admin deployment finishes.
+1. Smoke test admin product create with the list-immediately checkbox checked and unchecked on `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app`.
+2. Smoke test contextual list/unlist and edit tile actions on `/listed-products`.
 3. Add `packages/i18n` or equivalent shared dictionaries for English, Hindi, and Hinglish UI labels before wiring any external translation provider.
 4. Add real admin UI tests for file selection, loading overlays, disabled duplicate actions, and PLP image rendering; current admin `npm test` is only a placeholder.
 5. Continue `T052` across admin/mobile auth boundaries, then move to `T053` payload/image/deep-link optimization.

@@ -5,7 +5,7 @@ import { FormEvent, useState } from "react";
 
 import { getAdminSessionToken } from "@/src/features/auth/admin-session";
 import { mergeSelectedProductImages, removeSelectedProductImage } from "@/src/features/products/file-selection";
-import { type AdminProduct, updateAdminProduct, updateProductListing } from "@/src/services/admin-api";
+import { type AdminProduct, updateAdminProduct } from "@/src/services/admin-api";
 import { uploadProductImages } from "@/src/services/product-image-upload";
 import { isAdminSupabaseConfigured } from "@/src/services/supabase";
 
@@ -32,14 +32,11 @@ export default function ProductDetailPage() {
   const [imageUrlsText, setImageUrlsText] = useState("");
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [listingBusy, setListingBusy] = useState(false);
   const [result, setResult] = useState<AdminProduct | null>(null);
   const [error, setError] = useState("");
-  const isBusy = uploading || listingBusy;
-  const busyTitle = uploading ? "Patching product" : "Updating listing";
-  const busyDetail = uploading
-    ? "Uploading replacement images and saving product details. Please keep this tab open."
-    : "Applying the listing action and refreshing product state. This usually takes a moment.";
+  const isBusy = uploading;
+  const busyTitle = "Editing product";
+  const busyDetail = "Uploading replacement images and saving product details. Please keep this tab open.";
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -102,24 +99,6 @@ export default function ProductDetailPage() {
     }
   }
 
-  async function onListingAction(action: "list_now" | "unlist_now") {
-    const token = getAdminSessionToken();
-    if (!token) {
-      setError("Missing admin session token");
-      return;
-    }
-
-    setListingBusy(true);
-    setError("");
-    try {
-      setResult(await updateProductListing(token, params.productId, action));
-    } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : "Failed to update listing");
-    } finally {
-      setListingBusy(false);
-    }
-  }
-
   return (
     <main className="stack-lg" aria-busy={isBusy}>
       {isBusy && <BusyOverlay title={busyTitle} detail={busyDetail} />}
@@ -129,17 +108,6 @@ export default function ProductDetailPage() {
           <h1 className="headline">Product {params.productId}</h1>
           <p className="subtle">Update business details and replace image set for this product.</p>
         </div>
-      </section>
-
-      <section className="panel row">
-        <button type="button" className="secondary" disabled={isBusy} onClick={() => onListingAction("list_now")}>
-          {listingBusy && <span className="spinner" aria-hidden="true" />}
-          {listingBusy ? "Updating listing..." : "List now for 60 days"}
-        </button>
-        <button type="button" className="secondary danger-action" disabled={isBusy} onClick={() => onListingAction("unlist_now")}>
-          {listingBusy && <span className="spinner" aria-hidden="true" />}
-          {listingBusy ? "Updating listing..." : "Unlist now"}
-        </button>
       </section>
 
       <section className="panel">
@@ -159,7 +127,7 @@ export default function ProductDetailPage() {
           <div className="file-picker-card">
             <div>
               <label htmlFor="detail-image-files">Replace images from device</label>
-              <p className="file-help">Optional for patching. Select up to 5 images at once, or choose again to add more.</p>
+              <p className="file-help">Optional for editing. Select up to 5 images at once, or choose again to add more.</p>
             </div>
             <input
               id="detail-image-files"
@@ -194,7 +162,7 @@ export default function ProductDetailPage() {
           {!isAdminSupabaseConfigured() && <p className="error">Image upload needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.</p>}
           <button type="submit" disabled={isBusy}>
             {uploading && <span className="spinner" aria-hidden="true" />}
-            {uploading ? "Patching product..." : "Patch Product"}
+            {uploading ? "Editing product..." : "Edit Product"}
           </button>
         </form>
       </section>

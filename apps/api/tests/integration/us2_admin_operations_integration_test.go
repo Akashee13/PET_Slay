@@ -168,6 +168,47 @@ func TestAdminCanUnlistAndRelistProducts(t *testing.T) {
 	}
 }
 
+func TestAdminCanCreateProductAsUnlisted(t *testing.T) {
+	handler := testutil.NewHandler()
+
+	createReq := httptest.NewRequest(http.MethodPost, "/v1/admin/products", testutil.JSONBody(`{"title":"Draft Product","category":"western","baseWholesalePrice":899,"moq":2,"listingStatus":"unlisted"}`))
+	createReq.Header.Set("Authorization", "Bearer dev-admin-token")
+	createReq.Header.Set("Content-Type", "application/json")
+	createRec := httptest.NewRecorder()
+	handler.ServeHTTP(createRec, createReq)
+
+	if createRec.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d body=%s", createRec.Code, createRec.Body.String())
+	}
+
+	var created struct {
+		ID            string `json:"id"`
+		ListingStatus string `json:"listingStatus"`
+		VisibleUntil  string `json:"visibleUntil"`
+	}
+	if err := json.Unmarshal(createRec.Body.Bytes(), &created); err != nil {
+		t.Fatalf("decode created product: %v", err)
+	}
+	if created.ListingStatus != "unlisted" {
+		t.Fatalf("expected unlisted product, got %s", created.ListingStatus)
+	}
+	if created.VisibleUntil != "" {
+		t.Fatalf("expected no visibleUntil for unlisted onboarding, got %s", created.VisibleUntil)
+	}
+
+	buyerListReq := httptest.NewRequest(http.MethodGet, "/v1/catalog/products", nil)
+	buyerListReq.Header.Set("Authorization", "Bearer dev-buyer-token")
+	buyerListRec := httptest.NewRecorder()
+	handler.ServeHTTP(buyerListRec, buyerListReq)
+
+	if buyerListRec.Code != http.StatusOK {
+		t.Fatalf("expected buyer catalog 200, got %d body=%s", buyerListRec.Code, buyerListRec.Body.String())
+	}
+	if containsProductID(buyerListRec.Body.Bytes(), created.ID) {
+		t.Fatalf("expected unlisted onboarding product %s to be hidden from buyer catalog", created.ID)
+	}
+}
+
 func TestAdminPreflightAllowsStageAdminOrigin(t *testing.T) {
 	handler := testutil.NewHandler()
 

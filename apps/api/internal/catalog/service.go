@@ -244,6 +244,7 @@ type AdminCreateProductInput struct {
 	MOQ                int      `json:"moq"`
 	AvailabilityStatus string   `json:"availabilityStatus,omitempty"`
 	ImageURLs          []string `json:"imageUrls,omitempty"`
+	ListingStatus      string   `json:"listingStatus,omitempty"`
 }
 
 type AdminUpdateProductInput struct {
@@ -286,6 +287,9 @@ func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, 
 	}
 	input.ImageURLs = imageURLs
 
+	listingStatus, visibleUntil := createListingState(input.ListingStatus)
+	input.ListingStatus = string(listingStatus)
+
 	if s.repo != nil {
 		return s.repo.CreateProduct(input)
 	}
@@ -300,8 +304,6 @@ func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, 
 	if status == "" {
 		status = string(AvailabilityInStock)
 	}
-	visibleUntil := time.Now().UTC().Add(defaultListingWindow)
-
 	product := ProductDetail{
 		ProductCard: ProductCard{
 			ID:                 id,
@@ -312,8 +314,8 @@ func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, 
 			AvailabilityStatus: AvailabilityStatus(status),
 			IsNewArrival:       false,
 			ImageURLs:          imageURLs,
-			ListingStatus:      ListingListed,
-			VisibleUntil:       &visibleUntil,
+			ListingStatus:      listingStatus,
+			VisibleUntil:       visibleUntil,
 		},
 		Description: input.Description,
 		Variants:    []ProductVariant{},
@@ -326,6 +328,15 @@ func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, 
 
 	copy := product
 	return &copy, nil
+}
+
+func createListingState(value string) (ListingStatus, *time.Time) {
+	if strings.TrimSpace(value) == string(ListingUnlisted) {
+		return ListingUnlisted, nil
+	}
+
+	visibleUntil := time.Now().UTC().Add(defaultListingWindow)
+	return ListingListed, &visibleUntil
 }
 
 func (s *Service) UpdateProduct(productID string, input AdminUpdateProductInput) (*ProductDetail, error) {

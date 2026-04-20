@@ -30,6 +30,10 @@ function isExpired(product: AdminProduct): boolean {
   return new Date(product.visibleUntil).getTime() <= Date.now();
 }
 
+function isListedForResellers(product: AdminProduct): boolean {
+  return product.listingStatus === "listed" && !isExpired(product);
+}
+
 function getProductImages(product: AdminProduct): string[] {
   const uniqueImages = new Set<string>();
   if (product.coverImageUrl) {
@@ -67,7 +71,7 @@ function ProductImageCarousel({ images, product }: { images: string[]; product: 
           <Link
             href={`/products/${product.id}`}
             className="plp-carousel-slide"
-            aria-label={`Patch ${product.title}`}
+            aria-label={`Edit ${product.title}`}
             key={`${product.id}-${imageUrl}-${index}`}
           >
             <img
@@ -94,7 +98,7 @@ export default function ListedProductsPage() {
 
   const visibleProducts = useMemo(() => {
     const filtered = products.filter((product) => {
-      const listed = product.listingStatus === "listed" && !isExpired(product);
+      const listed = isListedForResellers(product);
       if (filter === "listed") {
         return listed;
       }
@@ -182,13 +186,13 @@ export default function ListedProductsPage() {
         <div className="collection-count">
           <strong>{products.length}</strong> products
           <span>{listedCount} listed</span>
-          <span>{attentionCount} need action</span>
+          <span>{attentionCount} unlisted / need action</span>
         </div>
         <div className="plp-filter-row">
           <select value={filter} onChange={(event) => setFilter(event.target.value as ListingFilter)} aria-label="Filter products">
             <option value="all">All products</option>
             <option value="listed">Listed now</option>
-            <option value="attention">Expired / unlisted</option>
+            <option value="attention">Unlisted / need action</option>
           </select>
           <select value={sortMode} onChange={(event) => setSortMode(event.target.value as SortMode)} aria-label="Sort products">
             <option value="newest">Sort: Newest</option>
@@ -205,7 +209,8 @@ export default function ListedProductsPage() {
           <div className="plp-grid">
             {visibleProducts.map((product) => {
               const expired = isExpired(product);
-              const listed = product.listingStatus === "listed" && !expired;
+              const listed = isListedForResellers(product);
+              const listingAction = listed ? "unlist_now" : "list_now";
               const productImages = getProductImages(product);
               return (
                 <article key={product.id} className="plp-card">
@@ -220,27 +225,20 @@ export default function ListedProductsPage() {
                       <span className={`status-chip ${listed ? "success" : "danger"}`}>
                         {listed ? "listed" : expired ? "expired" : product.listingStatus}
                       </span>
-                      <small>Visible until {formatVisibleUntil(product.visibleUntil)}</small>
+                      <small>{listed ? `Visible until ${formatVisibleUntil(product.visibleUntil)}` : "Hidden from resellers"}</small>
                     </div>
                     <div className="plp-actions">
                       <button
                         type="button"
-                        className="secondary"
+                        className={listed ? "secondary danger-action" : "secondary"}
                         disabled={busyProductId === product.id}
-                        onClick={() => onListingAction(product.id, "list_now")}
+                        onClick={() => onListingAction(product.id, listingAction)}
                       >
-                        {t("listNow")}
+                        {busyProductId === product.id ? "Updating..." : listed ? t("unlistNow") : t("listNow")}
                       </button>
-                      <button
-                        type="button"
-                        className="secondary danger-action"
-                        disabled={busyProductId === product.id}
-                        onClick={() => onListingAction(product.id, "unlist_now")}
-                      >
-                        {t("unlistNow")}
-                      </button>
-                      <Link href={`/products/${product.id}`} className="inline-link">
-                        {t("patchProduct")}
+                      <Link href={`/products/${product.id}`} className="edit-product-tile">
+                        <span>{t("editProduct")}</span>
+                        <small>Pricing, MOQ, images</small>
                       </Link>
                     </div>
                   </div>
