@@ -218,6 +218,9 @@
   - The next auth step is adding the deep-link callback/token exchange once real provider setup is complete.
 - Mobile long-form localization has been extended:
   - auth gate, product-detail loading/error copy, product CTA, and refund-policy subtitle now use shared copy keys.
+- Mobile order presentation polish:
+  - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/orders/order-presenter.ts` formats order statuses and INR totals.
+  - order list/detail/checkout screens now show formatted totals/statuses and avoid exposing raw deep-link route strings to buyers.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
@@ -238,7 +241,7 @@
 
 1. Smoke test the Expo buyer flow against a working buyer token: auth -> language -> PLP -> PDP -> checkout -> order detail/refund status.
 2. Replace the manual/dev token mobile auth gate with Supabase Google/Facebook/Instagram token exchange once provider setup is ready.
-3. Continue mobile localization by moving remaining dynamic status strings and social-provider labels into shared English/Hindi/Hinglish resources.
+3. Continue mobile localization by moving social-provider labels and remaining backend error strings into shared English/Hindi/Hinglish resources.
 4. Wire a real Expo push token provider behind `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/notifications/notification-controller.ts`.
 5. Add real admin UI/component tests for image file selection, loading overlays,
    disabled duplicate actions, and gallery rendering.

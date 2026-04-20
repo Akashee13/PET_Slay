@@ -4,13 +4,14 @@ import { StyleSheet, Text, View } from "react-native";
 import type { Order } from "@pet-slay/types";
 
 import { mobileTheme, Screen } from "../../../src/components/Screen";
+import { formatInr, formatOrderStatus } from "../../../src/features/orders/order-presenter";
 import { mobileCopy } from "../../../src/i18n";
 import type { RefundDecision } from "../../../src/services/buyer-api";
 import { useBuyerApp, useSessionSnapshot } from "../../../src/state/buyer-app-context";
 
 export default function OrderDetailScreen() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
-  const { notifications, orders, refunds: refundController } = useBuyerApp();
+  const { orders, refunds: refundController } = useBuyerApp();
   const session = useSessionSnapshot();
   const [order, setOrder] = useState<Order | null>(null);
   const [refunds, setRefunds] = useState<RefundDecision[]>([]);
@@ -39,10 +40,10 @@ export default function OrderDetailScreen() {
       {error && <Text style={styles.error}>{error}</Text>}
       {order && (
         <View style={styles.card}>
-          <Text style={styles.title}>Status: {order.status}</Text>
-          <Text style={styles.meta}>Total: ₹{order.totalAmount}</Text>
-          <Text style={styles.meta}>Items: {order.items.length}</Text>
-          <Text style={styles.meta}>Deep link: {notifications.buildOrderDeepLink(order.id)}</Text>
+          <Text style={styles.title}>{mobileCopy(session.language, "status")}: {formatOrderStatus(order.status)}</Text>
+          <Text style={styles.meta}>{mobileCopy(session.language, "total")}: {formatInr(order.totalAmount)}</Text>
+          <Text style={styles.meta}>{mobileCopy(session.language, "items")}: {order.items.length}</Text>
+          <Text style={styles.meta}>{mobileCopy(session.language, "secureOrderLinkReady")}</Text>
         </View>
       )}
       <View style={styles.card}>

@@ -4,6 +4,7 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../../src/components/ActionButton";
 import { mobileTheme, Screen } from "../../src/components/Screen";
+import { formatInr, formatOrderStatus } from "../../src/features/orders/order-presenter";
 import { mobileCopy } from "../../src/i18n";
 import { useBuyerApp, useSessionSnapshot } from "../../src/state/buyer-app-context";
 
@@ -38,7 +39,7 @@ export default function CheckoutScreen() {
         shippingAddress: { city },
       });
       setCreatedOrderId(order.id);
-      setMessage(`Order ${order.id} created. Status: ${order.status}`);
+      setMessage(`${mobileCopy(session.language, "orderCreated")}: ${order.id} · ${mobileCopy(session.language, "status")}: ${formatOrderStatus(order.status)}`);
     } catch (requestError) {
       setMessage(requestError instanceof Error && requestError.message === "quantity_below_moq"
         ? `Quantity must be at least MOQ ${moq}.`
@@ -57,7 +58,7 @@ export default function CheckoutScreen() {
       <View style={styles.summary}>
         <Text style={styles.summaryTitle}>{mobileCopy(session.language, "orderSummary")}</Text>
         <Text style={styles.summaryLine}>MOQ {moq}</Text>
-        <Text style={styles.summaryLine}>Estimated total ₹{Number(quantity || 0) * unitPrice}</Text>
+        <Text style={styles.summaryLine}>Estimated total {formatInr(Number(quantity || 0) * unitPrice)}</Text>
       </View>
 
       <View style={styles.form}>

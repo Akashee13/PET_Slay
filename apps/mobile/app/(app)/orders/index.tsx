@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Order } from "@pet-slay/types";
 
 import { mobileTheme, Screen } from "../../../src/components/Screen";
+import { formatInr, formatOrderStatus } from "../../../src/features/orders/order-presenter";
 import { mobileCopy } from "../../../src/i18n";
 import { useBuyerApp, useSessionSnapshot } from "../../../src/state/buyer-app-context";
 
@@ -34,8 +35,8 @@ export default function OrdersScreen() {
           <Link key={order.id} href={`/(app)/orders/${order.id}`} asChild>
             <Pressable style={styles.card}>
               <Text style={styles.title}>{order.id}</Text>
-              <Text style={styles.meta}>Status: {order.status}</Text>
-              <Text style={styles.meta}>Total: ₹{order.totalAmount}</Text>
+              <Text style={styles.meta}>{mobileCopy(session.language, "status")}: {formatOrderStatus(order.status)}</Text>
+              <Text style={styles.meta}>{mobileCopy(session.language, "total")}: {formatInr(order.totalAmount)}</Text>
               <Text style={styles.cta}>{mobileCopy(session.language, "viewRefundStatus")}</Text>
             </Pressable>
           </Link>

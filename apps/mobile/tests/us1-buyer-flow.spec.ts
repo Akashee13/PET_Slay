@@ -8,6 +8,7 @@ import { createCatalogController } from "../src/features/catalog/catalog-control
 import { FALLBACK_PRODUCT_IMAGE, getProductImageUrls } from "../src/features/catalog/product-images.ts";
 import { createLanguageController } from "../src/features/language/language-controller.ts";
 import { createOrderController } from "../src/features/orders/order-controller.ts";
+import { formatInr, formatOrderStatus } from "../src/features/orders/order-presenter.ts";
 import { buildSupabaseOAuthUrl, createSocialAuthOptions } from "../src/features/auth/social-auth-controller.ts";
 import { createRecordingAnalytics } from "../src/services/analytics.ts";
 import { createSessionStore } from "../src/state/session-store.ts";
@@ -193,6 +194,11 @@ describe("US1 buyer mobile flow", () => {
     assert.equal(translationResources.hinglish.arrivalAlertsBody, "Sirf relevant new-arrival prompts milenge jab device notifications ready honge.");
     assert.equal(translationResources.hindi.authTitle, "PET_Slay ke saath jaldi restock karein");
     assert.equal(translationResources.hinglish.startWholesaleOrder, "Wholesale order start karo");
+  });
+
+  it("formats order status and totals for buyer-facing screens", () => {
+    assert.equal(formatOrderStatus("payment_pending"), "Payment Pending");
+    assert.equal(formatInr(62000), "₹62,000");
   });
 
   it("submits a valid wholesale order and blocks quantities below MOQ", async () => {
