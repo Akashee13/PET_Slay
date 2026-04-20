@@ -16,6 +16,16 @@ export type BuyerApiClientOptions = {
   transport?: ApiTransport;
 };
 
+export type RefundDecision = {
+  id: string;
+  orderId: string;
+  buyerId: string;
+  status: string;
+  decisionType: "store_credit" | "payment_source";
+  reasonCode?: string;
+  adminNotes?: string;
+};
+
 function getMobileApiBaseUrl(): string {
   return (process.env.EXPO_PUBLIC_API_BASE_URL ?? DEFAULT_API_BASE_URL).replace(/\/$/, "");
 }
@@ -58,6 +68,20 @@ export class BuyerApiClient {
     });
   }
 
+  async listOrders(): Promise<Order[]> {
+    const payload = await this.request<{ items: Order[] }>("/v1/orders");
+    return payload.items;
+  }
+
+  async getOrderDetail(orderId: string): Promise<Order> {
+    return this.request<Order>(`/v1/orders/${encodeURIComponent(orderId)}`);
+  }
+
+  async listRefunds(orderId: string): Promise<RefundDecision[]> {
+    const payload = await this.request<{ items: RefundDecision[] }>(`/v1/orders/${encodeURIComponent(orderId)}/refunds`);
+    return payload.items;
+  }
+
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
     const token = this.getToken();
     if (!token) {
@@ -87,4 +111,3 @@ export class BuyerApiClient {
     return (await response.json()) as T;
   }
 }
-

@@ -11,7 +11,7 @@
 - Repo root: `/Users/akash/Documents/PetProjects/PET_Slay`
 - Branch: `001-wholesale-fashion-platform`
 - Primary feature folder: `/Users/akash/Documents/PetProjects/PET_Slay/specs/001-wholesale-fashion-platform`
-- Last refreshed: `2026-04-20`
+- Last refreshed: `2026-04-21`
 
 ## Product Decisions
 
@@ -130,12 +130,16 @@
   - `T026`
   - `T027`
   - `T028`
+- Completed in mobile US3:
+  - `T041`
+  - `T044`
+  - `T049`
 - Started, not complete:
   - `T052`
 - Still open and most immediate:
   - `T066` validate migration job + readiness in live stage environment and finalize DB activation
 - Remaining API-app implementation tasks (from `tasks.md`): `T038`, `T052`, `T053` (and `T066` for stage ops completion)
-- Mobile US1 now has a demoable buyer journey; remaining mobile work is mainly auth hardening, notification/refund visibility, and richer localization.
+- Mobile US1 now has a demoable buyer journey; mobile US3 now has order/refund visibility plus notification readiness/deep-link scaffolding. Remaining mobile work is mainly auth hardening, richer localization, and real device push-token integration.
 - Most admin UI tasks remain open in Phases 3-5.
 - Admin web now has a minimal operational slice implemented and build-verified for stage usage:
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/page.tsx`
@@ -195,6 +199,12 @@
   - Expo config: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app.json` limits platforms to iOS/Android, matching product direction.
   - `react-native-screens@~4.11.1` and `react-native-safe-area-context@5.4.0` are direct mobile dependencies because Expo SDK 53 export failed with the newer transitive `react-native-screens`.
   - analytics/error hooks: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/services/analytics.ts` records catalog load/detail, MOQ rejection, order submission, and failure events through injectable analytics.
+- Mobile US3 notification/refund surface is now implemented:
+  - tests: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/tests/us3-buyer-notifications-refunds.spec.ts`
+  - notifications: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/services/notifications.ts`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/notifications/notification-controller.ts`
+  - refunds: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/refunds/refund-controller.ts`
+  - order history/detail routes: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/orders/index.tsx`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/orders/[orderId].tsx`
+  - checkout now links successful order creation to order/refund detail.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
@@ -207,15 +217,16 @@
 - Admin `npm run lint` currently cannot run locally because `eslint` is not listed in `apps/admin/package.json` devDependencies.
 - Admin `npm test` currently runs a placeholder command only; add real UI/component tests for file selection and PLP galleries.
 - Mobile typecheck and Expo iOS/Android export now pass for the current buyer-flow slice.
+- Mobile validation passed on `2026-04-21`: `npm test`, `npm run typecheck`, and `npm run build` from `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile`.
 - Admin UI currently uses manual bearer token entry (no Supabase auth wiring yet) to accelerate stage operations.
 - Supabase Storage bucket/policy migration exists for default bucket `product-images`; continue to smoke test uploads after each admin/API deploy.
 
 ## Best Next Technical Path
 
-1. Smoke test the Expo buyer flow against a working buyer token: auth -> language -> PLP -> PDP -> checkout.
+1. Smoke test the Expo buyer flow against a working buyer token: auth -> language -> PLP -> PDP -> checkout -> order detail/refund status.
 2. Replace the manual/dev token mobile auth gate with Supabase Google/Facebook/Instagram-ready auth once provider setup is ready.
 3. Expand mobile localization resources so every screen has English, Hindi, and Hinglish copy.
-4. Create shared localization dictionaries for English, Hindi, and Hinglish UI labels before adding any runtime translation dependency.
+4. Wire a real Expo push token provider behind `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/notifications/notification-controller.ts`.
 5. Add real admin UI/component tests for image file selection, loading overlays,
    disabled duplicate actions, and gallery rendering.
 6. Continue API hardening tasks in order: `T052` (security/role boundary hardening), `T053` (catalog payload optimization).

@@ -14,7 +14,7 @@
 - Stage API: `https://pet-slay-api-stage-j67sekma7a-el.a.run.app`
 - Stage Admin target URL: `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app`
 - Architecture: React Native buyer app, Next.js admin app, Go API, Supabase-backed Postgres/Auth/Storage
-- Last refreshed: `2026-04-20`
+- Last refreshed: `2026-04-21`
 
 ## Product Context
 
@@ -139,6 +139,11 @@
   - added mobile buyer API client, session store, catalog/language/order controllers, and shared screen/button components.
   - pinned Expo SDK-compatible `react-native-screens` and `react-native-safe-area-context` so iOS/Android export succeeds.
   - added mobile buyer analytics/error hooks for catalog load, product detail, MOQ rejection, order submission, and flow failures.
+- Added React Native US3 buyer surface:
+  - order history screen and order detail screen with refund decision visibility.
+  - refund copy controller that makes the store-credit default explicit and highlights payment-source exceptions.
+  - notification readiness controller and order deep-link helpers for future push entry points.
+  - catalog PLP now includes a lightweight arrival-alert readiness check.
 
 ## Next Recommended Work
 

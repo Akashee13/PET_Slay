@@ -1,3 +1,4 @@
+import type { ComponentProps } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 
 import { mobileTheme } from "./Screen";
@@ -7,14 +8,16 @@ export function ActionButton({
   onPress,
   disabled,
   variant = "primary",
+  ...pressableProps
 }: {
   label: string;
   onPress?: () => void;
   disabled?: boolean;
   variant?: "primary" | "secondary" | "danger";
-}) {
+} & Omit<ComponentProps<typeof Pressable>, "children" | "disabled" | "onPress" | "style">) {
   return (
     <Pressable
+      {...pressableProps}
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}

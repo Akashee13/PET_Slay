@@ -65,11 +65,39 @@ function createTransport(): { transport: ApiTransport; calls: Array<{ path: stri
     }
 
     if (path === "/v1/orders") {
+      if (init.method === "POST") {
+        return {
+          id: "ord-001",
+          status: "created",
+          totalAmount: 62000,
+          items: [{ productVariantId: "var-western-001-s", quantity: 200, unitPrice: 310 }],
+        };
+      }
+
+      return {
+        items: [
+          {
+            id: "ord-001",
+            status: "created",
+            totalAmount: 62000,
+            items: [{ productVariantId: "var-western-001-s", quantity: 200, unitPrice: 310 }],
+          },
+        ],
+      };
+    }
+
+    if (path === "/v1/orders/ord-001") {
       return {
         id: "ord-001",
         status: "created",
         totalAmount: 62000,
         items: [{ productVariantId: "var-western-001-s", quantity: 200, unitPrice: 310 }],
+      };
+    }
+
+    if (path === "/v1/orders/ord-001/refunds") {
+      return {
+        items: [{ id: "refund-001", orderId: "ord-001", buyerId: "buyer-001", status: "approved", decisionType: "store_credit" }],
       };
     }
 
@@ -134,4 +162,5 @@ describe("US1 buyer mobile flow", () => {
     assert.equal(order.totalAmount, 62000);
     assert.deepEqual(analytics.events.map((event) => event.name), ["order_quantity_rejected", "order_submitted"]);
   });
+
 });

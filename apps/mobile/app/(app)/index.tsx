@@ -12,11 +12,12 @@ const FALLBACK_IMAGE = "https://image.pollinations.ai/prompt/minimal%20fashion%2
 
 export default function CatalogScreen() {
   const router = useRouter();
-  const { api, catalog, sessionStore } = useBuyerApp();
+  const { api, catalog, notifications, sessionStore } = useBuyerApp();
   const session = useSessionSnapshot();
   const [products, setProducts] = useState<ProductCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notificationStatus, setNotificationStatus] = useState("");
 
   useEffect(() => {
     if (session.status === "anonymous") {
@@ -62,7 +63,32 @@ export default function CatalogScreen() {
             <Text style={styles.tileValue}>{session.language}</Text>
           </Pressable>
         </Link>
+        <Link href="/(app)/orders" asChild>
+          <Pressable style={styles.tile}>
+            <Text style={styles.tileLabel}>Orders</Text>
+            <Text style={styles.tileValue}>History</Text>
+          </Pressable>
+        </Link>
         <ActionButton label="Refresh" variant="secondary" onPress={() => router.replace("/(app)")} />
+      </View>
+
+      <View style={styles.notice}>
+        <View style={styles.noticeCopy}>
+          <Text style={styles.noticeTitle}>Arrival alerts</Text>
+          <Text style={styles.noticeText}>Get conversion-focused new-arrival prompts only when device notifications are ready.</Text>
+          {notificationStatus && <Text style={styles.noticeStatus}>{notificationStatus}</Text>}
+        </View>
+        <ActionButton
+          label="Check"
+          variant="secondary"
+          onPress={() => {
+            setNotificationStatus("Checking notification readiness...");
+            notifications
+              .getReadiness()
+              .then((readiness) => setNotificationStatus(readiness.ready ? "Ready for relevant alerts." : readiness.reason.replace("_", " ")))
+              .catch(() => setNotificationStatus("Unable to check right now."));
+          }}
+        />
       </View>
 
       {loading && <Text style={styles.muted}>Loading products...</Text>}
@@ -116,6 +142,35 @@ const styles = StyleSheet.create({
   },
   grid: {
     gap: 16,
+  },
+  notice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 1,
+    borderColor: mobileTheme.line,
+    borderRadius: 22,
+    backgroundColor: "#fff7ed",
+    padding: 14,
+  },
+  noticeCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  noticeTitle: {
+    color: mobileTheme.ink,
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  noticeText: {
+    color: mobileTheme.muted,
+    fontSize: 13,
+  },
+  noticeStatus: {
+    color: mobileTheme.primary,
+    fontSize: 13,
+    fontWeight: "800",
+    textTransform: "capitalize",
   },
   productCard: {
     overflow: "hidden",

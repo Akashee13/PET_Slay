@@ -1,6 +1,6 @@
 import type { CreateOrderRequest, Order } from "@pet-slay/types";
 
-import type { BuyerApiClient } from "../../services/buyer-api";
+import type { BuyerApiClient, RefundDecision } from "../../services/buyer-api";
 import type { Analytics } from "../../services/analytics";
 
 export type SubmitOrderInput = {
@@ -11,12 +11,24 @@ export type SubmitOrderInput = {
 };
 
 export type OrderController = {
+  loadOrderDetail: (orderId: string) => Promise<Order>;
+  loadOrderHistory: () => Promise<Order[]>;
+  loadRefunds: (orderId: string) => Promise<RefundDecision[]>;
   submitOrder: (input: SubmitOrderInput) => Promise<Order>;
   validateWholesaleQuantity: (input: { quantity: number; moq: number }) => void;
 };
 
 export function createOrderController(options: { api: BuyerApiClient; analytics?: Analytics }): OrderController {
   return {
+    loadOrderDetail(orderId) {
+      return options.api.getOrderDetail(orderId);
+    },
+    loadOrderHistory() {
+      return options.api.listOrders();
+    },
+    loadRefunds(orderId) {
+      return options.api.listRefunds(orderId);
+    },
     async submitOrder(input) {
       const payload: CreateOrderRequest = {
         items: [{ productVariantId: input.productVariantId, quantity: input.quantity }],

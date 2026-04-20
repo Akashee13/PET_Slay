@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -22,6 +22,7 @@ export default function CheckoutScreen() {
   const [city, setCity] = useState("Delhi");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  const [createdOrderId, setCreatedOrderId] = useState("");
 
   async function submitOrder() {
     const nextQuantity = Number(quantity);
@@ -34,6 +35,7 @@ export default function CheckoutScreen() {
         quantity: nextQuantity,
         shippingAddress: { city },
       });
+      setCreatedOrderId(order.id);
       setMessage(`Order ${order.id} created. Status: ${order.status}`);
     } catch (requestError) {
       setMessage(requestError instanceof Error && requestError.message === "quantity_below_moq"
@@ -64,6 +66,11 @@ export default function CheckoutScreen() {
       </View>
 
       {message && <Text style={message.startsWith("Order") ? styles.success : styles.error}>{message}</Text>}
+      {createdOrderId && (
+        <Link href={`/(app)/orders/${createdOrderId}`} asChild>
+          <ActionButton label="View order and refund status" variant="secondary" />
+        </Link>
+      )}
       <ActionButton disabled={submitting || !params.variantId} label={submitting ? "Placing order..." : "Place wholesale order"} onPress={() => void submitOrder()} />
       <ActionButton label="Back to catalog" variant="secondary" onPress={() => router.replace("/(app)")} />
     </Screen>
