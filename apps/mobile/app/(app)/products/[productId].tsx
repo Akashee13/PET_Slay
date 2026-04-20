@@ -6,6 +6,7 @@ import type { ProductDetail } from "@pet-slay/types";
 import { ActionButton } from "../../../src/components/ActionButton";
 import { mobileTheme, Screen } from "../../../src/components/Screen";
 import { getPrimaryProductImage } from "../../../src/features/catalog/product-images";
+import { mobileCopy } from "../../../src/i18n";
 import { useBuyerApp, useSessionSnapshot } from "../../../src/state/buyer-app-context";
 
 export default function ProductDetailScreen() {
@@ -31,12 +32,12 @@ export default function ProductDetailScreen() {
   }, [catalog, productId, session.language]);
 
   if (loading) {
-    return <Screen title="Loading product" subtitle="Fetching the latest availability and MOQ." />;
+    return <Screen title={mobileCopy(session.language, "loadingProduct")} subtitle={mobileCopy(session.language, "loadingProductSubtitle")} />;
   }
 
   if (error || !product) {
     return (
-      <Screen title="Product unavailable" subtitle="This item may be unlisted or temporarily unavailable.">
+      <Screen title={mobileCopy(session.language, "productUnavailable")} subtitle={mobileCopy(session.language, "productUnavailableSubtitle")}>
         <Text style={styles.error}>{error || "product_not_found"}</Text>
       </Screen>
     );
@@ -45,22 +46,22 @@ export default function ProductDetailScreen() {
   const primaryVariant = product.variants[0];
 
   return (
-    <Screen eyebrow={product.category.replace("_", " ")} title={product.title} subtitle={product.description || "Review MOQ, availability, and variant before checkout."}>
+    <Screen eyebrow={product.category.replace("_", " ")} title={product.title} subtitle={product.description || mobileCopy(session.language, "productDetailFallbackSubtitle")}>
       <Image source={{ uri: getPrimaryProductImage(product) }} style={styles.heroImage} />
       <View style={styles.priceCard}>
-        <Text style={styles.price}>₹{product.baseWholesalePrice} wholesale</Text>
+        <Text style={styles.price}>₹{product.baseWholesalePrice} {mobileCopy(session.language, "wholesalePriceSuffix")}</Text>
         <Text style={styles.meta}>MOQ {product.moq} · {product.availabilityStatus.replace("_", " ")}</Text>
       </View>
 
       <View style={styles.variantCard}>
-        <Text style={styles.sectionTitle}>Available variant</Text>
+        <Text style={styles.sectionTitle}>{mobileCopy(session.language, "availableVariant")}</Text>
         {primaryVariant ? (
           <Text style={styles.meta}>
             {primaryVariant.sizeLabel}
             {primaryVariant.colorLabel ? ` · ${primaryVariant.colorLabel}` : ""} · {primaryVariant.availabilityStatus.replace("_", " ")}
           </Text>
         ) : (
-          <Text style={styles.error}>No variant available for ordering yet.</Text>
+          <Text style={styles.error}>{mobileCopy(session.language, "noVariantAvailable")}</Text>
         )}
       </View>
 
@@ -78,7 +79,7 @@ export default function ProductDetailScreen() {
           }}
           asChild
         >
-          <ActionButton label="Start wholesale order" />
+          <ActionButton label={mobileCopy(session.language, "startWholesaleOrder")} />
         </Link>
       )}
     </Screen>

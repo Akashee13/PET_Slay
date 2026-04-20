@@ -191,6 +191,8 @@ describe("US1 buyer mobile flow", () => {
     assert.equal(translationResources.english.viewOrderRefundStatus, "View order and refund status");
     assert.equal(translationResources.hindi.placeWholesaleOrder, "Wholesale order place karein");
     assert.equal(translationResources.hinglish.arrivalAlertsBody, "Sirf relevant new-arrival prompts milenge jab device notifications ready honge.");
+    assert.equal(translationResources.hindi.authTitle, "PET_Slay ke saath jaldi restock karein");
+    assert.equal(translationResources.hinglish.startWholesaleOrder, "Wholesale order start karo");
   });
 
   it("submits a valid wholesale order and blocks quantities below MOQ", async () => {

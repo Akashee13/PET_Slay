@@ -5,6 +5,7 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 import { ActionButton } from "../../src/components/ActionButton";
 import { mobileTheme, Screen } from "../../src/components/Screen";
 import { createSocialAuthOptions } from "../../src/features/auth/social-auth-controller";
+import { mobileCopy } from "../../src/i18n";
 import { getMobileSupabaseConfig } from "../../src/services/supabase";
 import { useBuyerApp, useSessionSnapshot } from "../../src/state/buyer-app-context";
 import { getDefaultBuyerToken } from "../../src/state/session-store";
@@ -32,24 +33,24 @@ export default function AuthScreen() {
 
   return (
     <Screen
-      eyebrow="Wholesale buyer access"
-      title="Restock faster with PET_Slay"
-      subtitle="Sign in to browse fresh women’s wear, save your preferred language, and place wholesale orders with MOQ clarity."
+      eyebrow={mobileCopy(session.language, "authEyebrow")}
+      title={mobileCopy(session.language, "authTitle")}
+      subtitle={mobileCopy(session.language, "authSubtitle")}
     >
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Founder/dev access</Text>
-        <Text style={styles.cardCopy}>Paste a buyer bearer token, or use the local demo token while backend auth is being hardened.</Text>
+        <Text style={styles.cardTitle}>{mobileCopy(session.language, "founderAccess")}</Text>
+        <Text style={styles.cardCopy}>{mobileCopy(session.language, "founderAccessBody")}</Text>
         <TextInput
           autoCapitalize="none"
           onChangeText={setToken}
-          placeholder="Buyer bearer token"
+          placeholder={mobileCopy(session.language, "buyerBearerToken")}
           placeholderTextColor="#9b8a7a"
           style={styles.input}
           value={token}
         />
         <ActionButton
           disabled={session.status === "authenticating" || token.trim().length === 0}
-          label={session.status === "authenticating" ? "Checking session..." : "Continue to catalog"}
+          label={session.status === "authenticating" ? mobileCopy(session.language, "checkingSession") : mobileCopy(session.language, "continueToCatalog")}
           onPress={() => void continueWithToken(token)}
         />
         {session.status === "error" && <Text style={styles.error}>{session.error}</Text>}
@@ -59,7 +60,7 @@ export default function AuthScreen() {
         {socialOptions.map((option) => (
           <View key={option.provider} style={styles.providerCard}>
             <ActionButton label={option.enabled ? option.label : `${option.label} soon`} variant="secondary" disabled={!option.enabled} />
-            {option.setupHint && <Text style={styles.providerHint}>{option.setupHint}</Text>}
+            {option.setupHint && <Text style={styles.providerHint}>{mobileCopy(session.language, "socialSetupPending")}</Text>}
           </View>
         ))}
       </View>

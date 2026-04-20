@@ -34,7 +34,7 @@ export default function OrderDetailScreen() {
   }, [orderId, orders]);
 
   return (
-    <Screen eyebrow={mobileCopy(session.language, "orderDetail")} title={orderId || "Order"} subtitle="Refunds default to store credit unless admin approves a source-payment exception.">
+    <Screen eyebrow={mobileCopy(session.language, "orderDetail")} title={orderId || mobileCopy(session.language, "order")} subtitle={mobileCopy(session.language, "refundPolicySubtitle")}>
       {loading && <Text style={styles.muted}>{mobileCopy(session.language, "loadingOrder")}</Text>}
       {error && <Text style={styles.error}>{error}</Text>}
       {order && (
