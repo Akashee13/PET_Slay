@@ -91,6 +91,7 @@
 - Started `T052` API role-boundary hardening:
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/auth/static_verifier.go` now rejects static dev tokens outside local/dev/test unless `ALLOW_DEV_TOKENS=true`.
   - `STAGE_ADMIN_BEARER_TOKEN` remains supported for current stage admin operations.
+  - `FOUNDER_ADMIN_BEARER_TOKEN` is supported as a stable founder-only admin token for stage/prod-like environments until Supabase admin auth is wired.
   - Tests added in `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/internal/auth/static_verifier_test.go`.
 - Added product listing lifecycle:
   - migration `/Users/akash/Documents/PetProjects/PET_Slay/apps/api/db/migrations/0003_product_listing_lifecycle.sql`

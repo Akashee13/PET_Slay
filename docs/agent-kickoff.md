@@ -107,6 +107,7 @@
 - Started `T052` security hardening:
   - `dev-buyer-token` and `dev-admin-token` are now local/test-only.
   - Stage/prod can still use `STAGE_ADMIN_BEARER_TOKEN` until Supabase admin auth is wired.
+  - Stage also supports `FOUNDER_ADMIN_BEARER_TOKEN` as a stable founder-only admin access token until proper admin auth is wired.
 - Added product listing lifecycle and admin table UX:
   - Products default to `listed` with a 60-day `visibleUntil` window.
   - Buyer catalog hides unlisted or expired products.
