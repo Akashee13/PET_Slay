@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "PET_Slay",
+    "slug": "pet-slay-reseller",
+    "scheme": "petslay",
+    "platforms": ["ios", "android"],
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#fff7ed"
+      }
+    },
+    "plugins": ["expo-router"]
+  }
+}

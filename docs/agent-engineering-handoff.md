@@ -123,12 +123,19 @@
   - `T050`
 - Completed in admin UI:
   - `T036`
+- Completed in mobile US1:
+  - `T019`
+  - `T024`
+  - `T025`
+  - `T026`
+  - `T027`
 - Started, not complete:
   - `T052`
 - Still open and most immediate:
   - `T066` validate migration job + readiness in live stage environment and finalize DB activation
 - Remaining API-app implementation tasks (from `tasks.md`): `T028`, `T038`, `T052`, `T053` (and `T066` for stage ops completion)
-- Most mobile/admin UI tasks remain open in Phases 3-5.
+- Mobile US1 now has a demoable buyer journey; remaining mobile work is mainly analytics, auth hardening, notification/refund visibility, and richer localization.
+- Most admin UI tasks remain open in Phases 3-5.
 - Admin web now has a minimal operational slice implemented and build-verified for stage usage:
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/page.tsx`
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/layout.tsx`
@@ -179,6 +186,13 @@
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/products/page.tsx` has a default-checked list-immediately checkbox.
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/listed-products/page.tsx` now shows one contextual list/unlist button and an edit-product tile.
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/products/[productId]/page.tsx` is now edit-only; listing controls stay centralized on PLP.
+- Mobile US1 buyer flow is now implemented as the first real React Native slice:
+  - TDD test: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/tests/us1-buyer-flow.spec.ts`
+  - session store/context: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/state/session-store.ts`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/state/buyer-app-context.tsx`
+  - API/client controllers: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/services/buyer-api.ts`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/catalog/catalog-controller.ts`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/language/language-controller.ts`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/orders/order-controller.ts`
+  - Expo routes: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(auth)/index.tsx`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/index.tsx`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/language.tsx`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/products/[productId].tsx`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/checkout.tsx`
+  - Expo config: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app.json` limits platforms to iOS/Android, matching product direction.
+  - `react-native-screens@~4.11.1` and `react-native-safe-area-context@5.4.0` are direct mobile dependencies because Expo SDK 53 export failed with the newer transitive `react-native-screens`.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
@@ -190,18 +204,19 @@
 - Initial SQL file (`0001_initial_schema.sql`) is still not internally idempotent, but reruns are now guarded by `schema_migrations` tracking.
 - Admin `npm run lint` currently cannot run locally because `eslint` is not listed in `apps/admin/package.json` devDependencies.
 - Admin `npm test` currently runs a placeholder command only; add real UI/component tests for file selection and PLP galleries.
-- Mobile workspace-wide typecheck currently fails on pre-existing issues in `apps/mobile/src/i18n/index.ts` and `apps/mobile/src/services/supabase.ts`; the new `apps/mobile/src/services/notifications.ts` file typechecks in isolation.
+- Mobile typecheck and Expo iOS/Android export now pass for the current buyer-flow slice.
 - Admin UI currently uses manual bearer token entry (no Supabase auth wiring yet) to accelerate stage operations.
 - Supabase Storage bucket/policy migration exists for default bucket `product-images`; continue to smoke test uploads after each admin/API deploy.
 
 ## Best Next Technical Path
 
-1. Validate admin product create with list-immediately checked and unchecked on stage.
-2. Validate `/listed-products` contextual list/unlist and edit tile actions on stage.
-3. Create shared localization dictionaries for English, Hindi, and Hinglish UI labels before adding any runtime translation dependency.
-4. Add real admin UI/component tests for image file selection, loading overlays,
+1. Smoke test the Expo buyer flow against a working buyer token: auth -> language -> PLP -> PDP -> checkout.
+2. Replace the manual/dev token mobile auth gate with Supabase Google/Facebook/Instagram-ready auth once provider setup is ready.
+3. Expand mobile localization resources so every screen has English, Hindi, and Hinglish copy.
+4. Create shared localization dictionaries for English, Hindi, and Hinglish UI labels before adding any runtime translation dependency.
+5. Add real admin UI/component tests for image file selection, loading overlays,
    disabled duplicate actions, and gallery rendering.
-5. Continue API hardening tasks in order: `T052` (security/role boundary hardening), `T053` (catalog payload optimization).
+6. Continue API hardening tasks in order: `T052` (security/role boundary hardening), `T053` (catalog payload optimization).
 
 ## Working Style
 

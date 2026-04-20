@@ -133,14 +133,19 @@
   - admins can uncheck it to create an unlisted product and list it later from PLP.
   - PLP cards show one contextual list/unlist button instead of two competing actions.
   - "Patch product" is now an "Edit product" tile-style action.
+- Advanced React Native buyer MVP development:
+  - added US1 mobile buyer-flow tests for session bootstrap, language preference, catalog browse/detail, and order submission.
+  - implemented Expo routes for auth token entry, reseller PLP, language selection, product detail, and checkout.
+  - added mobile buyer API client, session store, catalog/language/order controllers, and shared screen/button components.
+  - pinned Expo SDK-compatible `react-native-screens` and `react-native-safe-area-context` so iOS/Android export succeeds.
 
 ## Next Recommended Work
 
-1. Smoke test admin product create with the list-immediately checkbox checked and unchecked on `https://pet-slay-admin-stage-j67sekma7a-el.a.run.app`.
-2. Smoke test contextual list/unlist and edit tile actions on `/listed-products`.
-3. Add `packages/i18n` or equivalent shared dictionaries for English, Hindi, and Hinglish UI labels before wiring any external translation provider.
-4. Add real admin UI tests for file selection, loading overlays, disabled duplicate actions, and PLP image rendering; current admin `npm test` is only a placeholder.
-5. Continue `T052` across admin/mobile auth boundaries, then move to `T053` payload/image/deep-link optimization.
+1. Run the Expo app locally against a working buyer token and smoke test auth -> language -> PLP -> PDP -> checkout.
+2. Replace dev/manual buyer token entry with Supabase social auth once provider setup is ready.
+3. Expand mobile UI localization strings beyond the first catalog headline and wire Hindi/Hinglish copy across every mobile screen.
+4. Continue `T028` buyer analytics/error logging and `T052` auth/role-boundary hardening.
+5. Add real admin UI tests for file selection, loading overlays, disabled duplicate actions, and PLP image rendering; current admin `npm test` is only a placeholder.
 
 ## Milestone Refresh Rule
 

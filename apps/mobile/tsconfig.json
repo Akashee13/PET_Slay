@@ -2,7 +2,12 @@
   "extends": "../../packages/config/tsconfig.base.json",
   "compilerOptions": {
     "jsx": "react-jsx",
-    "types": ["react", "react-native"]
+    "types": ["react", "react-native"],
+    "baseUrl": "../..",
+    "paths": {
+      "@pet-slay/design-tokens": ["packages/design-tokens/src/index.ts"],
+      "@pet-slay/types": ["packages/types/src/index.ts"]
+    }
   },
   "include": ["app", "src"]
 }

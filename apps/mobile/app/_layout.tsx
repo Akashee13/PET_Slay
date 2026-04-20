@@ -1,5 +1,11 @@
 import { Stack } from "expo-router";
 
+import { BuyerAppProvider } from "../src/state/buyer-app-context";
+
 export default function RootLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <BuyerAppProvider>
+      <Stack screenOptions={{ headerShown: false }} />
+    </BuyerAppProvider>
+  );
 }
