@@ -167,7 +167,12 @@
   - gallery helper copy has been removed; images advance by timed slide index with a short eased transition instead of a slow marquee pull.
 - Localization provider guidance is captured in:
   - `/Users/akash/Documents/PetProjects/PET_Slay/docs/localization-provider-options.md`
-  - use static dictionaries for UI labels; use external translation APIs only for cached, admin-reviewed dynamic product/campaign copy.
+  - use static dictionaries for UI labels; use Google Cloud Translation only for cached, admin-reviewed dynamic product/campaign copy.
+  - GCP is preferred over low-call free providers because it keeps billing/quotas in one cloud account and has high default throughput.
+- Admin theme/responsiveness fixes:
+  - `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/globals.css` now gives dusk mode proper dark surfaces, tile backgrounds, and contrast instead of light topbar cards with light text.
+  - hidden file inputs use clipped visually-hidden styling instead of `left: -9999px`, which was a likely cause of mobile horizontal page scroll after selecting/submitting images.
+  - product response `<pre>` payloads and file chips wrap safely to prevent URL/filename overflow on mobile.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
@@ -186,7 +191,7 @@
 ## Best Next Technical Path
 
 1. Validate admin product persistence and multi-image upload end-to-end on stage.
-2. Validate `/listed-products` PLP carousel, list/unlist, and patch actions on stage.
+2. Validate `/products` mobile post-submit layout and dusk mode contrast on stage.
 3. Create shared localization dictionaries for English, Hindi, and Hinglish UI labels before adding any runtime translation dependency.
 4. Add real admin UI/component tests for image file selection, loading overlays,
    disabled duplicate actions, and gallery rendering.
