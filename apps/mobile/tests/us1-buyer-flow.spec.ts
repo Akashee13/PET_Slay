@@ -148,6 +148,11 @@ describe("US1 buyer mobile flow", () => {
     assert.equal(updated.preferredLanguage, "hinglish" satisfies Language);
     assert.equal(sessionStore.getSnapshot().language, "hinglish");
     assert.equal(calls[1].path, "/v1/buyers/preferences/language");
+
+    sessionStore.signOut();
+    assert.equal(sessionStore.getSnapshot().status, "anonymous");
+    assert.equal(sessionStore.getSnapshot().token, null);
+    assert.equal(sessionStore.getSnapshot().language, "hinglish");
   });
 
   it("prepares provider-ready social auth options without enabling unfinished OAuth", () => {

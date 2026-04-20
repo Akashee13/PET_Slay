@@ -227,6 +227,9 @@
 - Mobile OAuth callback scaffold:
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(auth)/callback.tsx` extracts callback tokens and bootstraps the buyer session.
   - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/auth/social-auth-controller.ts` includes callback token extraction tests.
+- Mobile buyer sign-out:
+  - catalog toolbar calls `sessionStore.signOut()` and returns to `/(auth)`.
+  - tests assert sign-out clears token/user and preserves language preference.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`

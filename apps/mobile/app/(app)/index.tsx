@@ -69,6 +69,14 @@ export default function CatalogScreen() {
           </Pressable>
         </Link>
         <ActionButton label={mobileCopy(session.language, "refreshCatalog")} variant="secondary" onPress={() => router.replace("/(app)")} />
+        <ActionButton
+          label={mobileCopy(session.language, "signOut")}
+          variant="secondary"
+          onPress={() => {
+            sessionStore.signOut();
+            router.replace("/(auth)");
+          }}
+        />
       </View>
 
       <View style={styles.notice}>
@@ -116,6 +124,7 @@ export default function CatalogScreen() {
 const styles = StyleSheet.create({
   toolbar: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   tile: {

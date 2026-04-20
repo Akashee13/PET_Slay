@@ -166,6 +166,9 @@
 - Added mobile OAuth callback scaffold:
   - route `/auth/callback` can extract a bearer token from query/hash callback payloads and bootstrap the buyer session.
   - callback copy is localized across English/Hindi/Hinglish.
+- Added mobile buyer sign-out:
+  - catalog toolbar now includes localized sign-out and returns to the auth screen.
+  - session sign-out clears token/user while preserving the selected language.
 
 ## Next Recommended Work
 
