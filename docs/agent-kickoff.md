@@ -116,6 +116,7 @@
   - Authenticated admin landing page defaults to `/listed-products`.
   - Listed-products page uses a PLP-style card grid inspired by lightweight fashion collection pages.
   - Product upload controls now accumulate multiple selected image files, support remove-before-submit chips, and keep the 5-image product cap.
+  - Product creation requires at least one device-uploaded image; manual image URL fields are hidden from admin forms for now.
   - Listed product cards show multiple product images in a horizontal, swipeable, auto-scrolling gallery.
 
 ## Next Recommended Work

@@ -156,6 +156,7 @@
   - shared helper: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/src/features/products/file-selection.ts`
   - create/update form: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/products/page.tsx`
   - product detail patch form: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/products/[productId]/page.tsx`
+  - create product now requires at least one device-uploaded image, hides manual image URL fields for operators, and shows custom selected-file count/chips instead of native file-input text.
 - Admin listed-products PLP now renders multiple images per product in a horizontal, swipeable, auto-scrolling gallery:
   - page: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/(protected)/listed-products/page.tsx`
   - styles: `/Users/akash/Documents/PetProjects/PET_Slay/apps/admin/app/globals.css`

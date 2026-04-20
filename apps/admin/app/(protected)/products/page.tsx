@@ -152,6 +152,11 @@ export default function ProductsPage() {
       const manualImageUrls = normalizeImageUrls(createForm.imageUrls);
       const filesToUpload = createUploadFiles.slice(0, 5);
 
+      if (filesToUpload.length === 0) {
+        setError("Upload at least 1 product image from device before creating a product.");
+        return;
+      }
+
       if (manualImageUrls.length+ filesToUpload.length > 5) {
         setError("You can attach maximum 5 images per product.");
         return;
@@ -277,6 +282,41 @@ export default function ProductsPage() {
             <input id="create-category" placeholder="Category (western/south_asian etc.)" value={createForm.category} onChange={(event) => setCreateForm((current) => ({ ...current, category: event.target.value }))} required />
             <label htmlFor="create-description">Description</label>
             <textarea id="create-description" placeholder="Description" value={createForm.description} onChange={(event) => setCreateForm((current) => ({ ...current, description: event.target.value }))} />
+            <div className="file-picker-card">
+              <div>
+                <label htmlFor="create-image-files">Product images from device <span className="required-mark">*</span></label>
+                <p className="file-help">Upload at least 1 image. Select up to 5 images at once, or choose again to add more.</p>
+              </div>
+              <input
+                id="create-image-files"
+                className="native-file-input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                multiple
+                onChange={(event) => {
+                  setCreateUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
+                  event.currentTarget.value = "";
+                }}
+              />
+              <label className="file-picker-button" htmlFor="create-image-files">
+                Choose product images
+              </label>
+              <strong className="file-selection-summary">
+                {createUploadFiles.length > 0 ? `${createUploadFiles.length} image${createUploadFiles.length === 1 ? "" : "s"} selected` : "No images selected yet"}
+              </strong>
+              {createUploadFiles.length > 0 && (
+                <div className="file-chip-row" aria-live="polite">
+                  {createUploadFiles.map((file, index) => (
+                    <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
+                      {file.name}
+                      <button type="button" onClick={() => setCreateUploadFiles((current) => removeSelectedProductImage(current, index))}>
+                        Remove
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
             <label htmlFor="create-base-price">Base wholesale price</label>
             <input id="create-base-price" placeholder="Base wholesale price" type="number" step="0.01" value={createForm.baseWholesalePrice} onChange={(event) => setCreateForm((current) => ({ ...current, baseWholesalePrice: event.target.value }))} required />
             <label htmlFor="create-moq">MOQ</label>
@@ -284,64 +324,6 @@ export default function ProductsPage() {
             <label htmlFor="create-status">Availability status</label>
             <input id="create-status" placeholder="Availability status" value={createForm.availabilityStatus} onChange={(event) => setCreateForm((current) => ({ ...current, availabilityStatus: event.target.value }))} />
 
-            <label>Product image URLs (1 to 5)</label>
-            {createForm.imageUrls.map((imageUrl, index) => (
-              <div className="row" key={`create-image-${index}`}>
-                <input
-                  placeholder={`Image URL ${index + 1}`}
-                  value={imageUrl}
-                  onChange={(event) =>
-                    setCreateForm((current) => ({
-                      ...current,
-                      imageUrls: setImageAt(current.imageUrls, index, event.target.value),
-                    }))
-                  }
-                />
-                {createForm.imageUrls.length > 1 && (
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() =>
-                      setCreateForm((current) => ({
-                        ...current,
-                        imageUrls: removeImageField(current.imageUrls, index),
-                      }))
-                    }
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            ))}
-            {createForm.imageUrls.length < 5 && (
-              <button type="button" className="secondary" onClick={() => setCreateForm((current) => ({ ...current, imageUrls: addImageField(current.imageUrls) }))}>
-                Add another image
-              </button>
-            )}
-            <label htmlFor="create-image-files">Upload images from device</label>
-            <input
-              id="create-image-files"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              multiple
-              onChange={(event) => {
-                setCreateUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
-                event.currentTarget.value = "";
-              }}
-            />
-            <p className="file-help">Select up to 5 images at once, or choose again to add more before creating the product.</p>
-            {createUploadFiles.length > 0 && (
-              <div className="file-chip-row" aria-live="polite">
-                {createUploadFiles.map((file, index) => (
-                  <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
-                    {file.name}
-                    <button type="button" onClick={() => setCreateUploadFiles((current) => removeSelectedProductImage(current, index))}>
-                      Remove
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
             {!isAdminSupabaseConfigured() && <p className="error">Image upload needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.</p>}
             <button type="submit">Create Product</button>
           </form>
@@ -366,64 +348,41 @@ export default function ProductsPage() {
             <label htmlFor="update-arrival">isNewArrival true|false (optional)</label>
             <input id="update-arrival" placeholder="isNewArrival true|false (optional)" value={updateForm.isNewArrival} onChange={(event) => setUpdateForm((current) => ({ ...current, isNewArrival: event.target.value }))} />
 
-            <label>Replace image URLs (up to 5)</label>
-            {updateForm.imageUrls.map((imageUrl, index) => (
-              <div className="row" key={`update-image-${index}`}>
-                <input
-                  placeholder={`Image URL ${index + 1}`}
-                  value={imageUrl}
-                  onChange={(event) =>
-                    setUpdateForm((current) => ({
-                      ...current,
-                      imageUrls: setImageAt(current.imageUrls, index, event.target.value),
-                    }))
-                  }
-                />
-                {updateForm.imageUrls.length > 1 && (
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() =>
-                      setUpdateForm((current) => ({
-                        ...current,
-                        imageUrls: removeImageField(current.imageUrls, index),
-                      }))
-                    }
-                  >
-                    Remove
-                  </button>
-                )}
+            <div className="file-picker-card">
+              <div>
+                <label htmlFor="update-image-files">Replace images from device</label>
+                <p className="file-help">Optional for patching. Select up to 5 images at once, or choose again to add more.</p>
               </div>
-            ))}
-            {updateForm.imageUrls.length < 5 && (
-              <button type="button" className="secondary" onClick={() => setUpdateForm((current) => ({ ...current, imageUrls: addImageField(current.imageUrls) }))}>
-                Add another image
-              </button>
-            )}
-            <label htmlFor="update-image-files">Upload images from device</label>
-            <input
-              id="update-image-files"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-              multiple
-              onChange={(event) => {
-                setUpdateUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
-                event.currentTarget.value = "";
-              }}
-            />
-            <p className="file-help">Select up to 5 images at once, or choose again to add more before patching the product.</p>
-            {updateUploadFiles.length > 0 && (
-              <div className="file-chip-row" aria-live="polite">
-                {updateUploadFiles.map((file, index) => (
-                  <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
-                    {file.name}
-                    <button type="button" onClick={() => setUpdateUploadFiles((current) => removeSelectedProductImage(current, index))}>
-                      Remove
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
+              <input
+                id="update-image-files"
+                className="native-file-input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                multiple
+                onChange={(event) => {
+                  setUpdateUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
+                  event.currentTarget.value = "";
+                }}
+              />
+              <label className="file-picker-button" htmlFor="update-image-files">
+                Choose replacement images
+              </label>
+              <strong className="file-selection-summary">
+                {updateUploadFiles.length > 0 ? `${updateUploadFiles.length} image${updateUploadFiles.length === 1 ? "" : "s"} selected` : "No replacement images selected"}
+              </strong>
+              {updateUploadFiles.length > 0 && (
+                <div className="file-chip-row" aria-live="polite">
+                  {updateUploadFiles.map((file, index) => (
+                    <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
+                      {file.name}
+                      <button type="button" onClick={() => setUpdateUploadFiles((current) => removeSelectedProductImage(current, index))}>
+                        Remove
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
             <button type="submit">Update Product</button>
           </form>
           {updateForm.productId && (

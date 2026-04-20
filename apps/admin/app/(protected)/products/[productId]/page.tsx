@@ -136,32 +136,41 @@ export default function ProductDetailPage() {
           <input id="detail-status" placeholder="Availability status (optional)" value={availabilityStatus} onChange={(event) => setAvailabilityStatus(event.target.value)} />
           <label htmlFor="detail-arrival">isNewArrival true|false (optional)</label>
           <input id="detail-arrival" placeholder="isNewArrival true|false (optional)" value={isNewArrival} onChange={(event) => setIsNewArrival(event.target.value)} />
-          <label htmlFor="detail-images">Image URLs (one per line, max 5)</label>
-          <textarea id="detail-images" placeholder="https://cdn.example.com/look-1.jpg" value={imageUrlsText} onChange={(event) => setImageUrlsText(event.target.value)} rows={5} />
-          <label htmlFor="detail-image-files">Upload images from device</label>
-          <input
-            id="detail-image-files"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            multiple
-            onChange={(event) => {
-              setUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
-              event.currentTarget.value = "";
-            }}
-          />
-          <p className="file-help">Select up to 5 images at once, or choose again to add more before patching this product.</p>
-          {uploadFiles.length > 0 && (
-            <div className="file-chip-row" aria-live="polite">
-              {uploadFiles.map((file, index) => (
-                <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
-                  {file.name}
-                  <button type="button" onClick={() => setUploadFiles((current) => removeSelectedProductImage(current, index))}>
-                    Remove
-                  </button>
-                </span>
-              ))}
+          <div className="file-picker-card">
+            <div>
+              <label htmlFor="detail-image-files">Replace images from device</label>
+              <p className="file-help">Optional for patching. Select up to 5 images at once, or choose again to add more.</p>
             </div>
-          )}
+            <input
+              id="detail-image-files"
+              className="native-file-input"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              multiple
+              onChange={(event) => {
+                setUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
+                event.currentTarget.value = "";
+              }}
+            />
+            <label className="file-picker-button" htmlFor="detail-image-files">
+              Choose replacement images
+            </label>
+            <strong className="file-selection-summary">
+              {uploadFiles.length > 0 ? `${uploadFiles.length} image${uploadFiles.length === 1 ? "" : "s"} selected` : "No replacement images selected"}
+            </strong>
+            {uploadFiles.length > 0 && (
+              <div className="file-chip-row" aria-live="polite">
+                {uploadFiles.map((file, index) => (
+                  <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
+                    {file.name}
+                    <button type="button" onClick={() => setUploadFiles((current) => removeSelectedProductImage(current, index))}>
+                      Remove
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
           {!isAdminSupabaseConfigured() && <p className="error">Image upload needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.</p>}
           <button type="submit">Patch Product</button>
         </form>

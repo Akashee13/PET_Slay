@@ -458,10 +458,61 @@ html[data-theme="dusk"] .ai-card img {
   font-size: 0.94rem;
 }
 
+.file-picker-card {
+  display: grid;
+  gap: 10px;
+  border: 1px dashed #d6b990;
+  border-radius: 16px;
+  background: rgba(255, 250, 242, 0.7);
+  padding: 14px;
+}
+
+html[data-theme="dusk"] .file-picker-card {
+  border-color: #334155;
+  background: rgba(17, 24, 39, 0.72);
+}
+
+.native-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.file-picker-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: fit-content;
+  min-height: 42px;
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  background: var(--primary);
+  color: white;
+  padding: 9px 16px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.file-picker-button:hover {
+  background: var(--primary-strong);
+}
+
+.file-selection-summary {
+  color: var(--primary-strong);
+  font-size: 0.9rem;
+}
+
 .file-help {
   margin: -2px 0 0;
   color: var(--text-muted);
   font-size: 0.86rem;
+}
+
+.required-mark {
+  color: var(--danger);
 }
 
 .file-chip-row {
