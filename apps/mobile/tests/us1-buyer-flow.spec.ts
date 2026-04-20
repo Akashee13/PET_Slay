@@ -10,6 +10,7 @@ import { createLanguageController } from "../src/features/language/language-cont
 import { createOrderController } from "../src/features/orders/order-controller.ts";
 import { createRecordingAnalytics } from "../src/services/analytics.ts";
 import { createSessionStore } from "../src/state/session-store.ts";
+import { translationResources } from "../../../packages/design-tokens/src/i18n/resources.ts";
 
 function createTransport(): { transport: ApiTransport; calls: Array<{ path: string; init: RequestInit }> } {
   const calls: Array<{ path: string; init: RequestInit }> = [];
@@ -171,6 +172,12 @@ describe("US1 buyer mobile flow", () => {
       }),
       [FALLBACK_PRODUCT_IMAGE],
     );
+  });
+
+  it("has buyer operations copy for English, Hindi, and Hinglish", () => {
+    assert.equal(translationResources.english.viewOrderRefundStatus, "View order and refund status");
+    assert.equal(translationResources.hindi.placeWholesaleOrder, "Wholesale order place karein");
+    assert.equal(translationResources.hinglish.arrivalAlertsBody, "Sirf relevant new-arrival prompts milenge jab device notifications ready honge.");
   });
 
   it("submits a valid wholesale order and blocks quantities below MOQ", async () => {

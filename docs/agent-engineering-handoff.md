@@ -209,6 +209,9 @@
   - shared image helper: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/catalog/product-images.ts`
   - catalog API client now sends `Accept-Language` on list/detail requests when the session language is known.
   - PLP and PDP use normalized image URLs with duplicate/empty filtering and fallback protection.
+- Mobile buyer localization has been expanded:
+  - `/Users/akash/Documents/PetProjects/PET_Slay/packages/design-tokens/src/i18n/resources.ts` now includes buyer catalog, checkout, orders, refund, loading, and notification readiness copy in English/Hindi/Hinglish.
+  - mobile catalog, language, checkout, order list, and order-detail screens consume those shared copy keys.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
@@ -229,7 +232,7 @@
 
 1. Smoke test the Expo buyer flow against a working buyer token: auth -> language -> PLP -> PDP -> checkout -> order detail/refund status.
 2. Replace the manual/dev token mobile auth gate with Supabase Google/Facebook/Instagram-ready auth once provider setup is ready.
-3. Expand mobile localization resources so every screen has English, Hindi, and Hinglish copy.
+3. Continue mobile localization by moving remaining long-form auth/product-detail/refund-policy paragraphs into shared English/Hindi/Hinglish resources.
 4. Wire a real Expo push token provider behind `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/notifications/notification-controller.ts`.
 5. Add real admin UI/component tests for image file selection, loading overlays,
    disabled duplicate actions, and gallery rendering.

@@ -53,7 +53,7 @@ export default function CatalogScreen() {
     <Screen
       eyebrow={session.user?.businessName ?? "Reseller catalog"}
       title={mobileCopy(session.language, "resellerWelcome")}
-      subtitle="Wholesale-first women’s western and South Asian fashion, curated for fast restock decisions."
+      subtitle={mobileCopy(session.language, "catalogSubtitle")}
     >
       <View style={styles.toolbar}>
         <Link href="/(app)/language" asChild>
@@ -64,21 +64,21 @@ export default function CatalogScreen() {
         </Link>
         <Link href="/(app)/orders" asChild>
           <Pressable style={styles.tile}>
-            <Text style={styles.tileLabel}>Orders</Text>
+            <Text style={styles.tileLabel}>{mobileCopy(session.language, "orders")}</Text>
             <Text style={styles.tileValue}>History</Text>
           </Pressable>
         </Link>
-        <ActionButton label="Refresh" variant="secondary" onPress={() => router.replace("/(app)")} />
+        <ActionButton label={mobileCopy(session.language, "refreshCatalog")} variant="secondary" onPress={() => router.replace("/(app)")} />
       </View>
 
       <View style={styles.notice}>
         <View style={styles.noticeCopy}>
-          <Text style={styles.noticeTitle}>Arrival alerts</Text>
-          <Text style={styles.noticeText}>Get conversion-focused new-arrival prompts only when device notifications are ready.</Text>
+          <Text style={styles.noticeTitle}>{mobileCopy(session.language, "arrivalAlerts")}</Text>
+          <Text style={styles.noticeText}>{mobileCopy(session.language, "arrivalAlertsBody")}</Text>
           {notificationStatus && <Text style={styles.noticeStatus}>{notificationStatus}</Text>}
         </View>
         <ActionButton
-          label="Check"
+          label={mobileCopy(session.language, "checkReadiness")}
           variant="secondary"
           onPress={() => {
             setNotificationStatus("Checking notification readiness...");
@@ -90,9 +90,9 @@ export default function CatalogScreen() {
         />
       </View>
 
-      {loading && <Text style={styles.muted}>Loading products...</Text>}
+      {loading && <Text style={styles.muted}>{mobileCopy(session.language, "loadingProducts")}</Text>}
       {error && <Text style={styles.error}>{error}</Text>}
-      {!loading && products.length === 0 && <Text style={styles.muted}>No reseller-visible products yet.</Text>}
+      {!loading && products.length === 0 && <Text style={styles.muted}>{mobileCopy(session.language, "noProducts")}</Text>}
 
       <View style={styles.grid}>
         {products.map((product) => (

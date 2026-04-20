@@ -4,12 +4,14 @@ import { StyleSheet, Text, View } from "react-native";
 import type { Order } from "@pet-slay/types";
 
 import { mobileTheme, Screen } from "../../../src/components/Screen";
+import { mobileCopy } from "../../../src/i18n";
 import type { RefundDecision } from "../../../src/services/buyer-api";
-import { useBuyerApp } from "../../../src/state/buyer-app-context";
+import { useBuyerApp, useSessionSnapshot } from "../../../src/state/buyer-app-context";
 
 export default function OrderDetailScreen() {
   const { orderId } = useLocalSearchParams<{ orderId: string }>();
   const { notifications, orders, refunds: refundController } = useBuyerApp();
+  const session = useSessionSnapshot();
   const [order, setOrder] = useState<Order | null>(null);
   const [refunds, setRefunds] = useState<RefundDecision[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,8 +34,8 @@ export default function OrderDetailScreen() {
   }, [orderId, orders]);
 
   return (
-    <Screen eyebrow="Order detail" title={orderId || "Order"} subtitle="Refunds default to store credit unless admin approves a source-payment exception.">
-      {loading && <Text style={styles.muted}>Loading order...</Text>}
+    <Screen eyebrow={mobileCopy(session.language, "orderDetail")} title={orderId || "Order"} subtitle="Refunds default to store credit unless admin approves a source-payment exception.">
+      {loading && <Text style={styles.muted}>{mobileCopy(session.language, "loadingOrder")}</Text>}
       {error && <Text style={styles.error}>{error}</Text>}
       {order && (
         <View style={styles.card}>
@@ -44,7 +46,7 @@ export default function OrderDetailScreen() {
         </View>
       )}
       <View style={styles.card}>
-        <Text style={styles.title}>Refund decisions</Text>
+        <Text style={styles.title}>{mobileCopy(session.language, "refundDecisions")}</Text>
         {refunds.length === 0 && (
           <View style={styles.refundRow}>
             <Text style={styles.meta}>{refundController.describeDecision().headline}</Text>

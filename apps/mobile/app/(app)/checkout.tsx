@@ -4,11 +4,13 @@ import { StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../../src/components/ActionButton";
 import { mobileTheme, Screen } from "../../src/components/Screen";
-import { useBuyerApp } from "../../src/state/buyer-app-context";
+import { mobileCopy } from "../../src/i18n";
+import { useBuyerApp, useSessionSnapshot } from "../../src/state/buyer-app-context";
 
 export default function CheckoutScreen() {
   const router = useRouter();
   const { orders } = useBuyerApp();
+  const session = useSessionSnapshot();
   const params = useLocalSearchParams<{
     productId: string;
     productTitle: string;
@@ -48,31 +50,31 @@ export default function CheckoutScreen() {
 
   return (
     <Screen
-      eyebrow="Wholesale checkout"
-      title={params.productTitle || "Create order"}
-      subtitle="Confirm MOQ and delivery city before placing the reseller order."
+      eyebrow={mobileCopy(session.language, "wholesaleCheckout")}
+      title={params.productTitle || mobileCopy(session.language, "createOrder")}
+      subtitle={mobileCopy(session.language, "checkoutSubtitle")}
     >
       <View style={styles.summary}>
-        <Text style={styles.summaryTitle}>Order summary</Text>
+        <Text style={styles.summaryTitle}>{mobileCopy(session.language, "orderSummary")}</Text>
         <Text style={styles.summaryLine}>MOQ {moq}</Text>
         <Text style={styles.summaryLine}>Estimated total ₹{Number(quantity || 0) * unitPrice}</Text>
       </View>
 
       <View style={styles.form}>
-        <Text style={styles.label}>Quantity</Text>
+        <Text style={styles.label}>{mobileCopy(session.language, "quantity")}</Text>
         <TextInput keyboardType="number-pad" onChangeText={setQuantity} style={styles.input} value={quantity} />
-        <Text style={styles.label}>Delivery city</Text>
+        <Text style={styles.label}>{mobileCopy(session.language, "deliveryCity")}</Text>
         <TextInput onChangeText={setCity} style={styles.input} value={city} />
       </View>
 
       {message && <Text style={message.startsWith("Order") ? styles.success : styles.error}>{message}</Text>}
       {createdOrderId && (
         <Link href={`/(app)/orders/${createdOrderId}`} asChild>
-          <ActionButton label="View order and refund status" variant="secondary" />
+          <ActionButton label={mobileCopy(session.language, "viewOrderRefundStatus")} variant="secondary" />
         </Link>
       )}
-      <ActionButton disabled={submitting || !params.variantId} label={submitting ? "Placing order..." : "Place wholesale order"} onPress={() => void submitOrder()} />
-      <ActionButton label="Back to catalog" variant="secondary" onPress={() => router.replace("/(app)")} />
+      <ActionButton disabled={submitting || !params.variantId} label={submitting ? mobileCopy(session.language, "placingOrder") : mobileCopy(session.language, "placeWholesaleOrder")} onPress={() => void submitOrder()} />
+      <ActionButton label={mobileCopy(session.language, "backToCatalog")} variant="secondary" onPress={() => router.replace("/(app)")} />
     </Screen>
   );
 }

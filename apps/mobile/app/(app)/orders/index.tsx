@@ -4,10 +4,12 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { Order } from "@pet-slay/types";
 
 import { mobileTheme, Screen } from "../../../src/components/Screen";
-import { useBuyerApp } from "../../../src/state/buyer-app-context";
+import { mobileCopy } from "../../../src/i18n";
+import { useBuyerApp, useSessionSnapshot } from "../../../src/state/buyer-app-context";
 
 export default function OrdersScreen() {
   const { orders } = useBuyerApp();
+  const session = useSessionSnapshot();
   const [items, setItems] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -23,8 +25,8 @@ export default function OrdersScreen() {
   }, [orders]);
 
   return (
-    <Screen eyebrow="Buyer orders" title="Order history" subtitle="Track wholesale orders and refund decisions from one place.">
-      {loading && <Text style={styles.muted}>Loading orders...</Text>}
+    <Screen eyebrow="Buyer orders" title={mobileCopy(session.language, "orderHistory")} subtitle={mobileCopy(session.language, "orderHistorySubtitle")}>
+      {loading && <Text style={styles.muted}>{mobileCopy(session.language, "loadingOrder")}</Text>}
       {error && <Text style={styles.error}>{error}</Text>}
       {!loading && items.length === 0 && <Text style={styles.muted}>No orders placed yet.</Text>}
       <View style={styles.list}>
@@ -34,7 +36,7 @@ export default function OrdersScreen() {
               <Text style={styles.title}>{order.id}</Text>
               <Text style={styles.meta}>Status: {order.status}</Text>
               <Text style={styles.meta}>Total: ₹{order.totalAmount}</Text>
-              <Text style={styles.cta}>View refund status</Text>
+              <Text style={styles.cta}>{mobileCopy(session.language, "viewRefundStatus")}</Text>
             </Pressable>
           </Link>
         ))}
@@ -77,4 +79,3 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 });
-

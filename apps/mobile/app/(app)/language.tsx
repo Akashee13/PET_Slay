@@ -5,6 +5,7 @@ import type { Language } from "@pet-slay/types";
 
 import { ActionButton } from "../../src/components/ActionButton";
 import { mobileTheme, Screen } from "../../src/components/Screen";
+import { mobileCopy } from "../../src/i18n";
 import { useBuyerApp, useSessionSnapshot } from "../../src/state/buyer-app-context";
 
 const LANGUAGE_OPTIONS: Array<{ value: Language; label: string; helper: string }> = [
@@ -35,9 +36,9 @@ export default function LanguageScreen() {
 
   return (
     <Screen
-      eyebrow="Language preference"
-      title="Choose buyer language"
-      subtitle="This updates app copy and saves the preference to the buyer profile."
+      eyebrow={mobileCopy(session.language, "languagePreference")}
+      title={mobileCopy(session.language, "chooseBuyerLanguage")}
+      subtitle={mobileCopy(session.language, "languageSubtitle")}
     >
       {error && <Text style={styles.error}>{error}</Text>}
       <View style={styles.list}>
@@ -97,4 +98,3 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 });
-
