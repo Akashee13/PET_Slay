@@ -1,6 +1,7 @@
 import type {
   CatalogProductsResponse,
   CreateOrderRequest,
+  Language,
   UpdateLanguageRequest,
   UpdateLanguageResponse,
 } from "@pet-slay/types";
@@ -52,13 +53,13 @@ export class BuyerApiClient {
     });
   }
 
-  async listProducts(): Promise<CatalogProductsResponse["items"]> {
-    const payload = await this.request<CatalogProductsResponse>("/v1/catalog/products");
+  async listProducts(options?: { language?: Language }): Promise<CatalogProductsResponse["items"]> {
+    const payload = await this.request<CatalogProductsResponse>("/v1/catalog/products", languageHeaders(options?.language));
     return payload.items;
   }
 
-  async getProductDetail(productId: string): Promise<ProductDetail> {
-    return this.request<ProductDetail>(`/v1/catalog/products/${encodeURIComponent(productId)}`);
+  async getProductDetail(productId: string, options?: { language?: Language }): Promise<ProductDetail> {
+    return this.request<ProductDetail>(`/v1/catalog/products/${encodeURIComponent(productId)}`, languageHeaders(options?.language));
   }
 
   async createOrder(input: CreateOrderRequest): Promise<Order> {
@@ -110,4 +111,16 @@ export class BuyerApiClient {
 
     return (await response.json()) as T;
   }
+}
+
+function languageHeaders(language?: Language): RequestInit | undefined {
+  if (!language) {
+    return undefined;
+  }
+
+  return {
+    headers: {
+      "Accept-Language": language,
+    },
+  };
 }

@@ -5,13 +5,13 @@ import type { ProductDetail } from "@pet-slay/types";
 
 import { ActionButton } from "../../../src/components/ActionButton";
 import { mobileTheme, Screen } from "../../../src/components/Screen";
-import { useBuyerApp } from "../../../src/state/buyer-app-context";
-
-const FALLBACK_IMAGE = "https://image.pollinations.ai/prompt/fashion%20product%20detail%20photo?width=900&height=1200&nologo=true";
+import { getPrimaryProductImage } from "../../../src/features/catalog/product-images";
+import { useBuyerApp, useSessionSnapshot } from "../../../src/state/buyer-app-context";
 
 export default function ProductDetailScreen() {
   const { productId } = useLocalSearchParams<{ productId: string }>();
   const { catalog } = useBuyerApp();
+  const session = useSessionSnapshot();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,11 +24,11 @@ export default function ProductDetailScreen() {
     setLoading(true);
     setError("");
     catalog
-      .loadProductDetail(productId)
+      .loadProductDetail(productId, { language: session.language })
       .then(setProduct)
       .catch((requestError: unknown) => setError(requestError instanceof Error ? requestError.message : "product_load_failed"))
       .finally(() => setLoading(false));
-  }, [catalog, productId]);
+  }, [catalog, productId, session.language]);
 
   if (loading) {
     return <Screen title="Loading product" subtitle="Fetching the latest availability and MOQ." />;
@@ -46,7 +46,7 @@ export default function ProductDetailScreen() {
 
   return (
     <Screen eyebrow={product.category.replace("_", " ")} title={product.title} subtitle={product.description || "Review MOQ, availability, and variant before checkout."}>
-      <Image source={{ uri: product.coverImageUrl ?? product.imageUrls?.[0] ?? FALLBACK_IMAGE }} style={styles.heroImage} />
+      <Image source={{ uri: getPrimaryProductImage(product) }} style={styles.heroImage} />
       <View style={styles.priceCard}>
         <Text style={styles.price}>₹{product.baseWholesalePrice} wholesale</Text>
         <Text style={styles.meta}>MOQ {product.moq} · {product.availabilityStatus.replace("_", " ")}</Text>
@@ -129,4 +129,3 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 });
-

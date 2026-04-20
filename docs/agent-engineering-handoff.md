@@ -205,6 +205,10 @@
   - refunds: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/refunds/refund-controller.ts`
   - order history/detail routes: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/orders/index.tsx`, `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/app/(app)/orders/[orderId].tsx`
   - checkout now links successful order creation to order/refund detail.
+- Mobile catalog polish toward `T053` is implemented:
+  - shared image helper: `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/catalog/product-images.ts`
+  - catalog API client now sends `Accept-Language` on list/detail requests when the session language is known.
+  - PLP and PDP use normalized image URLs with duplicate/empty filtering and fallback protection.
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
@@ -229,7 +233,7 @@
 4. Wire a real Expo push token provider behind `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/notifications/notification-controller.ts`.
 5. Add real admin UI/component tests for image file selection, loading overlays,
    disabled duplicate actions, and gallery rendering.
-6. Continue API hardening tasks in order: `T052` (security/role boundary hardening), `T053` (catalog payload optimization).
+6. Continue API hardening tasks in order: `T052` (security/role boundary hardening), finish API-side `T053` catalog payload optimization.
 
 ## Working Style
 

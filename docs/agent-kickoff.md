@@ -144,13 +144,17 @@
   - refund copy controller that makes the store-credit default explicit and highlights payment-source exceptions.
   - notification readiness controller and order deep-link helpers for future push entry points.
   - catalog PLP now includes a lightweight arrival-alert readiness check.
+- Added React Native catalog polish toward `T053`:
+  - mobile catalog/product-detail requests now send `Accept-Language` so localized payloads can be introduced server-side.
+  - product image selection is normalized to remove empty/duplicate URLs and always provide a fallback image.
+  - PLP/PDP image rendering now uses the shared catalog image helper.
 
 ## Next Recommended Work
 
 1. Run the Expo app locally against a working buyer token and smoke test auth -> language -> PLP -> PDP -> checkout.
 2. Replace dev/manual buyer token entry with Supabase social auth once provider setup is ready.
 3. Expand mobile UI localization strings beyond the first catalog headline and wire Hindi/Hinglish copy across every mobile screen.
-4. Continue `T052` auth/role-boundary hardening and `T053` catalog payload/image/deep-link optimization.
+4. Continue `T052` auth/role-boundary hardening and finish the API side of `T053` catalog payload/image/deep-link optimization.
 5. Add real admin UI tests for file selection, loading overlays, disabled duplicate actions, and PLP image rendering; current admin `npm test` is only a placeholder.
 
 ## Milestone Refresh Rule

@@ -5,6 +5,7 @@ import type { Language } from "@pet-slay/types";
 
 import { BuyerApiClient, type ApiTransport } from "../src/services/buyer-api.ts";
 import { createCatalogController } from "../src/features/catalog/catalog-controller.ts";
+import { FALLBACK_PRODUCT_IMAGE, getProductImageUrls } from "../src/features/catalog/product-images.ts";
 import { createLanguageController } from "../src/features/language/language-controller.ts";
 import { createOrderController } from "../src/features/orders/order-controller.ts";
 import { createRecordingAnalytics } from "../src/services/analytics.ts";
@@ -125,19 +126,51 @@ describe("US1 buyer mobile flow", () => {
   });
 
   it("loads catalog and product detail for the PLP-to-PDP journey", async () => {
-    const { transport } = createTransport();
+    const { transport, calls } = createTransport();
     const analytics = createRecordingAnalytics();
     const sessionStore = createSessionStore({ initialToken: "buyer-token" });
     const api = new BuyerApiClient({ baseUrl: "https://api.example.com", getToken: sessionStore.getToken, transport });
     const catalog = createCatalogController({ api, analytics });
 
-    const products = await catalog.loadProducts();
+    const products = await catalog.loadProducts({ language: "hinglish" });
     assert.equal(products[0].title, "Jeans Top Set");
     assert.equal(products[0].moq, 200);
+    assert.equal(calls.find((call) => call.path === "/v1/catalog/products")?.init.headers?.["Accept-Language"], "hinglish");
 
-    const detail = await catalog.loadProductDetail("prod-western-001");
+    const detail = await catalog.loadProductDetail("prod-western-001", { language: "hindi" });
     assert.equal(detail.variants[0].id, "var-western-001-s");
+    assert.equal(calls.find((call) => call.path === "/v1/catalog/products/prod-western-001")?.init.headers?.["Accept-Language"], "hindi");
     assert.deepEqual(analytics.events.map((event) => event.name), ["catalog_loaded", "product_detail_opened"]);
+  });
+
+  it("normalizes product images so empty or duplicate URLs do not break the catalog", () => {
+    assert.deepEqual(
+      getProductImageUrls({
+        id: "prod-001",
+        title: "Kurti set",
+        category: "south_asian",
+        baseWholesalePrice: 280,
+        moq: 150,
+        availabilityStatus: "in_stock",
+        isNewArrival: false,
+        coverImageUrl: " https://cdn.example.com/look-1.jpg ",
+        imageUrls: ["https://cdn.example.com/look-1.jpg", "", "https://cdn.example.com/look-2.jpg"],
+      }),
+      ["https://cdn.example.com/look-1.jpg", "https://cdn.example.com/look-2.jpg"],
+    );
+
+    assert.deepEqual(
+      getProductImageUrls({
+        id: "prod-002",
+        title: "Top",
+        category: "western",
+        baseWholesalePrice: 220,
+        moq: 100,
+        availabilityStatus: "in_stock",
+        isNewArrival: true,
+      }),
+      [FALLBACK_PRODUCT_IMAGE],
+    );
   });
 
   it("submits a valid wholesale order and blocks quantities below MOQ", async () => {

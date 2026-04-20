@@ -5,10 +5,9 @@ import type { ProductCard } from "@pet-slay/types";
 
 import { ActionButton } from "../../src/components/ActionButton";
 import { mobileTheme, Screen } from "../../src/components/Screen";
+import { getPrimaryProductImage } from "../../src/features/catalog/product-images";
 import { mobileCopy } from "../../src/i18n";
 import { useBuyerApp, useSessionSnapshot } from "../../src/state/buyer-app-context";
-
-const FALLBACK_IMAGE = "https://image.pollinations.ai/prompt/minimal%20fashion%20lookbook%20card?width=900&height=1200&nologo=true";
 
 export default function CatalogScreen() {
   const router = useRouter();
@@ -36,11 +35,11 @@ export default function CatalogScreen() {
     setLoading(true);
     setError("");
     catalog
-      .loadProducts()
+      .loadProducts({ language: session.language })
       .then(setProducts)
       .catch((requestError: unknown) => setError(requestError instanceof Error ? requestError.message : "catalog_load_failed"))
       .finally(() => setLoading(false));
-  }, [catalog, router, session.status]);
+  }, [catalog, router, session.language, session.status]);
 
   if (session.status !== "authenticated") {
     return (
@@ -99,7 +98,7 @@ export default function CatalogScreen() {
         {products.map((product) => (
           <Link key={product.id} href={`/(app)/products/${product.id}`} asChild>
             <Pressable style={styles.productCard}>
-              <Image source={{ uri: product.coverImageUrl ?? product.imageUrls?.[0] ?? FALLBACK_IMAGE }} style={styles.productImage} />
+              <Image source={{ uri: getPrimaryProductImage(product) }} style={styles.productImage} />
               <View style={styles.productBody}>
                 <Text style={styles.category}>{product.category.replace("_", " ")}</Text>
                 <Text style={styles.productTitle}>{product.title}</Text>
