@@ -1,12 +1,13 @@
 import { Link, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import type { ProductCard } from "@pet-slay/types";
 
 import { ActionButton } from "../../src/components/ActionButton";
-import { BrandMark } from "../../src/components/BrandMark";
+import { BuyerAccountDrawer } from "../../src/components/BuyerAccountDrawer";
+import { BuyerTopBar } from "../../src/components/BuyerTopBar";
 import { FashionImageCarousel } from "../../src/components/FashionImageCarousel";
-import { mobileTheme, Screen } from "../../src/components/Screen";
+import { mobileTheme } from "../../src/components/Screen";
 import { getProductImageUrls } from "../../src/features/catalog/product-images";
 import { mobileCopy } from "../../src/i18n";
 import { useBuyerApp, useSessionSnapshot } from "../../src/state/buyer-app-context";
@@ -19,6 +20,7 @@ export default function CatalogScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notificationStatus, setNotificationStatus] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (session.status === "anonymous") {
@@ -45,116 +47,163 @@ export default function CatalogScreen() {
 
   if (session.status !== "authenticated") {
     return (
-      <Screen title={mobileCopy(session.language, "preparingCatalog")} subtitle={mobileCopy(session.language, "preparingCatalogSubtitle")}>
-        <Text style={styles.muted}>{mobileCopy(session.language, "pleaseWait")}</Text>
-      </Screen>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.content}>
+          <Text style={styles.loadingTitle}>{mobileCopy(session.language, "preparingCatalog")}</Text>
+          <Text style={styles.muted}>{mobileCopy(session.language, "preparingCatalogSubtitle")}</Text>
+          <Text style={styles.muted}>{mobileCopy(session.language, "pleaseWait")}</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <Screen
-      eyebrow={session.user?.businessName ?? mobileCopy(session.language, "resellerCatalog")}
-      title={mobileCopy(session.language, "resellerWelcome")}
-      subtitle={mobileCopy(session.language, "catalogSubtitle")}
-    >
-      <BrandMark name={mobileCopy(session.language, "appName")} tagline={mobileCopy(session.language, "brandTagline")} />
-      <View style={styles.toolbar}>
-        <Link href="/(app)/language" asChild>
-          <Pressable style={styles.tile}>
-            <Text style={styles.tileLabel}>{mobileCopy(session.language, "language")}</Text>
-            <Text style={styles.tileValue}>{session.language}</Text>
-          </Pressable>
-        </Link>
-        <Link href="/(app)/orders" asChild>
-          <Pressable style={styles.tile}>
-            <Text style={styles.tileLabel}>{mobileCopy(session.language, "orders")}</Text>
-            <Text style={styles.tileValue}>{mobileCopy(session.language, "history")}</Text>
-          </Pressable>
-        </Link>
-        <ActionButton label={mobileCopy(session.language, "refreshCatalog")} variant="secondary" onPress={() => router.replace("/(app)")} />
-        <ActionButton
-          label={mobileCopy(session.language, "signOut")}
-          variant="secondary"
-          onPress={() => {
-            sessionStore.signOut();
-            router.replace("/(auth)");
-          }}
-        />
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.content} stickyHeaderIndices={[3]}>
+        <View pointerEvents="none" style={styles.heroGlowPrimary} />
+        <View pointerEvents="none" style={styles.heroGlowSecondary} />
 
-      <View style={styles.notice}>
-        <View style={styles.noticeCopy}>
-          <Text style={styles.noticeTitle}>{mobileCopy(session.language, "arrivalAlerts")}</Text>
-          <Text style={styles.noticeText}>{mobileCopy(session.language, "arrivalAlertsBody")}</Text>
-          {notificationStatus && <Text style={styles.noticeStatus}>{notificationStatus}</Text>}
+        <View style={styles.heroCard}>
+          <Text style={styles.eyebrow}>{session.user?.businessName ?? mobileCopy(session.language, "resellerCatalog")}</Text>
+          <Text style={styles.title}>{mobileCopy(session.language, "resellerWelcome")}</Text>
+          <Text style={styles.subtitle}>{mobileCopy(session.language, "catalogSubtitle")}</Text>
         </View>
-        <ActionButton
-          label={mobileCopy(session.language, "checkReadiness")}
-          variant="secondary"
-          onPress={() => {
-            setNotificationStatus(mobileCopy(session.language, "checkingNotificationReadiness"));
-            notifications
-              .getReadiness()
-              .then((readiness) =>
-                setNotificationStatus(
-                  readiness.ready ? mobileCopy(session.language, "relevantAlertsReady") : readiness.reason.replace("_", " "),
-                ),
-              )
-              .catch(() => setNotificationStatus(mobileCopy(session.language, "unableToCheckNotificationReadiness")));
-          }}
-        />
-      </View>
 
-      {loading && <Text style={styles.muted}>{mobileCopy(session.language, "loadingProducts")}</Text>}
-      {error && <Text style={styles.error}>{error}</Text>}
-      {!loading && products.length === 0 && <Text style={styles.muted}>{mobileCopy(session.language, "noProducts")}</Text>}
+        <View style={styles.stickyWrap}>
+          <BuyerTopBar
+            name={mobileCopy(session.language, "appName")}
+            tagline={mobileCopy(session.language, "brandTagline")}
+            onOpenMenu={() => setDrawerOpen(true)}
+          />
+        </View>
 
-      <View style={styles.grid}>
-        {products.map((product) => (
-          <Link key={product.id} href={`/(app)/products/${product.id}`} asChild>
-            <Pressable style={styles.productCard}>
-              <FashionImageCarousel imageUrls={getProductImageUrls(product)} />
-              <View style={styles.productBody}>
-                <Text style={styles.category}>{product.category.replace("_", " ")}</Text>
-                <Text style={styles.productTitle}>{product.title}</Text>
-                <Text style={styles.price}>₹{product.baseWholesalePrice} wholesale · MOQ {product.moq}</Text>
-                <Text style={styles.status}>{product.availabilityStatus.replace("_", " ")}</Text>
-              </View>
-            </Pressable>
-          </Link>
-        ))}
-      </View>
-    </Screen>
+        <View style={styles.notice}>
+          <View style={styles.noticeCopy}>
+            <Text style={styles.noticeTitle}>{mobileCopy(session.language, "arrivalAlerts")}</Text>
+            <Text style={styles.noticeText}>{mobileCopy(session.language, "arrivalAlertsBody")}</Text>
+            {notificationStatus && <Text style={styles.noticeStatus}>{notificationStatus}</Text>}
+          </View>
+          <ActionButton
+            label={mobileCopy(session.language, "checkReadiness")}
+            variant="secondary"
+            onPress={() => {
+              setNotificationStatus(mobileCopy(session.language, "checkingNotificationReadiness"));
+              notifications
+                .getReadiness()
+                .then((readiness) =>
+                  setNotificationStatus(
+                    readiness.ready ? mobileCopy(session.language, "relevantAlertsReady") : readiness.reason.replace("_", " "),
+                  ),
+                )
+                .catch(() => setNotificationStatus(mobileCopy(session.language, "unableToCheckNotificationReadiness")));
+            }}
+          />
+        </View>
+
+        {loading && <Text style={styles.muted}>{mobileCopy(session.language, "loadingProducts")}</Text>}
+        {error && <Text style={styles.error}>{error}</Text>}
+        {!loading && products.length === 0 && <Text style={styles.muted}>{mobileCopy(session.language, "noProducts")}</Text>}
+
+        <View style={styles.grid}>
+          {products.map((product) => (
+            <Link key={product.id} href={`/(app)/products/${product.id}`} asChild>
+              <Pressable style={styles.productCard}>
+                <FashionImageCarousel imageUrls={getProductImageUrls(product)} />
+                <View style={styles.productBody}>
+                  <Text style={styles.category}>{product.category.replace("_", " ")}</Text>
+                  <Text style={styles.productTitle}>{product.title}</Text>
+                  <Text style={styles.price}>₹{product.baseWholesalePrice} wholesale · MOQ {product.moq}</Text>
+                  <Text style={styles.status}>{product.availabilityStatus.replace("_", " ")}</Text>
+                </View>
+              </Pressable>
+            </Link>
+          ))}
+        </View>
+      </ScrollView>
+
+      <BuyerAccountDrawer
+        language={session.language}
+        onArrivalAlerts={() => {
+          setNotificationStatus(mobileCopy(session.language, "checkingNotificationReadiness"));
+          notifications
+            .getReadiness()
+            .then((readiness) =>
+              setNotificationStatus(readiness.ready ? mobileCopy(session.language, "relevantAlertsReady") : readiness.reason.replace("_", " ")),
+            )
+            .catch(() => setNotificationStatus(mobileCopy(session.language, "unableToCheckNotificationReadiness")));
+        }}
+        onClose={() => setDrawerOpen(false)}
+        onLanguage={() => router.push("/(app)/language")}
+        onOrders={() => router.push("/(app)/orders")}
+        onRefresh={() => router.replace("/(app)")}
+        onSignOut={() => {
+          sessionStore.signOut();
+          router.replace("/(auth)");
+        }}
+        user={session.user}
+        visible={drawerOpen}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  toolbar: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
-  tile: {
-    minWidth: 128,
+  safeArea: {
     flex: 1,
-    gap: 6,
+    backgroundColor: mobileTheme.bg,
+  },
+  content: {
+    gap: 18,
+    padding: 18,
+    paddingBottom: 44,
+  },
+  loadingTitle: {
+    color: mobileTheme.ink,
+    fontSize: 32,
+    fontWeight: "900",
+  },
+  heroCard: {
+    gap: 10,
+    overflow: "hidden",
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    borderRadius: 22,
-    backgroundColor: mobileTheme.cardAlt,
-    padding: 16,
+    borderRadius: 30,
+    backgroundColor: mobileTheme.card,
+    padding: 20,
+    shadowColor: mobileTheme.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 24,
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    elevation: 3,
   },
-  tileLabel: {
+  eyebrow: {
     color: mobileTheme.primaryDeep,
     fontSize: 12,
     fontWeight: "800",
+    letterSpacing: 1.3,
     textTransform: "uppercase",
   },
-  tileValue: {
+  title: {
     color: mobileTheme.ink,
-    fontSize: 16,
+    fontSize: 34,
     fontWeight: "900",
-    textTransform: "capitalize",
+    letterSpacing: -1.4,
+    lineHeight: 38,
+  },
+  subtitle: {
+    color: mobileTheme.muted,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  stickyWrap: {
+    marginHorizontal: -18,
+    marginTop: -2,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    backgroundColor: "rgba(255, 246, 251, 0.96)",
   },
   grid: {
     gap: 16,
@@ -237,6 +286,25 @@ const styles = StyleSheet.create({
   },
   muted: {
     color: mobileTheme.muted,
+  },
+  heroGlowPrimary: {
+    position: "absolute",
+    right: -10,
+    top: 10,
+    height: 150,
+    width: 150,
+    borderRadius: 999,
+    backgroundColor: mobileTheme.accentSoft,
+  },
+  heroGlowSecondary: {
+    position: "absolute",
+    left: -30,
+    top: 120,
+    height: 110,
+    width: 110,
+    borderRadius: 999,
+    backgroundColor: mobileTheme.lavender,
+    opacity: 0.8,
   },
   error: {
     color: mobileTheme.danger,
