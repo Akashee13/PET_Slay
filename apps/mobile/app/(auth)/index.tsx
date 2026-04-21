@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import * as ExpoLinking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 
@@ -91,6 +91,38 @@ export default function AuthScreen() {
       subtitle={mobileCopy(session.language, "authSubtitle")}
     >
       <BrandMark name={mobileCopy(session.language, "appName")} tagline={mobileCopy(session.language, "brandTagline")} />
+      <View style={styles.gmailHero}>
+        <View style={styles.gmailHeroHeader}>
+          <View style={styles.gmailBadge}>
+            <Text style={styles.gmailBadgeText}>G</Text>
+          </View>
+          <View style={styles.gmailCopy}>
+            <Text style={styles.gmailTitle}>{mobileCopy(session.language, "gmailPriorityTitle")}</Text>
+            <Text style={styles.gmailBody}>{mobileCopy(session.language, "gmailPriorityBody")}</Text>
+          </View>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          disabled={!googleEnabled || googleLoading}
+          onPress={() => {
+            if (googleEnabled) {
+              void continueWithGoogle();
+            }
+          }}
+          style={({ pressed }) => [
+            styles.gmailButton,
+            (!googleEnabled || googleLoading) && styles.gmailButtonDisabled,
+            pressed && googleEnabled && !googleLoading && styles.gmailButtonPressed,
+          ]}
+        >
+          <View style={styles.gmailButtonRow}>
+            {googleLoading ? <Text style={styles.gmailButtonIcon}>...</Text> : <Text style={styles.gmailButtonIcon}>G</Text>}
+            <Text style={styles.gmailButtonLabel}>{mobileCopy(session.language, "continueWithGmail")}</Text>
+          </View>
+        </Pressable>
+        {!googleEnabled && !googleLoading ? <Text style={styles.providerHint}>{mobileCopy(session.language, "socialGoogleUnavailable")}</Text> : null}
+        {googleError ? <Text style={styles.error}>{googleError}</Text> : null}
+      </View>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{mobileCopy(session.language, "founderAccess")}</Text>
         <Text style={styles.cardCopy}>{mobileCopy(session.language, "founderAccessBody")}</Text>
@@ -145,13 +177,93 @@ export default function AuthScreen() {
             </Text>
           </View>
         ))}
-        {googleError ? <Text style={styles.error}>{googleError}</Text> : null}
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  gmailHero: {
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "#f0d4df",
+    borderRadius: 30,
+    backgroundColor: "#fffdfd",
+    padding: 18,
+    shadowColor: mobileTheme.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 18,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    elevation: 2,
+  },
+  gmailHeroHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  gmailBadge: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 46,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#ead7e0",
+  },
+  gmailBadgeText: {
+    color: "#db4437",
+    fontSize: 24,
+    fontWeight: "900",
+  },
+  gmailCopy: {
+    flex: 1,
+    gap: 4,
+  },
+  gmailTitle: {
+    color: mobileTheme.ink,
+    fontSize: 20,
+    fontWeight: "900",
+  },
+  gmailBody: {
+    color: mobileTheme.muted,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  gmailButton: {
+    minHeight: 54,
+    borderRadius: 18,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e8d3db",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  gmailButtonDisabled: {
+    opacity: 0.55,
+  },
+  gmailButtonPressed: {
+    transform: [{ translateY: 1 }],
+  },
+  gmailButtonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  gmailButtonIcon: {
+    color: "#db4437",
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  gmailButtonLabel: {
+    color: mobileTheme.ink,
+    fontSize: 16,
+    fontWeight: "900",
+  },
   card: {
     gap: 14,
     borderWidth: 1,

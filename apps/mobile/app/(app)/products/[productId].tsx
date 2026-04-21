@@ -1,6 +1,6 @@
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Linking, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import type { ProductDetail } from "@pet-slay/types";
 
 import { ActionButton } from "../../../src/components/ActionButton";
@@ -92,7 +92,17 @@ export default function ProductDetailScreen() {
         <Text style={styles.noticeBody}>{mobileCopy(session.language, "whatsappOrderingBody")}</Text>
       </View>
       {message ? <Text style={styles.success}>{message}</Text> : null}
-      {primaryVariant && <ActionButton label={mobileCopy(session.language, "sendViaWhatsapp")} onPress={() => void sendOrderToWhatsapp()} />}
+      {primaryVariant ? (
+        <Pressable accessibilityRole="button" onPress={() => void sendOrderToWhatsapp()} style={({ pressed }) => [styles.whatsappButton, pressed && styles.whatsappButtonPressed]}>
+          <View style={styles.whatsappButtonRow}>
+            <Text style={styles.whatsappIcon}>W</Text>
+            <View style={styles.whatsappCopy}>
+              <Text style={styles.whatsappLabel}>{mobileCopy(session.language, "sendViaWhatsapp")}</Text>
+              <Text style={styles.whatsappHint}>{mobileCopy(session.language, "openWhatsappChat")}</Text>
+            </View>
+          </View>
+        </Pressable>
+      ) : null}
     </Screen>
   );
 }
@@ -142,6 +152,53 @@ const styles = StyleSheet.create({
     color: mobileTheme.muted,
     fontSize: 14,
     lineHeight: 21,
+  },
+  whatsappButton: {
+    borderRadius: 24,
+    backgroundColor: "#1f9d55",
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    shadowColor: "rgba(31,157,85,0.28)",
+    shadowOpacity: 1,
+    shadowRadius: 16,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    elevation: 3,
+  },
+  whatsappButtonPressed: {
+    transform: [{ translateY: 1 }],
+  },
+  whatsappButtonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  whatsappIcon: {
+    width: 42,
+    height: 42,
+    lineHeight: 42,
+    borderRadius: 21,
+    overflow: "hidden",
+    textAlign: "center",
+    backgroundColor: "rgba(255,255,255,0.18)",
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  whatsappCopy: {
+    flex: 1,
+    gap: 3,
+  },
+  whatsappLabel: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  whatsappHint: {
+    color: "rgba(255,255,255,0.86)",
+    fontSize: 13,
   },
   sectionTitle: {
     color: mobileTheme.ink,
