@@ -1,1 +1,1 @@
-export const mobileAppName = "PET_Slay Mobile";
+export const mobileAppName = "Noira Seller";

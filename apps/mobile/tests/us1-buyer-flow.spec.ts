@@ -9,9 +9,10 @@ import { FALLBACK_PRODUCT_IMAGE, getProductImageUrls } from "../src/features/cat
 import { createLanguageController } from "../src/features/language/language-controller.ts";
 import { createOrderController } from "../src/features/orders/order-controller.ts";
 import { formatInr, formatOrderStatus } from "../src/features/orders/order-presenter.ts";
+import { buildWhatsappOrderUrl } from "../src/features/orders/whatsapp-order.ts";
 import { buildSupabaseOAuthUrl, createSocialAuthOptions, extractBearerTokenFromCallback } from "../src/features/auth/social-auth-controller.ts";
 import { createRecordingAnalytics } from "../src/services/analytics.ts";
-import { createSessionStore, getDefaultBuyerToken } from "../src/state/session-store.ts";
+import { createSessionStore, getConfiguredBuyerToken, getDefaultBuyerToken } from "../src/state/session-store.ts";
 import { translationResources } from "../../../packages/design-tokens/src/i18n/resources.ts";
 
 function createTransport(): { transport: ApiTransport; calls: Array<{ path: string; init: RequestInit }> } {
@@ -121,12 +122,14 @@ describe("US1 buyer mobile flow", () => {
       delete process.env.EXPO_PUBLIC_BUYER_BEARER_TOKEN;
       process.env.EXPO_PUBLIC_APP_PROFILE = "local";
       assert.equal(getDefaultBuyerToken(), "dev-buyer-token");
+      assert.equal(getConfiguredBuyerToken(), "");
 
       process.env.EXPO_PUBLIC_APP_PROFILE = "stage";
       assert.equal(getDefaultBuyerToken(), "");
 
       process.env.EXPO_PUBLIC_BUYER_BEARER_TOKEN = "stage-buyer-token";
       assert.equal(getDefaultBuyerToken(), "stage-buyer-token");
+      assert.equal(getConfiguredBuyerToken(), "stage-buyer-token");
     } finally {
       restoreEnv("EXPO_PUBLIC_APP_PROFILE", originalProfile);
       restoreEnv("EXPO_PUBLIC_APP_ENV", originalEnv);
@@ -164,6 +167,14 @@ describe("US1 buyer mobile flow", () => {
       supabaseUrl: "https://stage.supabase.co/",
       redirectTo: "petslay://auth/callback",
     });
+    const readyOptions = createSocialAuthOptions({
+      supabaseUrl: "https://stage.supabase.co/",
+      redirectTo: "petslay://auth/callback",
+    });
+    assert.equal(readyOptions[0].provider, "google");
+    assert.equal(readyOptions[0].enabled, true);
+    assert.equal(readyOptions[1].enabled, false);
+    assert.equal(readyOptions[2].enabled, false);
     assert.equal(googleUrl, "https://stage.supabase.co/auth/v1/authorize?provider=google&redirect_to=petslay%3A%2F%2Fauth%2Fcallback");
     assert.equal(extractBearerTokenFromCallback("petslay://auth/callback#access_token=buyer-oauth-token"), "buyer-oauth-token");
     assert.equal(extractBearerTokenFromCallback({ access_token: "buyer-param-token" }), "buyer-param-token");
@@ -219,10 +230,11 @@ describe("US1 buyer mobile flow", () => {
 
   it("has buyer operations copy for English, Hindi, and Hinglish", () => {
     assert.equal(translationResources.english.viewOrderRefundStatus, "View order and refund status");
-    assert.equal(translationResources.hindi.placeWholesaleOrder, "Wholesale order place karein");
+    assert.equal(translationResources.hindi.placeWholesaleOrder, "होलसेल ऑर्डर करें");
     assert.equal(translationResources.hinglish.arrivalAlertsBody, "Sirf relevant new-arrival prompts milenge jab device notifications ready honge.");
-    assert.equal(translationResources.hindi.authTitle, "PET_Slay ke saath jaldi restock karein");
+    assert.equal(translationResources.hindi.authTitle, "नोइरा के साथ तेज़ रीस्टॉक करें");
     assert.equal(translationResources.hinglish.startWholesaleOrder, "Wholesale order start karo");
+    assert.equal(translationResources.hindi.languageHindiLabel, "हिन्दी");
     assert.equal(translationResources.english.missingCallbackToken, "Sign-in callback did not include a buyer token. Please try again.");
   });
 
@@ -252,6 +264,25 @@ describe("US1 buyer mobile flow", () => {
     assert.equal(order.id, "ord-001");
     assert.equal(order.totalAmount, 62000);
     assert.deepEqual(analytics.events.map((event) => event.name), ["order_quantity_rejected", "order_submitted"]);
+  });
+
+  it("builds a WhatsApp draft with buyer, quantity, city, and image context", () => {
+    const url = buildWhatsappOrderUrl({
+      businessName: "Ruchi Fashion House",
+      productTitle: "Jeans Top Set",
+      productImageUrl: "https://cdn.example.com/look.jpg",
+      quantity: 250,
+      moq: 200,
+      city: "Delhi",
+      unitPrice: 310,
+    });
+
+    assert.match(url, /^https:\/\/wa\.me\/918292349038\?text=/);
+    const decoded = decodeURIComponent(url.split("?text=")[1] ?? "");
+    assert.match(decoded, /Buyer: Ruchi Fashion House/);
+    assert.match(decoded, /Required quantity: 250/);
+    assert.match(decoded, /Delivery city: Delhi/);
+    assert.match(decoded, /Product image: https:\/\/cdn\.example\.com\/look\.jpg/);
   });
 
 });

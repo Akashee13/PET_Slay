@@ -231,6 +231,18 @@
 - Mobile buyer sign-out:
   - catalog toolbar calls `sessionStore.signOut()` and returns to `/(auth)`.
   - tests assert sign-out clears token/user and preserves language preference.
+- Mobile Expo/brand/release pass:
+  - Expo SDK has been upgraded to 54 for compatibility with current Expo Go on iPhone.
+  - Buyer auth token entry no longer prefills a stage/dev token; explicit token entry is required unless a local demo token is intentionally chosen in local/dev.
+  - Hindi copy now renders in Devanagari for primary buyer flows rather than Hinglish transliteration.
+  - Checkout includes WhatsApp draft handoff via `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/orders/whatsapp-order.ts`.
+  - Brand name is now `Noira` for buyer/mobile surfaces, with app bundle/package `com.noira.reseller`.
+  - New release assets/config/docs:
+    - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/assets/brand/noira-icon.png`
+    - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/assets/brand/noira-adaptive-foreground.png`
+    - `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/eas.json`
+    - `/Users/akash/Documents/PetProjects/PET_Slay/docs/play-store-release.md`
+    - `/Users/akash/Documents/PetProjects/PET_Slay/scripts/check-mobile-release-readiness.sh`
 - Constitution v1.3.0 adds the anxiety-reducing UX and consistent design language principle:
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/memory/constitution.md`
   - `/Users/akash/Documents/PetProjects/PET_Slay/.specify/templates/plan-template.md`
@@ -244,14 +256,15 @@
 - Admin `npm test` currently runs a placeholder command only; add real UI/component tests for file selection and PLP galleries.
 - Mobile typecheck and Expo iOS/Android export now pass for the current buyer-flow slice.
 - Mobile validation passed on `2026-04-21`: `npm test`, `npm run typecheck`, and `npm run build` from `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile`.
+- Mobile release-readiness validation passed on `2026-04-21`: `./scripts/check-mobile-release-readiness.sh` from `/Users/akash/Documents/PetProjects/PET_Slay`.
 - Admin UI currently uses manual bearer token entry (no Supabase auth wiring yet) to accelerate stage operations.
 - Supabase Storage bucket/policy migration exists for default bucket `product-images`; continue to smoke test uploads after each admin/API deploy.
 
 ## Best Next Technical Path
 
-1. Smoke test the Expo buyer flow against a working buyer token: auth -> language -> PLP -> PDP -> checkout -> order detail/refund status.
-2. Replace the manual/dev token mobile auth gate with proper Supabase Google/Facebook/Instagram token exchange once provider setup is ready; `/auth/callback` scaffold exists.
-3. Continue mobile localization by moving social-provider labels and remaining backend error strings into shared English/Hindi/Hinglish resources.
+1. Configure real Supabase Google OAuth credentials and redirect URIs, then verify Gmail sign-in in Expo Go and a preview/dev build.
+2. Create the EAS project metadata and run Android preview + production builds for Play internal testing.
+3. Continue mobile localization by moving remaining backend error strings into shared English/Hindi/Hinglish resources.
 4. Wire a real Expo push token provider behind `/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/src/features/notifications/notification-controller.ts`.
 5. Add real admin UI/component tests for image file selection, loading overlays,
    disabled duplicate actions, and gallery rendering.

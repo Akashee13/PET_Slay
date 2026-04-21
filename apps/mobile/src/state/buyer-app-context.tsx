@@ -10,7 +10,7 @@ import { createRefundController, type RefundController } from "../features/refun
 import { createConsoleAnalytics, type Analytics } from "../services/analytics";
 import { BuyerApiClient } from "../services/buyer-api";
 import { NotificationsService } from "../services/notifications";
-import { createSessionStore, getDefaultBuyerToken, type SessionSnapshot, type SessionStore } from "./session-store";
+import { createSessionStore, getConfiguredBuyerToken, type SessionSnapshot, type SessionStore } from "./session-store";
 
 type BuyerAppContextValue = {
   api: BuyerApiClient;
@@ -24,7 +24,7 @@ type BuyerAppContextValue = {
 };
 
 const BuyerAppContext = createContext<BuyerAppContextValue | null>(null);
-const sessionStore = createSessionStore({ initialToken: getDefaultBuyerToken() });
+const sessionStore = createSessionStore({ initialToken: getConfiguredBuyerToken() || null });
 const api = new BuyerApiClient({ getToken: sessionStore.getToken });
 const analytics = createConsoleAnalytics();
 const catalog = createCatalogController({ api, analytics });

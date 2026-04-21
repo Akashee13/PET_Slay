@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { mobileTheme } from "./Screen";
 
@@ -7,29 +7,36 @@ export function ActionButton({
   label,
   onPress,
   disabled,
+  loading,
   variant = "primary",
   ...pressableProps
 }: {
   label: string;
   onPress?: () => void;
   disabled?: boolean;
+  loading?: boolean;
   variant?: "primary" | "secondary" | "danger";
 } & Omit<ComponentProps<typeof Pressable>, "children" | "disabled" | "onPress" | "style">) {
   return (
     <Pressable
       {...pressableProps}
       accessibilityRole="button"
-      disabled={disabled}
+      disabled={disabled || loading}
       onPress={onPress}
       style={({ pressed }) => [
         styles.base,
         variant === "secondary" && styles.secondary,
         variant === "danger" && styles.danger,
-        pressed && !disabled && styles.pressed,
-        disabled && styles.disabled,
+        pressed && !disabled && !loading && styles.pressed,
+        (disabled || loading) && styles.disabled,
       ]}
     >
-      <Text style={[styles.label, variant === "secondary" && styles.secondaryLabel]}>{label}</Text>
+      <View style={styles.content}>
+        {loading ? (
+          <ActivityIndicator color={variant === "secondary" ? mobileTheme.ink : "#fff"} size="small" />
+        ) : null}
+        <Text style={[styles.label, variant === "secondary" && styles.secondaryLabel]}>{label}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -38,16 +45,30 @@ const styles = StyleSheet.create({
   base: {
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 48,
-    borderRadius: 16,
+    minHeight: 52,
+    borderRadius: 18,
     backgroundColor: mobileTheme.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 13,
+    shadowColor: mobileTheme.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 14,
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    elevation: 2,
+  },
+  content: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
   },
   secondary: {
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    backgroundColor: mobileTheme.card,
+    backgroundColor: mobileTheme.cardAlt,
   },
   danger: {
     backgroundColor: mobileTheme.danger,
@@ -63,6 +84,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 15,
     fontWeight: "800",
+    letterSpacing: 0.2,
   },
   secondaryLabel: {
     color: mobileTheme.ink,

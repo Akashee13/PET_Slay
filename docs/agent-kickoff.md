@@ -8,7 +8,7 @@
 
 ## Snapshot
 
-- Project: `PET_Slay`
+- Project: `PET_Slay` / buyer brand `Noira`
 - Repo: `/Users/akash/Documents/PetProjects/PET_Slay`
 - Branch: `001-wholesale-fashion-platform`
 - Stage API: `https://pet-slay-api-stage-j67sekma7a-el.a.run.app`
@@ -170,12 +170,24 @@
 - Added mobile buyer sign-out:
   - catalog toolbar now includes localized sign-out and returns to the auth screen.
   - session sign-out clears token/user while preserving the selected language.
+- Continued mobile buyer polish and Android release readiness:
+  - Expo mobile app is now on SDK 54 and compatible with current Expo Go on iPhone.
+  - Buyer auth no longer prefills the token box by default; only an explicit local demo button appears in local/dev contexts.
+  - Buyer language resources now include Devanagari Hindi copy for key auth, catalog, checkout, and order flows.
+  - Checkout can now draft reseller orders directly into WhatsApp for `+91 82923 49038`, including product image, quantity, MOQ, city, and unit price.
+  - Buyer PLP/PDP use branded `Noira` UI elements plus auto-advancing product image carousel support.
+  - Android release assets/config now exist:
+    - `apps/mobile/assets/brand/`
+    - `apps/mobile/eas.json`
+    - `apps/mobile/app.json` with `com.noira.reseller`
+    - `docs/play-store-release.md`
+    - `scripts/check-mobile-release-readiness.sh`
 
 ## Next Recommended Work
 
-1. Run the Expo app locally against a working buyer token and smoke test auth -> language -> PLP -> PDP -> checkout.
-2. Replace dev/manual buyer token entry with proper Supabase OAuth token exchange once provider setup is ready; callback route scaffold already exists.
-3. Continue mobile localization by moving social-provider labels and remaining backend error strings into shared English/Hindi/Hinglish copy resources.
+1. Configure Supabase Google OAuth credentials and redirect URIs, then smoke test Gmail sign-in end-to-end in Expo Go and a preview build.
+2. Create an EAS project and run `npx eas build --platform android --profile preview`, then submit the resulting `.aab` to the Play internal track.
+3. Continue mobile localization by moving remaining backend error strings into shared English/Hindi/Hinglish copy resources.
 4. Continue non-mobile `T052` auth/role-boundary hardening and finish the API side of `T053` catalog payload/image/deep-link optimization.
 5. Add real admin UI tests for file selection, loading overlays, disabled duplicate actions, and PLP image rendering; current admin `npm test` is only a placeholder.
 

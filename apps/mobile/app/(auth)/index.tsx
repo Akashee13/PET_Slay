@@ -1,8 +1,9 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Linking, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../../src/components/ActionButton";
+import { BrandMark } from "../../src/components/BrandMark";
 import { mobileTheme, Screen } from "../../src/components/Screen";
 import { createSocialAuthOptions } from "../../src/features/auth/social-auth-controller";
 import { mobileCopy } from "../../src/i18n";
@@ -14,7 +15,7 @@ export default function AuthScreen() {
   const router = useRouter();
   const { api, sessionStore } = useBuyerApp();
   const session = useSessionSnapshot();
-  const [token, setToken] = useState(getDefaultBuyerToken());
+  const [token, setToken] = useState("");
   const socialOptions = createSocialAuthOptions({
     supabaseUrl: getMobileSupabaseConfig().url,
     redirectTo: "petslay://auth/callback",
@@ -37,6 +38,7 @@ export default function AuthScreen() {
       title={mobileCopy(session.language, "authTitle")}
       subtitle={mobileCopy(session.language, "authSubtitle")}
     >
+      <BrandMark name={mobileCopy(session.language, "appName")} tagline={mobileCopy(session.language, "brandTagline")} />
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{mobileCopy(session.language, "founderAccess")}</Text>
         <Text style={styles.cardCopy}>{mobileCopy(session.language, "founderAccessBody")}</Text>
@@ -50,17 +52,44 @@ export default function AuthScreen() {
         />
         <ActionButton
           disabled={session.status === "authenticating" || token.trim().length === 0}
+          loading={session.status === "authenticating"}
           label={session.status === "authenticating" ? mobileCopy(session.language, "checkingSession") : mobileCopy(session.language, "continueToCatalog")}
           onPress={() => void continueWithToken(token)}
         />
+        {getDefaultBuyerToken() ? (
+          <ActionButton
+            label={mobileCopy(session.language, "useLocalDemoToken")}
+            variant="secondary"
+            onPress={() => {
+              setToken(getDefaultBuyerToken());
+            }}
+          />
+        ) : null}
         {session.status === "error" && <Text style={styles.error}>{session.error}</Text>}
       </View>
 
       <View style={styles.providerGrid}>
         {socialOptions.map((option) => (
           <View key={option.provider} style={styles.providerCard}>
-            <ActionButton label={option.enabled ? option.label : `${option.label} soon`} variant="secondary" disabled={!option.enabled} />
-            {option.setupHint && <Text style={styles.providerHint}>{mobileCopy(session.language, "socialSetupPending")}</Text>}
+            <ActionButton
+              label={option.enabled ? mobileCopy(session.language, "continueWithGmail") : `${option.label} ${mobileCopy(session.language, "socialComingSoon").toLowerCase()}`}
+              variant="secondary"
+              disabled={!option.enabled}
+              onPress={() => {
+                if (option.url) {
+                  void Linking.openURL(option.url);
+                }
+              }}
+            />
+            <Text style={styles.providerHint}>
+              {option.provider === "google"
+                ? option.enabled
+                  ? mobileCopy(session.language, "socialGoogleHelper")
+                  : mobileCopy(session.language, "socialSetupPending")
+                : option.provider === "facebook"
+                  ? mobileCopy(session.language, "socialFacebookHelper")
+                  : mobileCopy(session.language, "socialInstagramHelper")}
+            </Text>
           </View>
         ))}
       </View>
@@ -70,16 +99,16 @@ export default function AuthScreen() {
 
 const styles = StyleSheet.create({
   card: {
-    gap: 12,
+    gap: 14,
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    borderRadius: 24,
+    borderRadius: 28,
     backgroundColor: mobileTheme.card,
-    padding: 18,
+    padding: 20,
   },
   cardTitle: {
     color: mobileTheme.ink,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "900",
   },
   cardCopy: {
@@ -88,11 +117,11 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   input: {
-    minHeight: 48,
+    minHeight: 52,
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    borderRadius: 14,
-    backgroundColor: "#fff",
+    borderRadius: 18,
+    backgroundColor: mobileTheme.cardAlt,
     color: mobileTheme.ink,
     paddingHorizontal: 14,
   },
@@ -105,9 +134,15 @@ const styles = StyleSheet.create({
   },
   providerCard: {
     gap: 6,
+    borderWidth: 1,
+    borderColor: mobileTheme.line,
+    borderRadius: 22,
+    backgroundColor: mobileTheme.cardAlt,
+    padding: 14,
   },
   providerHint: {
     color: mobileTheme.muted,
     fontSize: 12,
+    lineHeight: 18,
   },
 });

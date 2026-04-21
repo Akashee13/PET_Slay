@@ -1,11 +1,12 @@
 import { Link, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import type { ProductDetail } from "@pet-slay/types";
 
 import { ActionButton } from "../../../src/components/ActionButton";
+import { FashionImageCarousel } from "../../../src/components/FashionImageCarousel";
 import { mobileTheme, Screen } from "../../../src/components/Screen";
-import { getPrimaryProductImage } from "../../../src/features/catalog/product-images";
+import { getProductImageUrls } from "../../../src/features/catalog/product-images";
 import { mobileCopy } from "../../../src/i18n";
 import { useBuyerApp, useSessionSnapshot } from "../../../src/state/buyer-app-context";
 
@@ -47,7 +48,7 @@ export default function ProductDetailScreen() {
 
   return (
     <Screen eyebrow={product.category.replace("_", " ")} title={product.title} subtitle={product.description || mobileCopy(session.language, "productDetailFallbackSubtitle")}>
-      <Image source={{ uri: getPrimaryProductImage(product) }} style={styles.heroImage} />
+      <FashionImageCarousel imageUrls={getProductImageUrls(product)} aspectRatio={3 / 4} />
       <View style={styles.priceCard}>
         <Text style={styles.price}>₹{product.baseWholesalePrice} {mobileCopy(session.language, "wholesalePriceSuffix")}</Text>
         <Text style={styles.meta}>MOQ {product.moq} · {product.availabilityStatus.replace("_", " ")}</Text>
@@ -72,6 +73,7 @@ export default function ProductDetailScreen() {
             params: {
               productId: product.id,
               productTitle: product.title,
+              productImage: getProductImageUrls(product)[0],
               variantId: primaryVariant.id,
               moq: String(product.moq),
               unitPrice: String(product.baseWholesalePrice),
@@ -87,19 +89,13 @@ export default function ProductDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  heroImage: {
-    width: "100%",
-    aspectRatio: 3 / 4,
-    borderRadius: 26,
-    backgroundColor: "#ead8c4",
-  },
   priceCard: {
     gap: 4,
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    borderRadius: 20,
+    borderRadius: 24,
     backgroundColor: mobileTheme.card,
-    padding: 16,
+    padding: 18,
   },
   price: {
     color: mobileTheme.ink,
@@ -116,9 +112,9 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    borderRadius: 20,
-    backgroundColor: "#fff1dc",
-    padding: 16,
+    borderRadius: 24,
+    backgroundColor: mobileTheme.cardAlt,
+    padding: 18,
   },
   sectionTitle: {
     color: mobileTheme.ink,

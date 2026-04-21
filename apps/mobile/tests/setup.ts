@@ -1,5 +1,5 @@
 export function setupMobileTests() {
   return {
-    appName: "PET_Slay Mobile Test Harness"
+    appName: "Noira Seller Test Harness"
   };
 }

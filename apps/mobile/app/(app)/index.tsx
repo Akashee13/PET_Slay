@@ -1,11 +1,13 @@
 import { Link, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { ProductCard } from "@pet-slay/types";
 
 import { ActionButton } from "../../src/components/ActionButton";
+import { BrandMark } from "../../src/components/BrandMark";
+import { FashionImageCarousel } from "../../src/components/FashionImageCarousel";
 import { mobileTheme, Screen } from "../../src/components/Screen";
-import { getPrimaryProductImage } from "../../src/features/catalog/product-images";
+import { getProductImageUrls } from "../../src/features/catalog/product-images";
 import { mobileCopy } from "../../src/i18n";
 import { useBuyerApp, useSessionSnapshot } from "../../src/state/buyer-app-context";
 
@@ -43,29 +45,30 @@ export default function CatalogScreen() {
 
   if (session.status !== "authenticated") {
     return (
-      <Screen title="Preparing your catalog" subtitle="Checking reseller session and loading fresh arrivals.">
-        <Text style={styles.muted}>Please wait...</Text>
+      <Screen title={mobileCopy(session.language, "preparingCatalog")} subtitle={mobileCopy(session.language, "preparingCatalogSubtitle")}>
+        <Text style={styles.muted}>{mobileCopy(session.language, "pleaseWait")}</Text>
       </Screen>
     );
   }
 
   return (
     <Screen
-      eyebrow={session.user?.businessName ?? "Reseller catalog"}
+      eyebrow={session.user?.businessName ?? mobileCopy(session.language, "resellerCatalog")}
       title={mobileCopy(session.language, "resellerWelcome")}
       subtitle={mobileCopy(session.language, "catalogSubtitle")}
     >
+      <BrandMark name={mobileCopy(session.language, "appName")} tagline={mobileCopy(session.language, "brandTagline")} />
       <View style={styles.toolbar}>
         <Link href="/(app)/language" asChild>
           <Pressable style={styles.tile}>
-            <Text style={styles.tileLabel}>Language</Text>
+            <Text style={styles.tileLabel}>{mobileCopy(session.language, "language")}</Text>
             <Text style={styles.tileValue}>{session.language}</Text>
           </Pressable>
         </Link>
         <Link href="/(app)/orders" asChild>
           <Pressable style={styles.tile}>
             <Text style={styles.tileLabel}>{mobileCopy(session.language, "orders")}</Text>
-            <Text style={styles.tileValue}>History</Text>
+            <Text style={styles.tileValue}>{mobileCopy(session.language, "history")}</Text>
           </Pressable>
         </Link>
         <ActionButton label={mobileCopy(session.language, "refreshCatalog")} variant="secondary" onPress={() => router.replace("/(app)")} />
@@ -89,11 +92,15 @@ export default function CatalogScreen() {
           label={mobileCopy(session.language, "checkReadiness")}
           variant="secondary"
           onPress={() => {
-            setNotificationStatus("Checking notification readiness...");
+            setNotificationStatus(mobileCopy(session.language, "checkingNotificationReadiness"));
             notifications
               .getReadiness()
-              .then((readiness) => setNotificationStatus(readiness.ready ? "Ready for relevant alerts." : readiness.reason.replace("_", " ")))
-              .catch(() => setNotificationStatus("Unable to check right now."));
+              .then((readiness) =>
+                setNotificationStatus(
+                  readiness.ready ? mobileCopy(session.language, "relevantAlertsReady") : readiness.reason.replace("_", " "),
+                ),
+              )
+              .catch(() => setNotificationStatus(mobileCopy(session.language, "unableToCheckNotificationReadiness")));
           }}
         />
       </View>
@@ -106,7 +113,7 @@ export default function CatalogScreen() {
         {products.map((product) => (
           <Link key={product.id} href={`/(app)/products/${product.id}`} asChild>
             <Pressable style={styles.productCard}>
-              <Image source={{ uri: getPrimaryProductImage(product) }} style={styles.productImage} />
+              <FashionImageCarousel imageUrls={getProductImageUrls(product)} />
               <View style={styles.productBody}>
                 <Text style={styles.category}>{product.category.replace("_", " ")}</Text>
                 <Text style={styles.productTitle}>{product.title}</Text>
@@ -128,16 +135,17 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   tile: {
+    minWidth: 128,
     flex: 1,
-    gap: 4,
+    gap: 6,
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    borderRadius: 18,
-    backgroundColor: mobileTheme.card,
-    padding: 14,
+    borderRadius: 22,
+    backgroundColor: mobileTheme.cardAlt,
+    padding: 16,
   },
   tileLabel: {
-    color: mobileTheme.muted,
+    color: mobileTheme.primaryDeep,
     fontSize: 12,
     fontWeight: "800",
     textTransform: "uppercase",
@@ -157,9 +165,9 @@ const styles = StyleSheet.create({
     gap: 12,
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    borderRadius: 22,
-    backgroundColor: "#fff7ed",
-    padding: 14,
+    borderRadius: 26,
+    backgroundColor: mobileTheme.cardAlt,
+    padding: 16,
   },
   noticeCopy: {
     flex: 1,
@@ -175,7 +183,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   noticeStatus: {
-    color: mobileTheme.primary,
+    color: mobileTheme.primaryDeep,
     fontSize: 13,
     fontWeight: "800",
     textTransform: "capitalize",
@@ -184,20 +192,23 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    borderRadius: 24,
+    borderRadius: 28,
     backgroundColor: mobileTheme.card,
-  },
-  productImage: {
-    width: "100%",
-    aspectRatio: 3 / 4,
-    backgroundColor: "#ead8c4",
+    shadowColor: mobileTheme.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 18,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    elevation: 2,
   },
   productBody: {
     gap: 6,
     padding: 14,
   },
   category: {
-    color: mobileTheme.accent,
+    color: mobileTheme.primaryDeep,
     fontSize: 12,
     fontWeight: "900",
     letterSpacing: 0.9,
@@ -216,8 +227,8 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     overflow: "hidden",
     borderRadius: 999,
-    backgroundColor: "#dcfce7",
-    color: "#166534",
+    backgroundColor: "#dbf6e3",
+    color: mobileTheme.sage,
     fontSize: 12,
     fontWeight: "800",
     paddingHorizontal: 10,

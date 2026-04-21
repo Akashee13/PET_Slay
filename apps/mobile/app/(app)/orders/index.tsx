@@ -26,10 +26,10 @@ export default function OrdersScreen() {
   }, [orders]);
 
   return (
-    <Screen eyebrow="Buyer orders" title={mobileCopy(session.language, "orderHistory")} subtitle={mobileCopy(session.language, "orderHistorySubtitle")}>
+    <Screen eyebrow={mobileCopy(session.language, "buyerOrdersEyebrow")} title={mobileCopy(session.language, "orderHistory")} subtitle={mobileCopy(session.language, "orderHistorySubtitle")}>
       {loading && <Text style={styles.muted}>{mobileCopy(session.language, "loadingOrder")}</Text>}
       {error && <Text style={styles.error}>{error}</Text>}
-      {!loading && items.length === 0 && <Text style={styles.muted}>No orders placed yet.</Text>}
+      {!loading && items.length === 0 && <Text style={styles.muted}>{mobileCopy(session.language, "noOrdersYet")}</Text>}
       <View style={styles.list}>
         {items.map((order) => (
           <Link key={order.id} href={`/(app)/orders/${order.id}`} asChild>
@@ -54,9 +54,9 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    borderRadius: 22,
-    backgroundColor: mobileTheme.card,
-    padding: 16,
+    borderRadius: 24,
+    backgroundColor: mobileTheme.cardAlt,
+    padding: 18,
   },
   title: {
     color: mobileTheme.ink,
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     textTransform: "capitalize",
   },
   cta: {
-    color: mobileTheme.primary,
+    color: mobileTheme.primaryDeep,
     fontWeight: "900",
   },
   muted: {

@@ -34,6 +34,10 @@ export function getDefaultBuyerToken(): string {
   return allowsLocalDevToken() ? "dev-buyer-token" : "";
 }
 
+export function getConfiguredBuyerToken(): string {
+  return process.env.EXPO_PUBLIC_BUYER_BEARER_TOKEN ?? "";
+}
+
 function allowsLocalDevToken(): boolean {
   const profile = process.env.EXPO_PUBLIC_APP_PROFILE ?? process.env.EXPO_PUBLIC_APP_ENV ?? "local";
   return ["dev", "development", "local", "test"].includes(profile.toLowerCase());

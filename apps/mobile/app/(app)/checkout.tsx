@@ -1,10 +1,11 @@
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, TextInput, View } from "react-native";
+import { Linking, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ActionButton } from "../../src/components/ActionButton";
 import { mobileTheme, Screen } from "../../src/components/Screen";
 import { formatInr, formatOrderStatus } from "../../src/features/orders/order-presenter";
+import { buildWhatsappOrderUrl } from "../../src/features/orders/whatsapp-order";
 import { mobileCopy } from "../../src/i18n";
 import { useBuyerApp, useSessionSnapshot } from "../../src/state/buyer-app-context";
 
@@ -15,6 +16,7 @@ export default function CheckoutScreen() {
   const params = useLocalSearchParams<{
     productId: string;
     productTitle: string;
+    productImage: string;
     variantId: string;
     moq: string;
     unitPrice: string;
@@ -42,10 +44,28 @@ export default function CheckoutScreen() {
       setMessage(`${mobileCopy(session.language, "orderCreated")}: ${order.id} · ${mobileCopy(session.language, "status")}: ${formatOrderStatus(order.status)}`);
     } catch (requestError) {
       setMessage(requestError instanceof Error && requestError.message === "quantity_below_moq"
-        ? `Quantity must be at least MOQ ${moq}.`
+        ? mobileCopy(session.language, "quantityBelowMoq").replace("{{moq}}", String(moq))
         : requestError instanceof Error ? requestError.message : "order_submit_failed");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function sendOrderToWhatsapp() {
+    try {
+      const url = buildWhatsappOrderUrl({
+        businessName: session.user?.businessName,
+        productTitle: params.productTitle || mobileCopy(session.language, "createOrder"),
+        productImageUrl: params.productImage || "",
+        quantity: Number(quantity || 0),
+        moq,
+        city,
+        unitPrice,
+      });
+      await Linking.openURL(url);
+      setMessage(mobileCopy(session.language, "whatsappReady"));
+    } catch {
+      setMessage(mobileCopy(session.language, "whatsappFailed"));
     }
   }
 
@@ -58,7 +78,7 @@ export default function CheckoutScreen() {
       <View style={styles.summary}>
         <Text style={styles.summaryTitle}>{mobileCopy(session.language, "orderSummary")}</Text>
         <Text style={styles.summaryLine}>MOQ {moq}</Text>
-        <Text style={styles.summaryLine}>Estimated total {formatInr(Number(quantity || 0) * unitPrice)}</Text>
+        <Text style={styles.summaryLine}>{mobileCopy(session.language, "estimatedTotal")} {formatInr(Number(quantity || 0) * unitPrice)}</Text>
       </View>
 
       <View style={styles.form}>
@@ -74,7 +94,13 @@ export default function CheckoutScreen() {
           <ActionButton label={mobileCopy(session.language, "viewOrderRefundStatus")} variant="secondary" />
         </Link>
       )}
-      <ActionButton disabled={submitting || !params.variantId} label={submitting ? mobileCopy(session.language, "placingOrder") : mobileCopy(session.language, "placeWholesaleOrder")} onPress={() => void submitOrder()} />
+      <ActionButton label={mobileCopy(session.language, "sendViaWhatsapp")} variant="secondary" onPress={() => void sendOrderToWhatsapp()} />
+      <ActionButton
+        disabled={!params.variantId}
+        loading={submitting}
+        label={submitting ? mobileCopy(session.language, "placingOrder") : mobileCopy(session.language, "placeWholesaleOrder")}
+        onPress={() => void submitOrder()}
+      />
       <ActionButton label={mobileCopy(session.language, "backToCatalog")} variant="secondary" onPress={() => router.replace("/(app)")} />
     </Screen>
   );
@@ -85,9 +111,9 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    borderRadius: 22,
-    backgroundColor: mobileTheme.card,
-    padding: 16,
+    borderRadius: 24,
+    backgroundColor: mobileTheme.cardAlt,
+    padding: 18,
   },
   summaryTitle: {
     color: mobileTheme.ink,
@@ -107,11 +133,11 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   input: {
-    minHeight: 48,
+    minHeight: 52,
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    borderRadius: 14,
-    backgroundColor: "#fff",
+    borderRadius: 18,
+    backgroundColor: mobileTheme.card,
     color: mobileTheme.ink,
     paddingHorizontal: 14,
   },

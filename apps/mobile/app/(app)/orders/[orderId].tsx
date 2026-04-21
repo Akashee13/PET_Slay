@@ -70,9 +70,9 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderColor: mobileTheme.line,
-    borderRadius: 22,
-    backgroundColor: mobileTheme.card,
-    padding: 16,
+    borderRadius: 24,
+    backgroundColor: mobileTheme.cardAlt,
+    padding: 18,
   },
   title: {
     color: mobileTheme.ink,

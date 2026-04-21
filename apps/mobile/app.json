@@ -1,18 +1,24 @@
 {
   "expo": {
-    "name": "PET_Slay",
-    "slug": "pet-slay-reseller",
+    "name": "Noira Seller",
+    "slug": "noira-seller",
     "scheme": "petslay",
     "platforms": ["ios", "android"],
     "orientation": "portrait",
     "userInterfaceStyle": "light",
+    "icon": "./assets/brand/noira-icon.png",
     "ios": {
-      "supportsTablet": false
+      "supportsTablet": false,
+      "bundleIdentifier": "com.noira.reseller"
     },
     "android": {
+      "package": "com.noira.reseller",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#fff7ed"
-      }
+        "foregroundImage": "./assets/brand/noira-adaptive-foreground.png",
+        "backgroundColor": "#fff3f8"
+      },
+      "edgeToEdgeEnabled": true
     },
     "plugins": ["expo-router"]
   }

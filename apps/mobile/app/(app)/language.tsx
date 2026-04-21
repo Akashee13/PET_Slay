@@ -4,15 +4,10 @@ import { StyleSheet, Text, View } from "react-native";
 import type { Language } from "@pet-slay/types";
 
 import { ActionButton } from "../../src/components/ActionButton";
+import { BrandMark } from "../../src/components/BrandMark";
 import { mobileTheme, Screen } from "../../src/components/Screen";
 import { mobileCopy } from "../../src/i18n";
 import { useBuyerApp, useSessionSnapshot } from "../../src/state/buyer-app-context";
-
-const LANGUAGE_OPTIONS: Array<{ value: Language; label: string; helper: string }> = [
-  { value: "english", label: "English", helper: "Simple operations copy for catalog and checkout." },
-  { value: "hindi", label: "हिन्दी", helper: "Hindi-first support for North India reseller buyers." },
-  { value: "hinglish", label: "Hinglish", helper: "Daily-business language for WhatsApp-style selling." },
-];
 
 export default function LanguageScreen() {
   const router = useRouter();
@@ -40,9 +35,26 @@ export default function LanguageScreen() {
       title={mobileCopy(session.language, "chooseBuyerLanguage")}
       subtitle={mobileCopy(session.language, "languageSubtitle")}
     >
+      <BrandMark name={mobileCopy(session.language, "appName")} tagline={mobileCopy(session.language, "brandTagline")} />
       {error && <Text style={styles.error}>{error}</Text>}
       <View style={styles.list}>
-        {LANGUAGE_OPTIONS.map((option) => {
+        {([
+          {
+            value: "english",
+            label: mobileCopy(session.language, "languageEnglishLabel"),
+            helper: mobileCopy(session.language, "languageEnglishHelper"),
+          },
+          {
+            value: "hindi",
+            label: mobileCopy(session.language, "languageHindiLabel"),
+            helper: mobileCopy(session.language, "languageHindiHelper"),
+          },
+          {
+            value: "hinglish",
+            label: mobileCopy(session.language, "languageHinglishLabel"),
+            helper: mobileCopy(session.language, "languageHinglishHelper"),
+          },
+        ] satisfies Array<{ value: Language; label: string; helper: string }>).map((option) => {
           const selected = session.language === option.value;
           return (
             <View key={option.value} style={[styles.card, selected && styles.selectedCard]}>
@@ -52,7 +64,7 @@ export default function LanguageScreen() {
               </View>
               <ActionButton
                 disabled={saving !== null}
-                label={saving === option.value ? "Saving..." : selected ? "Selected" : "Use this"}
+                label={saving === option.value ? mobileCopy(session.language, "saving") : selected ? mobileCopy(session.language, "selected") : mobileCopy(session.language, "useThis")}
                 onPress={() => void selectLanguage(option.value)}
                 variant={selected ? "secondary" : "primary"}
               />
@@ -77,8 +89,8 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   selectedCard: {
-    borderColor: mobileTheme.accent,
-    backgroundColor: "#fff1dc",
+    borderColor: mobileTheme.primary,
+    backgroundColor: mobileTheme.cardAlt,
   },
   copy: {
     gap: 5,

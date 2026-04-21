@@ -20,10 +20,10 @@ export type Analytics = {
 export function createConsoleAnalytics(): Analytics {
   return {
     track(event, properties) {
-      console.info("[PET_Slay mobile analytics]", event, properties ?? {});
+      console.info("[Noira mobile analytics]", event, properties ?? {});
     },
     recordError(event, error, properties) {
-      console.warn("[PET_Slay mobile analytics]", event, {
+      console.warn("[Noira mobile analytics]", event, {
         ...properties,
         error: error instanceof Error ? error.message : "unknown_error",
       });
@@ -49,4 +49,3 @@ export function createRecordingAnalytics(): Analytics & { events: AnalyticsEvent
     },
   };
 }
-

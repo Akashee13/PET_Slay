@@ -15,6 +15,8 @@ export function Screen({
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content}>
+        <View pointerEvents="none" style={styles.heroGlowPrimary} />
+        <View pointerEvents="none" style={styles.heroGlowSecondary} />
         {(eyebrow || title || subtitle) && (
           <View style={styles.header}>
             {eyebrow && <Text style={styles.eyebrow}>{eyebrow}</Text>}
@@ -29,15 +31,21 @@ export function Screen({
 }
 
 export const mobileTheme = {
-  bg: "#fff7ed",
-  ink: "#2b2118",
-  muted: "#776859",
-  card: "#fffaf2",
-  line: "#ead8c4",
-  primary: "#5a3f2b",
-  accent: "#c47a35",
-  sage: "#607a54",
-  danger: "#a33b28",
+  bg: "#fff6fb",
+  bgAlt: "#ffeaf4",
+  ink: "#2d1230",
+  muted: "#7b5f73",
+  card: "#fffdfd",
+  cardAlt: "#fff1f8",
+  line: "#f3c8da",
+  primary: "#e91e63",
+  primaryDeep: "#b31252",
+  accent: "#ff7aa2",
+  accentSoft: "#ffd4e4",
+  lavender: "#f6e6ff",
+  sage: "#3d915d",
+  danger: "#c73f65",
+  shadow: "rgba(179, 18, 82, 0.12)",
 };
 
 const styles = StyleSheet.create({
@@ -51,25 +59,58 @@ const styles = StyleSheet.create({
     paddingBottom: 44,
   },
   header: {
-    gap: 8,
+    gap: 10,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: mobileTheme.line,
+    borderRadius: 30,
+    backgroundColor: mobileTheme.card,
+    padding: 20,
+    shadowColor: mobileTheme.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 24,
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    elevation: 3,
   },
   eyebrow: {
-    color: mobileTheme.accent,
+    color: mobileTheme.primaryDeep,
     fontSize: 12,
     fontWeight: "800",
-    letterSpacing: 1.1,
+    letterSpacing: 1.3,
     textTransform: "uppercase",
   },
   title: {
     color: mobileTheme.ink,
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: "900",
-    letterSpacing: -1.1,
-    lineHeight: 36,
+    letterSpacing: -1.4,
+    lineHeight: 38,
   },
   subtitle: {
     color: mobileTheme.muted,
     fontSize: 15,
-    lineHeight: 21,
+    lineHeight: 22,
+  },
+  heroGlowPrimary: {
+    position: "absolute",
+    right: -10,
+    top: 10,
+    height: 150,
+    width: 150,
+    borderRadius: 999,
+    backgroundColor: mobileTheme.accentSoft,
+  },
+  heroGlowSecondary: {
+    position: "absolute",
+    left: -30,
+    top: 120,
+    height: 110,
+    width: 110,
+    borderRadius: 999,
+    backgroundColor: mobileTheme.lavender,
+    opacity: 0.8,
   },
 });

@@ -14,14 +14,14 @@ export type SocialAuthOption = {
 };
 
 const PROVIDER_LABELS: Record<SocialAuthProvider, string> = {
-  google: "Continue with Google",
+  google: "Continue with Gmail",
   facebook: "Continue with Facebook",
   instagram: "Continue with Instagram",
 };
 
 export function createSocialAuthOptions(config: SocialAuthConfig): SocialAuthOption[] {
   return (["google", "facebook", "instagram"] satisfies SocialAuthProvider[]).map((provider) => {
-    const enabled = Boolean(config.supabaseUrl && config.redirectTo);
+    const enabled = provider === "google" && Boolean(config.supabaseUrl && config.redirectTo);
     return {
       provider,
       label: PROVIDER_LABELS[provider],
