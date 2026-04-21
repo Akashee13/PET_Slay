@@ -65,3 +65,23 @@ func AdminUpdateHandler(service *Service) http.HandlerFunc {
 		httpresponse.JSON(w, http.StatusOK, product)
 	}
 }
+
+func AdminDetailHandler(service *Service) http.HandlerFunc {
+	prefix := "/v1/admin/products/"
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		productID := strings.TrimPrefix(r.URL.Path, prefix)
+		if productID == "" || productID == r.URL.Path {
+			httpresponse.Error(w, http.StatusBadRequest, "invalid_product_id")
+			return
+		}
+
+		product, err := service.Get(productID)
+		if err != nil {
+			httpresponse.Error(w, http.StatusNotFound, err.Error())
+			return
+		}
+
+		httpresponse.JSON(w, http.StatusOK, product)
+	}
+}

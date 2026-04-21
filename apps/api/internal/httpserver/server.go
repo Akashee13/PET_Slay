@@ -171,12 +171,14 @@ func New() http.Handler {
 		}
 	})))
 	mux.Handle("/v1/admin/products/", auth.RequireRole(verifier, auth.RoleAdmin)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPatch {
+		switch r.Method {
+		case http.MethodGet:
+			catalog.AdminDetailHandler(catalogService).ServeHTTP(w, r)
+		case http.MethodPatch:
+			catalog.AdminUpdateHandler(catalogService).ServeHTTP(w, r)
+		default:
 			httpresponse.Error(w, http.StatusMethodNotAllowed, "method_not_allowed")
-			return
 		}
-
-		catalog.AdminUpdateHandler(catalogService).ServeHTTP(w, r)
 	})))
 	mux.Handle("/v1/admin/orders", auth.RequireRole(verifier, auth.RoleAdmin)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {

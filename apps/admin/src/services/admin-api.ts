@@ -33,8 +33,8 @@ export type AdminProductInput = {
   category: string;
   description?: string;
   baseWholesalePrice: number;
-  moq: number;
   availabilityStatus?: string;
+  availableSizes?: string[];
   imageUrls?: string[];
   listingStatus?: "listed" | "unlisted";
 };
@@ -43,8 +43,8 @@ export type AdminProductUpdateInput = {
   title?: string;
   description?: string;
   baseWholesalePrice?: number;
-  moq?: number;
   availabilityStatus?: string;
+  availableSizes?: string[];
   isNewArrival?: boolean;
   imageUrls?: string[];
   listingAction?: "list_now" | "unlist_now";
@@ -62,6 +62,11 @@ export type AdminProduct = {
   isNewArrival?: boolean;
   coverImageUrl?: string;
   imageUrls?: string[];
+  variants?: Array<{
+    id: string;
+    sizeLabel: string;
+    availabilityStatus: string;
+  }>;
   listingStatus: "listed" | "unlisted";
   visibleUntil?: string;
 };
@@ -92,6 +97,13 @@ export async function updateAdminProduct(token: string, productId: string, input
     method: "PATCH",
     token,
     body: input,
+  });
+}
+
+export async function getAdminProduct(token: string, productId: string): Promise<AdminProduct> {
+  return adminRequest<AdminProduct>(`/v1/admin/products/${productId}`, {
+    method: "GET",
+    token,
   });
 }
 

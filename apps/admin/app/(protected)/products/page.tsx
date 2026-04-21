@@ -8,6 +8,7 @@ import { useAdminLanguage } from "@/src/features/i18n/admin-language";
 import { mergeSelectedProductImages, removeSelectedProductImage } from "@/src/features/products/file-selection";
 import {
   createAdminProduct,
+  getAdminProduct,
   type AdminProduct,
   listAdminProducts,
   updateAdminProduct,
@@ -15,87 +16,68 @@ import {
 import { uploadProductImages } from "@/src/services/product-image-upload";
 import { isAdminSupabaseConfigured } from "@/src/services/supabase";
 
+const SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"] as const;
+
 type CreateForm = {
   title: string;
   category: string;
   description: string;
   baseWholesalePrice: string;
-  moq: string;
   availabilityStatus: string;
-  imageUrls: string[];
+  availableSizes: string[];
   listImmediately: boolean;
 };
 
 type UpdateForm = {
   productId: string;
   title: string;
+  category: string;
   description: string;
   baseWholesalePrice: string;
-  moq: string;
   availabilityStatus: string;
-  isNewArrival: string;
-  imageUrls: string[];
+  isNewArrival: boolean;
+  availableSizes: string[];
+  currentImageUrls: string[];
 };
 
-type BusyOperation = "create" | "update" | "";
+type BusyOperation = "create" | "update" | "prefill" | "";
+type ModalMode = "create" | "edit" | null;
 
 const defaultCreateForm: CreateForm = {
   title: "",
   category: "western",
   description: "",
   baseWholesalePrice: "",
-  moq: "",
   availabilityStatus: "in_stock",
-  imageUrls: [""],
+  availableSizes: ["M"],
   listImmediately: true,
 };
 
 const defaultUpdateForm: UpdateForm = {
   productId: "",
   title: "",
+  category: "western",
   description: "",
   baseWholesalePrice: "",
-  moq: "",
-  availabilityStatus: "",
-  isNewArrival: "",
-  imageUrls: [""],
+  availabilityStatus: "in_stock",
+  isNewArrival: false,
+  availableSizes: ["M"],
+  currentImageUrls: [],
 };
-
-function normalizeImageUrls(imageUrls: string[]): string[] {
-  return imageUrls.map((imageUrl) => imageUrl.trim()).filter(Boolean).slice(0, 5);
-}
-
-function setImageAt(imageUrls: string[], index: number, value: string): string[] {
-  const next = [...imageUrls];
-  next[index] = value;
-  return next;
-}
-
-function addImageField(imageUrls: string[]): string[] {
-  if (imageUrls.length >= 5) {
-    return imageUrls;
-  }
-  return [...imageUrls, ""];
-}
-
-function removeImageField(imageUrls: string[], index: number): string[] {
-  const next = imageUrls.filter((_, currentIndex) => currentIndex != index);
-  return next.length > 0 ? next : [""];
-}
 
 const INVENTORY_AI_SHOTS = [
   {
     label: "Aisle intelligence dashboard",
-    prompt: "warehouse inventory dashboard ui, clean glassmorphism cards, fashion boxes, blue teal palette, cinematic lighting"
+    prompt: "warehouse inventory dashboard ui, clean glassmorphism cards, fashion boxes, blue teal palette, cinematic lighting",
   },
   {
     label: "SKU scanning operations",
-    prompt: "mobile warehouse sku scanner interface, premium ux, modern warehouse environment, neon accents"
+    prompt: "mobile warehouse sku scanner interface, premium ux, modern warehouse environment, neon accents",
   },
   {
     label: "Realtime stock command center",
-    prompt: "realtime stock monitoring admin panel, logistics map, elegant data visualization, high-end product ui"
-  }
+    prompt: "realtime stock monitoring admin panel, logistics map, elegant data visualization, high-end product ui",
+  },
 ] as const;
 
 function buildAiImageUrl(prompt: string): string {
@@ -114,27 +96,59 @@ function BusyOverlay({ title, detail }: { title: string; detail: string }) {
   );
 }
 
+function toggleSize(current: string[], sizeLabel: string): string[] {
+  if (current.includes(sizeLabel)) {
+    return current.filter((size) => size !== sizeLabel);
+  }
+
+  return [...current, sizeLabel];
+}
+
+function toUpdateForm(product: AdminProduct): UpdateForm {
+  return {
+    productId: product.id,
+    title: product.title,
+    category: product.category,
+    description: product.description ?? "",
+    baseWholesalePrice: String(product.baseWholesalePrice ?? ""),
+    availabilityStatus: product.availabilityStatus || "in_stock",
+    isNewArrival: Boolean(product.isNewArrival),
+    availableSizes:
+      product.variants?.map((variant) => variant.sizeLabel).filter(Boolean) && product.variants.length > 0
+        ? product.variants.map((variant) => variant.sizeLabel)
+        : ["M"],
+    currentImageUrls: product.imageUrls ?? [],
+  };
+}
+
 export default function ProductsPage() {
   const { t } = useAdminLanguage();
+  const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [createForm, setCreateForm] = useState<CreateForm>(defaultCreateForm);
   const [updateForm, setUpdateForm] = useState<UpdateForm>(defaultUpdateForm);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [productsLoading, setProductsLoading] = useState(true);
+  const [selectedEditProductId, setSelectedEditProductId] = useState("");
   const [createUploadFiles, setCreateUploadFiles] = useState<File[]>([]);
   const [updateUploadFiles, setUpdateUploadFiles] = useState<File[]>([]);
   const [busyOperation, setBusyOperation] = useState<BusyOperation>("");
   const [result, setResult] = useState<AdminProduct | null>(null);
   const [error, setError] = useState("");
   const isBusy = busyOperation !== "";
-  const busyTitle = busyOperation === "create" ? "Creating product" : "Updating product";
-  const busyDetail = busyOperation === "create"
-    ? "Uploading product images and publishing the catalog item. Please keep this tab open."
-    : "Saving product updates and replacing images if selected. Please keep this tab open.";
 
-  const activeProducts = useMemo(
-    () => [...products].sort((left, right) => right.id.localeCompare(left.id)),
-    [products]
-  );
+  const activeProducts = useMemo(() => [...products].sort((left, right) => right.id.localeCompare(left.id)), [products]);
+  const busyTitle =
+    busyOperation === "create"
+      ? "Creating product"
+      : busyOperation === "update"
+        ? "Updating product"
+        : "Loading product details";
+  const busyDetail =
+    busyOperation === "create"
+      ? "Uploading product images and creating the catalog item. Please keep this tab open."
+      : busyOperation === "update"
+        ? "Saving the edited product and replacing images if selected. Please keep this tab open."
+        : "Fetching the latest product details to prefill the edit form.";
 
   async function loadProducts() {
     const token = getAdminSessionToken();
@@ -160,6 +174,45 @@ export default function ProductsPage() {
     void loadProducts();
   }, []);
 
+  function closeModal() {
+    if (isBusy) {
+      return;
+    }
+    setModalMode(null);
+    setError("");
+    setCreateUploadFiles([]);
+    setUpdateUploadFiles([]);
+  }
+
+  function openCreateModal() {
+    setCreateForm(defaultCreateForm);
+    setCreateUploadFiles([]);
+    setError("");
+    setModalMode("create");
+  }
+
+  async function prefillEditForm(productId: string) {
+    const token = getAdminSessionToken();
+    if (!token) {
+      setError("Missing admin session token");
+      return;
+    }
+
+    setBusyOperation("prefill");
+    setError("");
+    try {
+      const product = await getAdminProduct(token, productId);
+      setSelectedEditProductId(productId);
+      setUpdateForm(toUpdateForm(product));
+      setUpdateUploadFiles([]);
+      setModalMode("edit");
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Failed to load product details");
+    } finally {
+      setBusyOperation("");
+    }
+  }
+
   async function onCreate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const token = getAdminSessionToken();
@@ -168,40 +221,37 @@ export default function ProductsPage() {
       return;
     }
 
+    if (createForm.availableSizes.length === 0) {
+      setError("Select at least one available size.");
+      return;
+    }
+
+    if (createUploadFiles.length === 0) {
+      setError("Upload at least 1 product image from device before creating a product.");
+      return;
+    }
+
     setError("");
     try {
-      const manualImageUrls = normalizeImageUrls(createForm.imageUrls);
-      const filesToUpload = createUploadFiles.slice(0, 5);
-
-      if (filesToUpload.length === 0) {
-        setError("Upload at least 1 product image from device before creating a product.");
-        return;
-      }
-
-      if (manualImageUrls.length+ filesToUpload.length > 5) {
-        setError("You can attach maximum 5 images per product.");
-        return;
-      }
-
       setBusyOperation("create");
-      const uploadedImageUrls = await uploadProductImages(filesToUpload, {
+      const uploadedImageUrls = await uploadProductImages(createUploadFiles.slice(0, 5), {
         productTitleHint: createForm.title,
       });
 
       const created = await createAdminProduct(token, {
-        title: createForm.title,
-        category: createForm.category,
-        description: createForm.description,
+        title: createForm.title.trim(),
+        category: createForm.category.trim(),
+        description: createForm.description.trim(),
         baseWholesalePrice: Number(createForm.baseWholesalePrice),
-        moq: Number(createForm.moq),
-        availabilityStatus: createForm.availabilityStatus,
-        imageUrls: [...manualImageUrls, ...uploadedImageUrls],
+        availabilityStatus: createForm.availabilityStatus.trim(),
+        availableSizes: createForm.availableSizes,
+        imageUrls: uploadedImageUrls,
         listingStatus: createForm.listImmediately ? "listed" : "unlisted",
       });
       setResult(created);
       setCreateForm(defaultCreateForm);
       setCreateUploadFiles([]);
-      setUpdateForm((current) => ({ ...current, productId: created.id }));
+      setModalMode(null);
       await loadProducts();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to create product");
@@ -219,48 +269,38 @@ export default function ProductsPage() {
     }
 
     if (!updateForm.productId.trim()) {
-      setError("productId is required for update");
+      setError("Select a product to edit first.");
       return;
     }
 
-    const payload: {
-      title?: string;
-      description?: string;
-      baseWholesalePrice?: number;
-      moq?: number;
-      availabilityStatus?: string;
-      isNewArrival?: boolean;
-      imageUrls?: string[];
-    } = {};
-
-    if (updateForm.title.trim()) payload.title = updateForm.title.trim();
-    if (updateForm.description.trim()) payload.description = updateForm.description.trim();
-    if (updateForm.baseWholesalePrice.trim()) payload.baseWholesalePrice = Number(updateForm.baseWholesalePrice);
-    if (updateForm.moq.trim()) payload.moq = Number(updateForm.moq);
-    if (updateForm.availabilityStatus.trim()) payload.availabilityStatus = updateForm.availabilityStatus.trim();
-    if (updateForm.isNewArrival.trim()) payload.isNewArrival = updateForm.isNewArrival === "true";
-
-    const normalizedImageUrls = normalizeImageUrls(updateForm.imageUrls);
-    const filesToUpload = updateUploadFiles.slice(0, 5);
-    if (normalizedImageUrls.length+ filesToUpload.length > 5) {
-      setError("You can attach maximum 5 images per product.");
+    if (updateForm.availableSizes.length === 0) {
+      setError("Select at least one available size.");
       return;
     }
 
     setError("");
     try {
       setBusyOperation("update");
-      const uploadedImageUrls = await uploadProductImages(filesToUpload, {
-        productTitleHint: updateForm.title || updateForm.productId,
-      });
-
-      if (normalizedImageUrls.length > 0 || uploadedImageUrls.length > 0) {
-        payload.imageUrls = [...normalizedImageUrls, ...uploadedImageUrls];
+      let imageUrls = updateForm.currentImageUrls;
+      if (updateUploadFiles.length > 0) {
+        imageUrls = await uploadProductImages(updateUploadFiles.slice(0, 5), {
+          productTitleHint: updateForm.title || updateForm.productId,
+        });
       }
 
-      const updated = await updateAdminProduct(token, updateForm.productId.trim(), payload);
+      const updated = await updateAdminProduct(token, updateForm.productId.trim(), {
+        title: updateForm.title.trim(),
+        description: updateForm.description.trim(),
+        baseWholesalePrice: Number(updateForm.baseWholesalePrice),
+        availabilityStatus: updateForm.availabilityStatus.trim(),
+        availableSizes: updateForm.availableSizes,
+        isNewArrival: updateForm.isNewArrival,
+        imageUrls,
+      });
       setResult(updated);
       setUpdateUploadFiles([]);
+      setUpdateForm(toUpdateForm(updated));
+      setModalMode(null);
       await loadProducts();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to update product");
@@ -278,162 +318,274 @@ export default function ProductsPage() {
           <h1 className="headline">{t("addProductTitle")}</h1>
           <p className="subtle">{t("addProductSubtitle")}</p>
         </div>
-        <Link href="/listed-products" className="button-link">{t("listedProductsNav")}</Link>
+        <Link href="/listed-products" className="button-link">
+          {t("listedProductsNav")}
+        </Link>
       </section>
 
       <section className="hero-panel stack">
-        <h2 style={{ margin: 0 }}>Catalog Manager Snapshot</h2>
-        <p className="subtle">Keep merchandising, stock intent, and image quality aligned before buyers place orders.</p>
-        <div className="kpi-grid">
-          <div className="kpi"><strong>{activeProducts.length}</strong><span className="subtle">Products in admin table</span></div>
-          <div className="kpi"><strong>5 max</strong><span className="subtle">Images per product</span></div>
-          <div className="kpi"><strong>Live</strong><span className="subtle">Stage API sync</span></div>
-          <div className="kpi"><strong>Admin Ready</strong><span className="subtle">Business-first layout</span></div>
+        <h2 style={{ margin: 0 }}>Product Operations Hub</h2>
+        <p className="subtle">Open a focused modal for adding or editing products. Edit forms are prefilled so the admin can erase, refine, and resubmit quickly.</p>
+        <div className="product-action-grid">
+          <button className="product-action-card" type="button" onClick={openCreateModal}>
+            <strong>Add Product</strong>
+            <span>Open a fresh intake form with image upload and size selection.</span>
+          </button>
+          <button
+            className="product-action-card accent"
+            type="button"
+            onClick={() => {
+              if (selectedEditProductId) {
+                void prefillEditForm(selectedEditProductId);
+              } else if (activeProducts[0]) {
+                void prefillEditForm(activeProducts[0].id);
+              } else {
+                setError("No products available to edit yet.");
+              }
+            }}
+          >
+            <strong>Edit Product</strong>
+            <span>Choose a product below and open a prefilled edit modal.</span>
+          </button>
         </div>
       </section>
 
       {error && <p className="error">{error}</p>}
 
-      <section className="data-grid">
-        <article className="panel">
-          <h2>Add New Product</h2>
-          <p>Capture essential commercial details and upload up to 5 product images.</p>
-          <form onSubmit={onCreate} className="field-grid">
-            <label htmlFor="create-title">Title</label>
-            <input id="create-title" placeholder="Title" value={createForm.title} onChange={(event) => setCreateForm((current) => ({ ...current, title: event.target.value }))} required disabled={isBusy} />
-            <label htmlFor="create-category">Category</label>
-            <input id="create-category" placeholder="Category (western/south_asian etc.)" value={createForm.category} onChange={(event) => setCreateForm((current) => ({ ...current, category: event.target.value }))} required disabled={isBusy} />
-            <label htmlFor="create-description">Description</label>
-            <textarea id="create-description" placeholder="Description" value={createForm.description} onChange={(event) => setCreateForm((current) => ({ ...current, description: event.target.value }))} disabled={isBusy} />
-            <div className="file-picker-card">
+      {modalMode && (
+        <div className="modal-backdrop" role="presentation" onClick={closeModal}>
+          <section className="modal-sheet panel stack" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
               <div>
-                <label htmlFor="create-image-files">Product images from device <span className="required-mark">*</span></label>
-                <p className="file-help">Upload at least 1 image. Select up to 5 images at once, or choose again to add more.</p>
+                <h2>{modalMode === "create" ? "Add Product" : "Edit Product"}</h2>
+                <p className="subtle" style={{ marginBottom: 0 }}>
+                  {modalMode === "create"
+                    ? "Create a product in a focused form, then publish or keep it unlisted."
+                    : "Loaded details are editable. Erase any field you want to change and resubmit."}
+                </p>
               </div>
-              <input
-                id="create-image-files"
-                className="native-file-input"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                multiple
-                disabled={isBusy}
-                onChange={(event) => {
-                  setCreateUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
-                }}
-              />
-              <label className={`file-picker-button ${isBusy ? "disabled" : ""}`} htmlFor="create-image-files">
-                Choose product images
-              </label>
-              <strong className="file-selection-summary">
-                {createUploadFiles.length > 0 ? `${createUploadFiles.length} image${createUploadFiles.length === 1 ? "" : "s"} selected` : "No images selected yet"}
-              </strong>
-              {createUploadFiles.length > 0 && (
-                <div className="file-chip-row" aria-live="polite">
-                  {createUploadFiles.map((file, index) => (
-                    <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
-                      {file.name}
-                      <button type="button" disabled={isBusy} onClick={() => setCreateUploadFiles((current) => removeSelectedProductImage(current, index))}>
-                        Remove
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
+              <button type="button" className="modal-close" onClick={closeModal} disabled={isBusy} aria-label="Close product form">
+                ×
+              </button>
             </div>
-            <label htmlFor="create-base-price">Base wholesale price</label>
-            <input id="create-base-price" placeholder="Base wholesale price" type="number" step="0.01" value={createForm.baseWholesalePrice} onChange={(event) => setCreateForm((current) => ({ ...current, baseWholesalePrice: event.target.value }))} required disabled={isBusy} />
-            <label htmlFor="create-moq">MOQ</label>
-            <input id="create-moq" placeholder="MOQ" type="number" value={createForm.moq} onChange={(event) => setCreateForm((current) => ({ ...current, moq: event.target.value }))} required disabled={isBusy} />
-            <label htmlFor="create-status">Availability status</label>
-            <input id="create-status" placeholder="Availability status" value={createForm.availabilityStatus} onChange={(event) => setCreateForm((current) => ({ ...current, availabilityStatus: event.target.value }))} disabled={isBusy} />
-            <label className="checkbox-card" htmlFor="create-list-immediately">
-              <input
-                id="create-list-immediately"
-                type="checkbox"
-                checked={createForm.listImmediately}
-                onChange={(event) => setCreateForm((current) => ({ ...current, listImmediately: event.target.checked }))}
-                disabled={isBusy}
-              />
-              <span>
-                <strong>List immediately to resellers</strong>
-                <small>Default selected. Uncheck to onboard as unlisted and manually list later from PLP.</small>
-              </span>
-            </label>
 
-            {!isAdminSupabaseConfigured() && <p className="error">Image upload needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.</p>}
-            <button type="submit" disabled={isBusy}>
-              {busyOperation === "create" && <span className="spinner" aria-hidden="true" />}
-              {busyOperation === "create" ? "Creating product..." : "Create Product"}
-            </button>
-          </form>
-        </article>
-
-        <article className="panel">
-          <h2>Update Existing Product</h2>
-          <p>Adjust merchandising details and replace image set when needed.</p>
-          <form onSubmit={onUpdate} className="field-grid">
-            <label htmlFor="update-product-id">Product ID (required)</label>
-            <input id="update-product-id" placeholder="Product ID (required)" value={updateForm.productId} onChange={(event) => setUpdateForm((current) => ({ ...current, productId: event.target.value }))} required disabled={isBusy} />
-            <label htmlFor="update-title">Title (optional)</label>
-            <input id="update-title" placeholder="Title (optional)" value={updateForm.title} onChange={(event) => setUpdateForm((current) => ({ ...current, title: event.target.value }))} disabled={isBusy} />
-            <label htmlFor="update-description">Description (optional)</label>
-            <textarea id="update-description" placeholder="Description (optional)" value={updateForm.description} onChange={(event) => setUpdateForm((current) => ({ ...current, description: event.target.value }))} disabled={isBusy} />
-            <label htmlFor="update-base-price">Base wholesale price (optional)</label>
-            <input id="update-base-price" placeholder="Base wholesale price (optional)" type="number" step="0.01" value={updateForm.baseWholesalePrice} onChange={(event) => setUpdateForm((current) => ({ ...current, baseWholesalePrice: event.target.value }))} disabled={isBusy} />
-            <label htmlFor="update-moq">MOQ (optional)</label>
-            <input id="update-moq" placeholder="MOQ (optional)" type="number" value={updateForm.moq} onChange={(event) => setUpdateForm((current) => ({ ...current, moq: event.target.value }))} disabled={isBusy} />
-            <label htmlFor="update-status">Availability status (optional)</label>
-            <input id="update-status" placeholder="Availability status (optional)" value={updateForm.availabilityStatus} onChange={(event) => setUpdateForm((current) => ({ ...current, availabilityStatus: event.target.value }))} disabled={isBusy} />
-            <label htmlFor="update-arrival">isNewArrival true|false (optional)</label>
-            <input id="update-arrival" placeholder="isNewArrival true|false (optional)" value={updateForm.isNewArrival} onChange={(event) => setUpdateForm((current) => ({ ...current, isNewArrival: event.target.value }))} disabled={isBusy} />
-
-            <div className="file-picker-card">
-              <div>
-                <label htmlFor="update-image-files">Replace images from device</label>
-                <p className="file-help">Optional for editing. Select up to 5 images at once, or choose again to add more.</p>
-              </div>
-              <input
-                id="update-image-files"
-                className="native-file-input"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                multiple
-                disabled={isBusy}
-                onChange={(event) => {
-                  setUpdateUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])));
-                }}
-              />
-              <label className={`file-picker-button ${isBusy ? "disabled" : ""}`} htmlFor="update-image-files">
-                Choose replacement images
-              </label>
-              <strong className="file-selection-summary">
-                {updateUploadFiles.length > 0 ? `${updateUploadFiles.length} image${updateUploadFiles.length === 1 ? "" : "s"} selected` : "No replacement images selected"}
-              </strong>
-              {updateUploadFiles.length > 0 && (
-                <div className="file-chip-row" aria-live="polite">
-                  {updateUploadFiles.map((file, index) => (
-                    <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
-                      {file.name}
-                      <button type="button" disabled={isBusy} onClick={() => setUpdateUploadFiles((current) => removeSelectedProductImage(current, index))}>
-                        Remove
-                      </button>
-                    </span>
-                  ))}
+            {modalMode === "create" ? (
+              <form onSubmit={onCreate} className="field-grid">
+                <label htmlFor="create-title">Title</label>
+                <input id="create-title" placeholder="Title" value={createForm.title} onChange={(event) => setCreateForm((current) => ({ ...current, title: event.target.value }))} required disabled={isBusy} />
+                <label htmlFor="create-category">Category</label>
+                <input id="create-category" placeholder="Category (western/south_asian etc.)" value={createForm.category} onChange={(event) => setCreateForm((current) => ({ ...current, category: event.target.value }))} required disabled={isBusy} />
+                <label htmlFor="create-description">Description</label>
+                <textarea id="create-description" placeholder="Description" value={createForm.description} onChange={(event) => setCreateForm((current) => ({ ...current, description: event.target.value }))} disabled={isBusy} />
+                <label htmlFor="create-base-price">Base wholesale price</label>
+                <input id="create-base-price" placeholder="Base wholesale price" type="number" step="0.01" value={createForm.baseWholesalePrice} onChange={(event) => setCreateForm((current) => ({ ...current, baseWholesalePrice: event.target.value }))} required disabled={isBusy} />
+                <fieldset className="size-picker">
+                  <legend>Available sizes</legend>
+                  <div className="size-chip-grid">
+                    {SIZE_OPTIONS.map((sizeLabel) => {
+                      const selected = createForm.availableSizes.includes(sizeLabel);
+                      return (
+                        <label key={sizeLabel} className={`size-chip ${selected ? "selected" : ""}`}>
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => setCreateForm((current) => ({ ...current, availableSizes: toggleSize(current.availableSizes, sizeLabel) }))}
+                            disabled={isBusy}
+                          />
+                          <span>{sizeLabel}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+                <label htmlFor="create-status">Availability status</label>
+                <input id="create-status" placeholder="Availability status" value={createForm.availabilityStatus} onChange={(event) => setCreateForm((current) => ({ ...current, availabilityStatus: event.target.value }))} disabled={isBusy} />
+                <div className="file-picker-card">
+                  <div>
+                    <label htmlFor="create-image-files">Product images from device <span className="required-mark">*</span></label>
+                    <p className="file-help">Upload at least 1 image. Select up to 5 images at once, or choose again to add more.</p>
+                  </div>
+                  <input
+                    id="create-image-files"
+                    className="native-file-input"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    multiple
+                    disabled={isBusy}
+                    onChange={(event) => setCreateUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])))}
+                  />
+                  <label className={`file-picker-button ${isBusy ? "disabled" : ""}`} htmlFor="create-image-files">
+                    Choose product images
+                  </label>
+                  <strong className="file-selection-summary">
+                    {createUploadFiles.length > 0 ? `${createUploadFiles.length} image${createUploadFiles.length === 1 ? "" : "s"} selected` : "No images selected yet"}
+                  </strong>
+                  {createUploadFiles.length > 0 && (
+                    <div className="file-chip-row" aria-live="polite">
+                      {createUploadFiles.map((file, index) => (
+                        <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
+                          {file.name}
+                          <button type="button" disabled={isBusy} onClick={() => setCreateUploadFiles((current) => removeSelectedProductImage(current, index))}>
+                            Remove
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            <button type="submit" disabled={isBusy}>
-              {busyOperation === "update" && <span className="spinner" aria-hidden="true" />}
-              {busyOperation === "update" ? "Updating product..." : "Update Product"}
-            </button>
-          </form>
-          {updateForm.productId && (
-            <p style={{ marginBottom: 0 }}>
-              Direct link: <Link href={`/products/${updateForm.productId}`} className="inline-link">Open product operation page</Link>
-            </p>
-          )}
-        </article>
-      </section>
+                <label className="checkbox-card" htmlFor="create-list-immediately">
+                  <input
+                    id="create-list-immediately"
+                    type="checkbox"
+                    checked={createForm.listImmediately}
+                    onChange={(event) => setCreateForm((current) => ({ ...current, listImmediately: event.target.checked }))}
+                    disabled={isBusy}
+                  />
+                  <span>
+                    <strong>List immediately to resellers</strong>
+                    <small>Default selected. Uncheck to onboard as unlisted and manually list later from PLP.</small>
+                  </span>
+                </label>
+                {!isAdminSupabaseConfigured() && <p className="error">Image upload needs `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.</p>}
+                <div className="modal-actions">
+                  <button type="button" className="secondary" onClick={closeModal} disabled={isBusy}>Cancel</button>
+                  <button type="submit" disabled={isBusy}>
+                    {busyOperation === "create" && <span className="spinner" aria-hidden="true" />}
+                    {busyOperation === "create" ? "Creating product..." : "Create Product"}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={onUpdate} className="field-grid">
+                <label htmlFor="edit-product-selector">Select product</label>
+                <select
+                  id="edit-product-selector"
+                  value={selectedEditProductId}
+                  onChange={(event) => {
+                    const nextProductId = event.target.value;
+                    setSelectedEditProductId(nextProductId);
+                    if (nextProductId) {
+                      void prefillEditForm(nextProductId);
+                    }
+                  }}
+                  disabled={isBusy}
+                >
+                  <option value="">Choose product</option>
+                  {activeProducts.map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.title} · {product.id}
+                    </option>
+                  ))}
+                </select>
+
+                {updateForm.productId ? (
+                  <>
+                    <label htmlFor="update-title">Title</label>
+                    <input id="update-title" placeholder="Title" value={updateForm.title} onChange={(event) => setUpdateForm((current) => ({ ...current, title: event.target.value }))} disabled={isBusy} />
+                    <label htmlFor="update-category">Category</label>
+                    <input id="update-category" placeholder="Category" value={updateForm.category} onChange={(event) => setUpdateForm((current) => ({ ...current, category: event.target.value }))} disabled={isBusy} />
+                    <label htmlFor="update-description">Description</label>
+                    <textarea id="update-description" placeholder="Description" value={updateForm.description} onChange={(event) => setUpdateForm((current) => ({ ...current, description: event.target.value }))} disabled={isBusy} />
+                    <label htmlFor="update-base-price">Base wholesale price</label>
+                    <input id="update-base-price" placeholder="Base wholesale price" type="number" step="0.01" value={updateForm.baseWholesalePrice} onChange={(event) => setUpdateForm((current) => ({ ...current, baseWholesalePrice: event.target.value }))} disabled={isBusy} />
+                    <fieldset className="size-picker">
+                      <legend>Available sizes</legend>
+                      <div className="size-chip-grid">
+                        {SIZE_OPTIONS.map((sizeLabel) => {
+                          const selected = updateForm.availableSizes.includes(sizeLabel);
+                          return (
+                            <label key={sizeLabel} className={`size-chip ${selected ? "selected" : ""}`}>
+                              <input
+                                type="checkbox"
+                                checked={selected}
+                                onChange={() => setUpdateForm((current) => ({ ...current, availableSizes: toggleSize(current.availableSizes, sizeLabel) }))}
+                                disabled={isBusy}
+                              />
+                              <span>{sizeLabel}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </fieldset>
+                    <label htmlFor="update-status">Availability status</label>
+                    <input id="update-status" placeholder="Availability status" value={updateForm.availabilityStatus} onChange={(event) => setUpdateForm((current) => ({ ...current, availabilityStatus: event.target.value }))} disabled={isBusy} />
+                    <label className="checkbox-card" htmlFor="update-arrival">
+                      <input
+                        id="update-arrival"
+                        type="checkbox"
+                        checked={updateForm.isNewArrival}
+                        onChange={(event) => setUpdateForm((current) => ({ ...current, isNewArrival: event.target.checked }))}
+                        disabled={isBusy}
+                      />
+                      <span>
+                        <strong>Mark as new arrival</strong>
+                        <small>Use when the style should stand out in buyer discovery surfaces.</small>
+                      </span>
+                    </label>
+
+                    <div className="stack">
+                      <strong>Current product images</strong>
+                      {updateForm.currentImageUrls.length > 0 ? (
+                        <div className="thumb-strip">
+                          {updateForm.currentImageUrls.map((imageUrl) => (
+                            <img key={imageUrl} src={imageUrl} alt={`${updateForm.title} asset`} loading="lazy" referrerPolicy="no-referrer" />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="subtle">No images uploaded yet.</p>
+                      )}
+                    </div>
+
+                    <div className="file-picker-card">
+                      <div>
+                        <label htmlFor="update-image-files">Replace images from device</label>
+                        <p className="file-help">Optional for editing. Selecting files will replace the current image set.</p>
+                      </div>
+                      <input
+                        id="update-image-files"
+                        className="native-file-input"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        multiple
+                        disabled={isBusy}
+                        onChange={(event) => setUpdateUploadFiles((current) => mergeSelectedProductImages(current, Array.from(event.target.files ?? [])))}
+                      />
+                      <label className={`file-picker-button ${isBusy ? "disabled" : ""}`} htmlFor="update-image-files">
+                        Choose replacement images
+                      </label>
+                      <strong className="file-selection-summary">
+                        {updateUploadFiles.length > 0 ? `${updateUploadFiles.length} image${updateUploadFiles.length === 1 ? "" : "s"} selected` : "No replacement images selected"}
+                      </strong>
+                      {updateUploadFiles.length > 0 && (
+                        <div className="file-chip-row" aria-live="polite">
+                          {updateUploadFiles.map((file, index) => (
+                            <span className="file-chip" key={`${file.name}-${file.size}-${file.lastModified}`}>
+                              {file.name}
+                              <button type="button" disabled={isBusy} onClick={() => setUpdateUploadFiles((current) => removeSelectedProductImage(current, index))}>
+                                Remove
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="modal-actions">
+                      <button type="button" className="secondary" onClick={closeModal} disabled={isBusy}>Cancel</button>
+                      <button type="submit" disabled={isBusy}>
+                        {busyOperation === "update" && <span className="spinner" aria-hidden="true" />}
+                        {busyOperation === "update" ? "Updating product..." : "Update Product"}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="subtle">Select a product to load its current details into the edit form.</p>
+                )}
+              </form>
+            )}
+          </section>
+        </div>
+      )}
 
       {result && (
         <section className="panel">
@@ -444,7 +596,7 @@ export default function ProductsPage() {
 
       <section className="panel stack">
         <h2>All Uploaded Products</h2>
-        <p>For list, unlist, and edit actions, use the dedicated listed-products table.</p>
+        <p>Use the edit action below to open the prefilled modal. Listing controls stay in the dedicated listed-products table.</p>
         {productsLoading && <p className="subtle">Loading catalog…</p>}
         {!productsLoading && activeProducts.length === 0 && <p className="subtle">No products available yet.</p>}
         <div className="product-admin-grid">
@@ -454,7 +606,7 @@ export default function ProductsPage() {
               <div className="product-admin-body stack">
                 <strong>{product.title}</strong>
                 <span className="subtle">{product.id} • {product.category}</span>
-                <span className="subtle">MOQ {product.moq} • ₹{product.baseWholesalePrice}</span>
+                <span className="subtle">₹{product.baseWholesalePrice} • {(product.variants ?? []).map((variant) => variant.sizeLabel).join(", ") || "No sizes"}</span>
                 <span className="status-chip">{product.availabilityStatus}</span>
                 {product.imageUrls && product.imageUrls.length > 0 && (
                   <div className="thumb-strip">
@@ -463,7 +615,17 @@ export default function ProductsPage() {
                     ))}
                   </div>
                 )}
-                <Link href="/listed-products" className="inline-link">Open listed-products table</Link>
+                <div className="product-card-actions">
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => void prefillEditForm(product.id)}
+                    disabled={isBusy}
+                  >
+                    Open edit modal
+                  </button>
+                  <Link href="/listed-products" className="inline-link">Open listed-products table</Link>
+                </div>
               </div>
             </article>
           ))}

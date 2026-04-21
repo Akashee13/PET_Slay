@@ -241,8 +241,8 @@ type AdminCreateProductInput struct {
 	Category           string   `json:"category"`
 	Description        string   `json:"description,omitempty"`
 	BaseWholesalePrice float64  `json:"baseWholesalePrice"`
-	MOQ                int      `json:"moq"`
 	AvailabilityStatus string   `json:"availabilityStatus,omitempty"`
+	AvailableSizes     []string `json:"availableSizes,omitempty"`
 	ImageURLs          []string `json:"imageUrls,omitempty"`
 	ListingStatus      string   `json:"listingStatus,omitempty"`
 }
@@ -251,8 +251,8 @@ type AdminUpdateProductInput struct {
 	Title              *string   `json:"title,omitempty"`
 	Description        *string   `json:"description,omitempty"`
 	BaseWholesalePrice *float64  `json:"baseWholesalePrice,omitempty"`
-	MOQ                *int      `json:"moq,omitempty"`
 	AvailabilityStatus *string   `json:"availabilityStatus,omitempty"`
+	AvailableSizes     *[]string `json:"availableSizes,omitempty"`
 	IsNewArrival       *bool     `json:"isNewArrival,omitempty"`
 	ImageURLs          *[]string `json:"imageUrls,omitempty"`
 	ListingStatus      *string   `json:"listingStatus,omitempty"`
@@ -278,6 +278,55 @@ func normalizeImageURLs(imageURLs []string) ([]string, error) {
 	}
 
 	return normalized, nil
+}
+
+func normalizeSizeLabels(sizeLabels []string) []string {
+	if len(sizeLabels) == 0 {
+		return nil
+	}
+
+	allowed := map[string]bool{
+		"XS": true,
+		"S": true,
+		"M": true,
+		"L": true,
+		"XL": true,
+		"XXL": true,
+		"XXXL": true,
+	}
+	normalized := make([]string, 0, len(sizeLabels))
+	seen := make(map[string]bool, len(sizeLabels))
+	for _, sizeLabel := range sizeLabels {
+		size := strings.ToUpper(strings.TrimSpace(sizeLabel))
+		if size == "" || !allowed[size] || seen[size] {
+			continue
+		}
+		seen[size] = true
+		normalized = append(normalized, size)
+	}
+
+	return normalized
+}
+
+func buildVariants(productID string, sizeLabels []string, status string) []ProductVariant {
+	normalized := normalizeSizeLabels(sizeLabels)
+	if len(normalized) == 0 {
+		normalized = []string{"M"}
+	}
+	if status == "" {
+		status = string(AvailabilityInStock)
+	}
+
+	variants := make([]ProductVariant, 0, len(normalized))
+	for _, sizeLabel := range normalized {
+		variants = append(variants, ProductVariant{
+			ID:                 fmt.Sprintf("var-%s-%s", productID, strings.ToLower(sizeLabel)),
+			SizeLabel:          sizeLabel,
+			AvailabilityStatus: AvailabilityStatus(status),
+		})
+	}
+
+	return variants
 }
 
 func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, error) {
@@ -310,7 +359,7 @@ func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, 
 			Title:              input.Title,
 			Category:           ProductCategory(input.Category),
 			BaseWholesalePrice: input.BaseWholesalePrice,
-			MOQ:                input.MOQ,
+			MOQ:                1,
 			AvailabilityStatus: AvailabilityStatus(status),
 			IsNewArrival:       false,
 			ImageURLs:          imageURLs,
@@ -318,7 +367,7 @@ func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, 
 			VisibleUntil:       visibleUntil,
 		},
 		Description: input.Description,
-		Variants:    []ProductVariant{},
+		Variants:    buildVariants(id, input.AvailableSizes, status),
 	}
 	if len(imageURLs) > 0 {
 		product.CoverImageURL = imageURLs[0]
@@ -347,6 +396,10 @@ func (s *Service) UpdateProduct(productID string, input AdminUpdateProductInput)
 		}
 		input.ImageURLs = &imageURLs
 	}
+	if input.AvailableSizes != nil {
+		normalized := normalizeSizeLabels(*input.AvailableSizes)
+		input.AvailableSizes = &normalized
+	}
 
 	if s.repo != nil {
 		return s.repo.UpdateProduct(productID, input)
@@ -369,11 +422,14 @@ func (s *Service) UpdateProduct(productID string, input AdminUpdateProductInput)
 		if input.BaseWholesalePrice != nil {
 			product.BaseWholesalePrice = *input.BaseWholesalePrice
 		}
-		if input.MOQ != nil {
-			product.MOQ = *input.MOQ
-		}
 		if input.AvailabilityStatus != nil {
 			product.AvailabilityStatus = AvailabilityStatus(*input.AvailabilityStatus)
+			for variantIndex := range product.Variants {
+				product.Variants[variantIndex].AvailabilityStatus = AvailabilityStatus(*input.AvailabilityStatus)
+			}
+		}
+		if input.AvailableSizes != nil {
+			product.Variants = buildVariants(product.ID, *input.AvailableSizes, string(product.AvailabilityStatus))
 		}
 		if input.IsNewArrival != nil {
 			product.IsNewArrival = *input.IsNewArrival

@@ -222,9 +222,21 @@ func (r *PostgresRepository) CreateProduct(input AdminCreateProductInput) (*Prod
 	_, err = r.db.Exec(`
 		INSERT INTO products (id, sku, title, slug, category, description, base_wholesale_price, moq, availability_status, media_cover_url, media_urls, listing_status, visible_until)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12, $13)
-	`, id, sku, input.Title, strings.TrimPrefix(id, "prod-"), input.Category, input.Description, input.BaseWholesalePrice, input.MOQ, status, coverImageURL, string(imageURLsJSON), listingStatus, visibleUntil)
+	`, id, sku, input.Title, strings.TrimPrefix(id, "prod-"), input.Category, input.Description, input.BaseWholesalePrice, 1, status, coverImageURL, string(imageURLsJSON), listingStatus, visibleUntil)
 	if err != nil {
 		return nil, err
+	}
+	sizeLabels := normalizeSizeLabels(input.AvailableSizes)
+	if len(sizeLabels) == 0 {
+		sizeLabels = []string{"M"}
+	}
+	for _, sizeLabel := range sizeLabels {
+		if _, err := r.db.Exec(`
+			INSERT INTO product_variants (id, product_id, size_label, availability_status)
+			VALUES ($1, $2, $3, $4)
+		`, fmt.Sprintf("var-%s-%s", id, strings.ToLower(sizeLabel)), id, sizeLabel, status); err != nil {
+			return nil, err
+		}
 	}
 
 	return r.Get(id)
@@ -244,9 +256,6 @@ func (r *PostgresRepository) UpdateProduct(productID string, input AdminUpdatePr
 	}
 	if input.BaseWholesalePrice != nil {
 		product.BaseWholesalePrice = *input.BaseWholesalePrice
-	}
-	if input.MOQ != nil {
-		product.MOQ = *input.MOQ
 	}
 	if input.AvailabilityStatus != nil {
 		product.AvailabilityStatus = AvailabilityStatus(*input.AvailabilityStatus)
@@ -294,6 +303,27 @@ func (r *PostgresRepository) UpdateProduct(productID string, input AdminUpdatePr
 	}
 	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
 		return nil, ErrProductNotFound
+	}
+	if input.AvailableSizes != nil {
+		sizeLabels := normalizeSizeLabels(*input.AvailableSizes)
+		if len(sizeLabels) == 0 {
+			sizeLabels = []string{"M"}
+		}
+		if _, err := r.db.Exec(`DELETE FROM product_variants WHERE product_id = $1`, productID); err != nil {
+			return nil, err
+		}
+		for _, sizeLabel := range sizeLabels {
+			if _, err := r.db.Exec(`
+				INSERT INTO product_variants (id, product_id, size_label, availability_status)
+				VALUES ($1, $2, $3, $4)
+			`, fmt.Sprintf("var-%s-%s", productID, strings.ToLower(sizeLabel)), productID, sizeLabel, product.AvailabilityStatus); err != nil {
+				return nil, err
+			}
+		}
+	} else if input.AvailabilityStatus != nil {
+		if _, err := r.db.Exec(`UPDATE product_variants SET availability_status = $2 WHERE product_id = $1`, productID, product.AvailabilityStatus); err != nil {
+			return nil, err
+		}
 	}
 
 	return r.Get(productID)
