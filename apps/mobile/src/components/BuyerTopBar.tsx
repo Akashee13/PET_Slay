@@ -14,7 +14,9 @@ export function BuyerTopBar({
 }) {
   return (
     <View style={styles.wrap}>
-      <BrandMark name={name} tagline={tagline} />
+      <View style={styles.brandSlot}>
+        <BrandMark name={name} tagline={tagline} />
+      </View>
       <Pressable accessibilityLabel="Open account menu" accessibilityRole="button" onPress={onOpenMenu} style={({ pressed }) => [styles.menuButton, pressed && styles.menuButtonPressed]}>
         <View style={styles.menuStack}>
           <View style={styles.menuLineLong} />
@@ -30,7 +32,6 @@ const styles = StyleSheet.create({
   wrap: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     gap: 14,
     borderWidth: 1,
     borderColor: mobileTheme.line,
@@ -47,7 +48,12 @@ const styles = StyleSheet.create({
     },
     elevation: 2,
   },
+  brandSlot: {
+    flex: 1,
+    minWidth: 0,
+  },
   menuButton: {
+    flexShrink: 0,
     alignItems: "center",
     justifyContent: "center",
     width: 48,
