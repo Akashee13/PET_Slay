@@ -153,27 +153,18 @@ export default function AuthScreen() {
       </View>
 
       <View style={styles.providerGrid}>
-        {socialOptions.map((option) => (
+        {socialOptions.filter((option) => option.provider !== "google").map((option) => (
           <View key={option.provider} style={styles.providerCard}>
             <ActionButton
-              label={option.provider === "google" ? mobileCopy(session.language, "continueWithGmail") : `${option.label} ${mobileCopy(session.language, "socialComingSoon").toLowerCase()}`}
+              label={`${option.label} ${mobileCopy(session.language, "socialComingSoon").toLowerCase()}`}
               variant="secondary"
-              disabled={!option.enabled || googleLoading}
-              loading={option.provider === "google" && googleLoading}
-              onPress={() => {
-                if (option.provider === "google" && option.enabled) {
-                  void continueWithGoogle();
-                }
-              }}
+              disabled
+              onPress={() => {}}
             />
             <Text style={styles.providerHint}>
-              {option.provider === "google"
-                ? option.enabled
-                  ? mobileCopy(session.language, "socialGoogleHelper")
-                  : mobileCopy(session.language, "socialGoogleUnavailable")
-                : option.provider === "facebook"
-                  ? mobileCopy(session.language, "socialFacebookHelper")
-                  : mobileCopy(session.language, "socialInstagramHelper")}
+              {option.provider === "facebook"
+                ? mobileCopy(session.language, "socialFacebookHelper")
+                : mobileCopy(session.language, "socialInstagramHelper")}
             </Text>
           </View>
         ))}
