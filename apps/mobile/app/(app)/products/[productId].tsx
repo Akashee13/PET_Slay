@@ -1,11 +1,13 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Linking, Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Linking, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import type { ProductDetail } from "@pet-slay/types";
 
 import { ActionButton } from "../../../src/components/ActionButton";
+import { BuyerAccountDrawer } from "../../../src/components/BuyerAccountDrawer";
+import { BuyerTopBar } from "../../../src/components/BuyerTopBar";
 import { FashionImageCarousel } from "../../../src/components/FashionImageCarousel";
-import { mobileTheme, Screen } from "../../../src/components/Screen";
+import { mobileTheme } from "../../../src/components/Screen";
 import { getProductImageUrls } from "../../../src/features/catalog/product-images";
 import { buildWhatsappOrderUrl } from "../../../src/features/orders/whatsapp-order";
 import { mobileCopy } from "../../../src/i18n";
@@ -14,7 +16,7 @@ import { useBuyerApp, useSessionSnapshot } from "../../../src/state/buyer-app-co
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { productId } = useLocalSearchParams<{ productId: string }>();
-  const { catalog } = useBuyerApp();
+  const { api, catalog, notifications, sessionStore } = useBuyerApp();
   const session = useSessionSnapshot();
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -26,6 +28,13 @@ export default function ProductDetailScreen() {
   const [whatsappPhone, setWhatsappPhone] = useState("");
   const [gstNumber, setGstNumber] = useState("");
   const [orderError, setOrderError] = useState("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (session.status === "anonymous") {
+      void sessionStore.bootstrap(api);
+    }
+  }, [api, session.status, sessionStore]);
 
   useEffect(() => {
     if (!productId) {
@@ -42,14 +51,25 @@ export default function ProductDetailScreen() {
   }, [catalog, productId, session.language]);
 
   if (loading) {
-    return <Screen title={mobileCopy(session.language, "loadingProduct")} subtitle={mobileCopy(session.language, "loadingProductSubtitle")} />;
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.fallbackWrap}>
+          <Text style={styles.fallbackTitle}>{mobileCopy(session.language, "loadingProduct")}</Text>
+          <Text style={styles.fallbackSubtitle}>{mobileCopy(session.language, "loadingProductSubtitle")}</Text>
+        </View>
+      </SafeAreaView>
+    );
   }
 
   if (error || !product) {
     return (
-      <Screen title={mobileCopy(session.language, "productUnavailable")} subtitle={mobileCopy(session.language, "productUnavailableSubtitle")}>
-        <Text style={styles.error}>{error || "product_not_found"}</Text>
-      </Screen>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.fallbackWrap}>
+          <Text style={styles.fallbackTitle}>{mobileCopy(session.language, "productUnavailable")}</Text>
+          <Text style={styles.fallbackSubtitle}>{mobileCopy(session.language, "productUnavailableSubtitle")}</Text>
+          <Text style={styles.error}>{error || "product_not_found"}</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -57,6 +77,14 @@ export default function ProductDetailScreen() {
   const primaryVariant = currentProduct.variants[0];
   const imageUrls = getProductImageUrls(currentProduct);
   const minimumOrderQuantity = String(currentProduct.moq);
+  const availableSizes = Array.from(
+    new Set(
+      currentProduct.variants
+        .map((variant) => variant.sizeLabel?.trim())
+        .filter((sizeLabel): sizeLabel is string => Boolean(sizeLabel))
+        .concat(Object.keys(currentProduct.sizeChart ?? {}).filter(Boolean)),
+    ),
+  );
 
   async function sendOrderToWhatsapp() {
     try {
@@ -86,6 +114,24 @@ export default function ProductDetailScreen() {
 
     setOrderError("");
     setOrderSheetOpen(false);
+    if (!primaryVariant) {
+      const url = buildWhatsappOrderUrl({
+        businessName: session.user?.businessName,
+        fullName: fullName.trim(),
+        whatsappPhone: whatsappPhone.trim(),
+        gstNumber: gstNumber.trim(),
+        productTitle: currentProduct.title,
+        productImageUrl: imageUrls[0],
+        quantity: nextQuantity,
+        moq: currentProduct.moq,
+        unitPrice: currentProduct.baseWholesalePrice,
+      });
+      void Linking.openURL(url)
+        .then(() => setMessage(mobileCopy(session.language, "whatsappReady")))
+        .catch(() => setMessage(mobileCopy(session.language, "whatsappFailed")));
+      return;
+    }
+
     router.push({
       pathname: "/(app)/checkout",
       params: {
@@ -104,31 +150,65 @@ export default function ProductDetailScreen() {
   }
 
   return (
-    <Screen eyebrow={currentProduct.category.replace("_", " ")} title={currentProduct.title} subtitle={currentProduct.description || mobileCopy(session.language, "productDetailFallbackSubtitle")}>
-      <FashionImageCarousel imageUrls={imageUrls} aspectRatio={3 / 4} />
-      <View style={styles.priceCard}>
-        <Text style={styles.price}>₹{currentProduct.baseWholesalePrice} {mobileCopy(session.language, "wholesalePriceSuffix")}</Text>
-        <Text style={styles.meta}>MOQ {currentProduct.moq} · {currentProduct.availabilityStatus.replace("_", " ")}</Text>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView contentContainerStyle={styles.content} stickyHeaderIndices={[0]}>
+        <View style={styles.stickyWrap}>
+          <BuyerTopBar
+            name={mobileCopy(session.language, "appName")}
+            tagline={mobileCopy(session.language, "brandTagline")}
+            onOpenMenu={() => setDrawerOpen(true)}
+          />
+        </View>
 
-      <View style={styles.variantCard}>
-        <Text style={styles.sectionTitle}>{mobileCopy(session.language, "availableVariant")}</Text>
-        {primaryVariant ? (
-          <Text style={styles.meta}>
-            {primaryVariant.sizeLabel}
-            {primaryVariant.colorLabel ? ` · ${primaryVariant.colorLabel}` : ""} · {primaryVariant.availabilityStatus.replace("_", " ")}
+        <FashionImageCarousel imageUrls={imageUrls} aspectRatio={3 / 4} />
+
+        <View style={styles.heroCard}>
+          <Text style={styles.eyebrow}>{currentProduct.category.replace("_", " ")}</Text>
+          <Text style={styles.title}>{currentProduct.title}</Text>
+          <Text style={styles.subtitle}>{currentProduct.description || mobileCopy(session.language, "productDetailFallbackSubtitle")}</Text>
+        </View>
+
+        <View style={styles.priceCard}>
+          <Text style={styles.price}>
+            ₹{currentProduct.baseWholesalePrice} {mobileCopy(session.language, "wholesalePriceSuffix")}
           </Text>
-        ) : (
-          <Text style={styles.error}>{mobileCopy(session.language, "noVariantAvailable")}</Text>
-        )}
-      </View>
+          <Text style={styles.meta}>MOQ {currentProduct.moq} · {currentProduct.availabilityStatus.replace("_", " ")}</Text>
+        </View>
 
-      <View style={styles.notice}>
-        <Text style={styles.noticeTitle}>{mobileCopy(session.language, "whatsappOrderingTitle")}</Text>
-        <Text style={styles.noticeBody}>{mobileCopy(session.language, "whatsappOrderingBody")}</Text>
-      </View>
-      {message ? <Text style={styles.success}>{message}</Text> : null}
-      {primaryVariant ? (
+        <View style={styles.variantCard}>
+          <Text style={styles.sectionTitle}>{mobileCopy(session.language, "availableSizes")}</Text>
+          {availableSizes.length > 0 ? (
+            <View style={styles.chipRow}>
+              {availableSizes.map((sizeLabel) => (
+                <View key={sizeLabel} style={styles.sizeChip}>
+                  <Text style={styles.sizeChipText}>{sizeLabel}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.error}>{mobileCopy(session.language, "noVariantAvailable")}</Text>
+          )}
+        </View>
+
+        <View style={styles.variantCard}>
+          <Text style={styles.sectionTitle}>{mobileCopy(session.language, "availableVariant")}</Text>
+          {primaryVariant ? (
+            <Text style={styles.meta}>
+              {primaryVariant.sizeLabel}
+              {primaryVariant.colorLabel ? ` · ${primaryVariant.colorLabel}` : ""} · {primaryVariant.availabilityStatus.replace("_", " ")}
+            </Text>
+          ) : (
+            <Text style={styles.meta}>{mobileCopy(session.language, "whatsappOrderingBody")}</Text>
+          )}
+        </View>
+
+        <View style={styles.notice}>
+          <Text style={styles.noticeTitle}>{mobileCopy(session.language, "whatsappOrderingTitle")}</Text>
+          <Text style={styles.noticeBody}>{mobileCopy(session.language, "whatsappOrderingBody")}</Text>
+        </View>
+
+        {message ? <Text style={styles.success}>{message}</Text> : null}
+
         <View style={styles.actionRow}>
           <Pressable accessibilityRole="button" onPress={() => void sendOrderToWhatsapp()} style={({ pressed }) => [styles.whatsappButton, pressed && styles.whatsappButtonPressed]}>
             <View style={styles.whatsappButtonRow}>
@@ -141,7 +221,30 @@ export default function ProductDetailScreen() {
           </Pressable>
           <ActionButton label={mobileCopy(session.language, "orderNow")} onPress={openOrderSheet} />
         </View>
-      ) : null}
+      </ScrollView>
+
+      <BuyerAccountDrawer
+        language={session.language}
+        onArrivalAlerts={() => {
+          setMessage(mobileCopy(session.language, "checkingNotificationReadiness"));
+          notifications
+            .getReadiness()
+            .then((readiness) =>
+              setMessage(readiness.ready ? mobileCopy(session.language, "relevantAlertsReady") : readiness.reason.replace("_", " ")),
+            )
+            .catch(() => setMessage(mobileCopy(session.language, "unableToCheckNotificationReadiness")));
+        }}
+        onClose={() => setDrawerOpen(false)}
+        onLanguage={() => router.push("/(app)/language")}
+        onOrders={() => router.push("/(app)/orders")}
+        onRefresh={() => router.replace("/(app)")}
+        onSignOut={() => {
+          sessionStore.signOut();
+          router.replace("/(auth)");
+        }}
+        user={session.user}
+        visible={drawerOpen}
+      />
 
       <Modal animationType="slide" onRequestClose={() => setOrderSheetOpen(false)} transparent visible={orderSheetOpen}>
         <View style={styles.sheetOverlay}>
@@ -163,16 +266,82 @@ export default function ProductDetailScreen() {
             <TextInput autoCapitalize="characters" onChangeText={setGstNumber} style={styles.input} value={gstNumber} />
 
             {orderError ? <Text style={styles.error}>{orderError}</Text> : null}
-            <ActionButton label={mobileCopy(session.language, "continueOrder")} onPress={continueToOrderFlow} />
+            <ActionButton label={primaryVariant ? mobileCopy(session.language, "continueOrder") : mobileCopy(session.language, "sendViaWhatsapp")} onPress={continueToOrderFlow} />
             <ActionButton label={mobileCopy(session.language, "backToCatalog")} onPress={() => setOrderSheetOpen(false)} variant="secondary" />
           </View>
         </View>
       </Modal>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: mobileTheme.bg,
+  },
+  content: {
+    gap: 18,
+    padding: 18,
+    paddingBottom: 44,
+  },
+  stickyWrap: {
+    marginHorizontal: -18,
+    marginTop: -2,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    backgroundColor: "rgba(255, 246, 251, 0.96)",
+  },
+  fallbackWrap: {
+    gap: 10,
+    padding: 24,
+  },
+  fallbackTitle: {
+    color: mobileTheme.ink,
+    fontSize: 32,
+    fontWeight: "900",
+  },
+  fallbackSubtitle: {
+    color: mobileTheme.muted,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  heroCard: {
+    gap: 10,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: mobileTheme.line,
+    borderRadius: 30,
+    backgroundColor: mobileTheme.card,
+    padding: 20,
+    shadowColor: mobileTheme.shadow,
+    shadowOpacity: 1,
+    shadowRadius: 24,
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    elevation: 3,
+  },
+  eyebrow: {
+    color: mobileTheme.primaryDeep,
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 1.3,
+    textTransform: "uppercase",
+  },
+  title: {
+    color: mobileTheme.ink,
+    fontSize: 34,
+    fontWeight: "900",
+    letterSpacing: -1.4,
+    lineHeight: 38,
+  },
+  subtitle: {
+    color: mobileTheme.muted,
+    fontSize: 15,
+    lineHeight: 22,
+  },
   priceCard: {
     gap: 4,
     borderWidth: 1,
@@ -220,6 +389,25 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     gap: 12,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  sizeChip: {
+    borderWidth: 1,
+    borderColor: mobileTheme.line,
+    borderRadius: 999,
+    backgroundColor: mobileTheme.card,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  sizeChipText: {
+    color: mobileTheme.ink,
+    fontSize: 13,
+    fontWeight: "900",
+    letterSpacing: 0.2,
   },
   whatsappButton: {
     borderRadius: 24,
