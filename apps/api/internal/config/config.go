@@ -11,6 +11,8 @@ type Config struct {
 	DatabaseURL      string
 	DatabaseRequired bool
 	SupabaseURL      string
+	SupabaseAnonKey  string
+	SupabaseServiceRoleKey string
 }
 
 func Load() Config {
@@ -20,6 +22,8 @@ func Load() Config {
 		DatabaseURL:      os.Getenv("DATABASE_URL"),
 		DatabaseRequired: parseBool(os.Getenv("DATABASE_REQUIRED")),
 		SupabaseURL:      os.Getenv("SUPABASE_URL"),
+		SupabaseAnonKey:  os.Getenv("SUPABASE_ANON_KEY"),
+		SupabaseServiceRoleKey: os.Getenv("SUPABASE_SERVICE_ROLE_KEY"),
 	}
 }
 

@@ -159,7 +159,7 @@ describe("US1 buyer mobile flow", () => {
   });
 
   it("prepares provider-ready social auth options without enabling unfinished OAuth", () => {
-    const pendingOptions = createSocialAuthOptions({ supabaseUrl: "", redirectTo: "petslay://auth/callback" });
+    const pendingOptions = createSocialAuthOptions({ supabaseUrl: "", redirectTo: "petslay://auth/callback", googleEnabled: false });
     assert.equal(pendingOptions.every((option) => !option.enabled), true);
     assert.equal(pendingOptions[0].setupHint, "Supabase OAuth setup pending");
 

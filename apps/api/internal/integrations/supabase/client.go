@@ -1,6 +1,9 @@
 package supabase
 
-import "errors"
+import (
+	"errors"
+	"net/http"
+)
 
 var ErrSupabaseNotConfigured = errors.New("supabase is not configured")
 
@@ -12,6 +15,7 @@ type Config struct {
 
 type Client struct {
 	config Config
+	httpClient *http.Client
 }
 
 func New(config Config) (*Client, error) {
@@ -19,9 +23,15 @@ func New(config Config) (*Client, error) {
 		return nil, ErrSupabaseNotConfigured
 	}
 
-	return &Client{config: config}, nil
+	return &Client{config: config, httpClient: http.DefaultClient}, nil
 }
 
 func (c *Client) Config() Config {
 	return c.config
+}
+
+func (c *Client) SetHTTPClient(client *http.Client) {
+	if client != nil {
+		c.httpClient = client
+	}
 }

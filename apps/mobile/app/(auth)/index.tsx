@@ -1,25 +1,34 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Linking, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
+import * as ExpoLinking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 
 import { ActionButton } from "../../src/components/ActionButton";
 import { BrandMark } from "../../src/components/BrandMark";
 import { mobileTheme, Screen } from "../../src/components/Screen";
-import { createSocialAuthOptions } from "../../src/features/auth/social-auth-controller";
+import { buildSupabaseOAuthUrl, createSocialAuthOptions, extractBearerTokenFromCallback, fetchSocialProviderStatus } from "../../src/features/auth/social-auth-controller";
 import { mobileCopy } from "../../src/i18n";
 import { getMobileSupabaseConfig } from "../../src/services/supabase";
 import { useBuyerApp, useSessionSnapshot } from "../../src/state/buyer-app-context";
 import { getDefaultBuyerToken } from "../../src/state/session-store";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function AuthScreen() {
   const router = useRouter();
   const { api, sessionStore } = useBuyerApp();
   const session = useSessionSnapshot();
   const [token, setToken] = useState("");
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(true);
+  const [googleError, setGoogleError] = useState("");
+  const supabaseConfig = getMobileSupabaseConfig();
+  const redirectTo = ExpoLinking.createURL("/callback");
   const socialOptions = createSocialAuthOptions({
-    supabaseUrl: getMobileSupabaseConfig().url,
-    redirectTo: "petslay://auth/callback",
-    googleEnabled: process.env.EXPO_PUBLIC_GOOGLE_AUTH_ENABLED === "true",
+    supabaseUrl: supabaseConfig.url,
+    redirectTo,
+    googleEnabled,
   });
 
   useEffect(() => {
@@ -28,9 +37,51 @@ export default function AuthScreen() {
     }
   }, [router, session.status]);
 
+  useEffect(() => {
+    setGoogleLoading(true);
+    fetchSocialProviderStatus({
+      supabaseUrl: supabaseConfig.url,
+      anonKey: supabaseConfig.anonKey,
+    })
+      .then((status) => {
+        setGoogleEnabled(status.googleEnabled);
+        setGoogleError("");
+      })
+      .catch(() => {
+        setGoogleEnabled(false);
+        setGoogleError(mobileCopy(session.language, "socialGoogleUnavailable"));
+      })
+      .finally(() => setGoogleLoading(false));
+  }, [session.language, supabaseConfig.anonKey, supabaseConfig.url]);
+
   async function continueWithToken(nextToken: string) {
     sessionStore.setToken(nextToken.trim());
     await sessionStore.bootstrap(api);
+  }
+
+  async function continueWithGoogle() {
+    try {
+      const authUrl = buildSupabaseOAuthUrl("google", {
+        supabaseUrl: supabaseConfig.url,
+        redirectTo,
+        googleEnabled: true,
+      });
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectTo);
+      if (result.type !== "success") {
+        return;
+      }
+
+      const accessToken = extractBearerTokenFromCallback(result.url);
+      if (!accessToken) {
+        setGoogleError(mobileCopy(session.language, "missingCallbackToken"));
+        return;
+      }
+
+      setGoogleError("");
+      await continueWithToken(accessToken);
+    } catch {
+      setGoogleError(mobileCopy(session.language, "socialGoogleUnavailable"));
+    }
   }
 
   return (
@@ -75,10 +126,11 @@ export default function AuthScreen() {
             <ActionButton
               label={option.provider === "google" ? mobileCopy(session.language, "continueWithGmail") : `${option.label} ${mobileCopy(session.language, "socialComingSoon").toLowerCase()}`}
               variant="secondary"
-              disabled={!option.enabled}
+              disabled={!option.enabled || googleLoading}
+              loading={option.provider === "google" && googleLoading}
               onPress={() => {
-                if (option.url) {
-                  void Linking.openURL(option.url);
+                if (option.provider === "google" && option.enabled) {
+                  void continueWithGoogle();
                 }
               }}
             />
@@ -93,6 +145,7 @@ export default function AuthScreen() {
             </Text>
           </View>
         ))}
+        {googleError ? <Text style={styles.error}>{googleError}</Text> : null}
       </View>
     </Screen>
   );

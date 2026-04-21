@@ -11,6 +11,7 @@ import (
 	"github.com/akash/pet_slay/apps/api/internal/config"
 	"github.com/akash/pet_slay/apps/api/internal/http/middleware"
 	httpresponse "github.com/akash/pet_slay/apps/api/internal/http/response"
+	"github.com/akash/pet_slay/apps/api/internal/integrations/supabase"
 	"github.com/akash/pet_slay/apps/api/internal/notifications"
 	"github.com/akash/pet_slay/apps/api/internal/orders"
 	"github.com/akash/pet_slay/apps/api/internal/refunds"
@@ -38,7 +39,16 @@ func New() http.Handler {
 		DatabaseURL:      cfg.DatabaseURL,
 		DatabaseRequired: cfg.DatabaseRequired,
 	})
-	verifier := auth.NewStaticVerifier()
+	staticVerifier := auth.NewStaticVerifier()
+	verifiers := []auth.Verifier{staticVerifier}
+	if supabaseClient, err := supabase.New(supabase.Config{
+		URL:            cfg.SupabaseURL,
+		AnonKey:        cfg.SupabaseAnonKey,
+		ServiceRoleKey: cfg.SupabaseServiceRoleKey,
+	}); err == nil {
+		verifiers = append(verifiers, verifierAdapter{verify: supabaseClient.VerifyAccessToken})
+	}
+	verifier := auth.NewChainVerifier(verifiers...)
 	var preferenceStore users.BuyerProfileStore = users.NewPreferenceStore()
 	if dbStore.Configured() {
 		preferenceStore = users.NewPostgresBuyerProfileStore(dbStore.DB)
@@ -214,4 +224,12 @@ func New() http.Handler {
 	handler = middleware.CORS(handler)
 
 	return handler
+}
+
+type verifierAdapter struct {
+	verify func(token string) (*auth.Session, error)
+}
+
+func (v verifierAdapter) VerifyBearerToken(token string) (*auth.Session, error) {
+	return v.verify(token)
 }

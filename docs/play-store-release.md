@@ -10,7 +10,7 @@
 
 1. Copy [`apps/mobile/.env.example`](/Users/akash/Documents/PetProjects/PET_Slay/apps/mobile/.env.example) to `.env.local`.
 2. Fill `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
-3. Set `EXPO_PUBLIC_GOOGLE_AUTH_ENABLED=true` only after Google is enabled in Supabase Auth providers and the redirect URI is configured.
+3. Enable Google in Supabase Auth providers and configure the redirect URI before testing Gmail login.
 4. Keep `EXPO_PUBLIC_BUYER_BEARER_TOKEN` empty for Gmail login testing, or set a stage buyer token for token-based QA.
 
 ## Build Profiles
