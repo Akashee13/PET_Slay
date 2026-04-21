@@ -2,6 +2,9 @@ const WHATSAPP_PHONE = "918292349038";
 
 export function buildWhatsappOrderUrl(input: {
   businessName?: string;
+  fullName?: string;
+  whatsappPhone?: string;
+  gstNumber?: string;
   productTitle: string;
   productImageUrl?: string;
   quantity: number;
@@ -12,6 +15,9 @@ export function buildWhatsappOrderUrl(input: {
   const lines = [
     `Hello Noira team, I want to place a reseller order.`,
     input.businessName ? `Buyer: ${input.businessName}` : undefined,
+    input.fullName ? `Full name: ${input.fullName}` : undefined,
+    input.whatsappPhone ? `WhatsApp number: ${input.whatsappPhone}` : undefined,
+    input.gstNumber ? `GST number: ${input.gstNumber}` : undefined,
     `Product: ${input.productTitle}`,
     `Required quantity: ${input.quantity}`,
     `MOQ: ${input.moq}`,

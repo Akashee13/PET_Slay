@@ -20,10 +20,17 @@ export default function CheckoutScreen() {
     variantId: string;
     moq: string;
     unitPrice: string;
+    quantity: string;
+    fullName: string;
+    whatsappPhone: string;
+    gstNumber: string;
   }>();
   const moq = Number(params.moq || "0");
   const unitPrice = Number(params.unitPrice || "0");
-  const [quantity, setQuantity] = useState(params.moq || "");
+  const [quantity, setQuantity] = useState(params.quantity || params.moq || "");
+  const [fullName, setFullName] = useState(params.fullName || "");
+  const [whatsappPhone, setWhatsappPhone] = useState(params.whatsappPhone || "");
+  const [gstNumber, setGstNumber] = useState(params.gstNumber || "");
   const [city, setCity] = useState("Delhi");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
@@ -33,19 +40,36 @@ export default function CheckoutScreen() {
     const nextQuantity = Number(quantity);
     setMessage("");
     try {
+      if (!fullName.trim() || !whatsappPhone.trim()) {
+        throw new Error("order_details_required");
+      }
       orders.validateWholesaleQuantity({ quantity: nextQuantity, moq });
       setSubmitting(true);
       const order = await orders.submitOrder({
         productVariantId: params.variantId,
         quantity: nextQuantity,
-        shippingAddress: { city },
+        shippingAddress: {
+          city,
+          fullName: fullName.trim(),
+          whatsappPhone: whatsappPhone.trim(),
+          gstNumber: gstNumber.trim() || undefined,
+        },
+        notes: [`Buyer name: ${fullName.trim()}`, `WhatsApp: ${whatsappPhone.trim()}`, gstNumber.trim() ? `GST: ${gstNumber.trim()}` : undefined]
+          .filter(Boolean)
+          .join(" · "),
       });
       setCreatedOrderId(order.id);
       setMessage(`${mobileCopy(session.language, "orderCreated")}: ${order.id} · ${mobileCopy(session.language, "status")}: ${formatOrderStatus(order.status)}`);
     } catch (requestError) {
-      setMessage(requestError instanceof Error && requestError.message === "quantity_below_moq"
-        ? mobileCopy(session.language, "quantityBelowMoq").replace("{{moq}}", String(moq))
-        : requestError instanceof Error ? requestError.message : "order_submit_failed");
+      setMessage(
+        requestError instanceof Error && requestError.message === "quantity_below_moq"
+          ? mobileCopy(session.language, "quantityBelowMoq").replace("{{moq}}", String(moq))
+          : requestError instanceof Error && requestError.message === "order_details_required"
+            ? mobileCopy(session.language, "orderDetailsRequired")
+            : requestError instanceof Error
+              ? requestError.message
+              : "order_submit_failed",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -53,8 +77,14 @@ export default function CheckoutScreen() {
 
   async function sendOrderToWhatsapp() {
     try {
+      if (!fullName.trim() || !whatsappPhone.trim()) {
+        throw new Error("order_details_required");
+      }
       const url = buildWhatsappOrderUrl({
         businessName: session.user?.businessName,
+        fullName: fullName.trim(),
+        whatsappPhone: whatsappPhone.trim(),
+        gstNumber: gstNumber.trim(),
         productTitle: params.productTitle || mobileCopy(session.language, "createOrder"),
         productImageUrl: params.productImage || "",
         quantity: Number(quantity || 0),
@@ -64,8 +94,12 @@ export default function CheckoutScreen() {
       });
       await Linking.openURL(url);
       setMessage(mobileCopy(session.language, "whatsappReady"));
-    } catch {
-      setMessage(mobileCopy(session.language, "whatsappFailed"));
+    } catch (requestError) {
+      setMessage(
+        requestError instanceof Error && requestError.message === "order_details_required"
+          ? mobileCopy(session.language, "orderDetailsRequired")
+          : mobileCopy(session.language, "whatsappFailed"),
+      );
     }
   }
 
@@ -84,6 +118,12 @@ export default function CheckoutScreen() {
       <View style={styles.form}>
         <Text style={styles.label}>{mobileCopy(session.language, "quantity")}</Text>
         <TextInput keyboardType="number-pad" onChangeText={setQuantity} style={styles.input} value={quantity} />
+        <Text style={styles.label}>{mobileCopy(session.language, "fullName")}</Text>
+        <TextInput onChangeText={setFullName} style={styles.input} value={fullName} />
+        <Text style={styles.label}>{mobileCopy(session.language, "whatsappPhoneNumber")}</Text>
+        <TextInput keyboardType="phone-pad" onChangeText={setWhatsappPhone} style={styles.input} value={whatsappPhone} />
+        <Text style={styles.label}>{mobileCopy(session.language, "gstNumberOptional")}</Text>
+        <TextInput autoCapitalize="characters" onChangeText={setGstNumber} style={styles.input} value={gstNumber} />
         <Text style={styles.label}>{mobileCopy(session.language, "deliveryCity")}</Text>
         <TextInput onChangeText={setCity} style={styles.input} value={city} />
       </View>
