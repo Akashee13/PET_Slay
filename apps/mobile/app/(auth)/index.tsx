@@ -19,6 +19,7 @@ export default function AuthScreen() {
   const socialOptions = createSocialAuthOptions({
     supabaseUrl: getMobileSupabaseConfig().url,
     redirectTo: "petslay://auth/callback",
+    googleEnabled: process.env.EXPO_PUBLIC_GOOGLE_AUTH_ENABLED === "true",
   });
 
   useEffect(() => {
@@ -72,7 +73,7 @@ export default function AuthScreen() {
         {socialOptions.map((option) => (
           <View key={option.provider} style={styles.providerCard}>
             <ActionButton
-              label={option.enabled ? mobileCopy(session.language, "continueWithGmail") : `${option.label} ${mobileCopy(session.language, "socialComingSoon").toLowerCase()}`}
+              label={option.provider === "google" ? mobileCopy(session.language, "continueWithGmail") : `${option.label} ${mobileCopy(session.language, "socialComingSoon").toLowerCase()}`}
               variant="secondary"
               disabled={!option.enabled}
               onPress={() => {
@@ -85,7 +86,7 @@ export default function AuthScreen() {
               {option.provider === "google"
                 ? option.enabled
                   ? mobileCopy(session.language, "socialGoogleHelper")
-                  : mobileCopy(session.language, "socialSetupPending")
+                  : mobileCopy(session.language, "socialGoogleUnavailable")
                 : option.provider === "facebook"
                   ? mobileCopy(session.language, "socialFacebookHelper")
                   : mobileCopy(session.language, "socialInstagramHelper")}

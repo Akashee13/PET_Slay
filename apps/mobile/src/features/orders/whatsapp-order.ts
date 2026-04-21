@@ -6,7 +6,7 @@ export function buildWhatsappOrderUrl(input: {
   productImageUrl?: string;
   quantity: number;
   moq: number;
-  city: string;
+  city?: string;
   unitPrice: number;
 }) {
   const lines = [
@@ -15,7 +15,7 @@ export function buildWhatsappOrderUrl(input: {
     `Product: ${input.productTitle}`,
     `Required quantity: ${input.quantity}`,
     `MOQ: ${input.moq}`,
-    `Delivery city: ${input.city}`,
+    input.city ? `Delivery city: ${input.city}` : undefined,
     `Base wholesale price: INR ${input.unitPrice}`,
     input.productImageUrl ? `Product image: ${input.productImageUrl}` : undefined,
   ].filter(Boolean);

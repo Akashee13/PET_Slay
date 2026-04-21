@@ -3,6 +3,7 @@ export type SocialAuthProvider = "google" | "facebook" | "instagram";
 export type SocialAuthConfig = {
   supabaseUrl: string;
   redirectTo: string;
+  googleEnabled?: boolean;
 };
 
 export type SocialAuthOption = {
@@ -21,7 +22,7 @@ const PROVIDER_LABELS: Record<SocialAuthProvider, string> = {
 
 export function createSocialAuthOptions(config: SocialAuthConfig): SocialAuthOption[] {
   return (["google", "facebook", "instagram"] satisfies SocialAuthProvider[]).map((provider) => {
-    const enabled = provider === "google" && Boolean(config.supabaseUrl && config.redirectTo);
+    const enabled = provider === "google" && Boolean(config.googleEnabled && config.supabaseUrl && config.redirectTo);
     return {
       provider,
       label: PROVIDER_LABELS[provider],

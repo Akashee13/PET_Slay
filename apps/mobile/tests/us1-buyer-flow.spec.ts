@@ -170,6 +170,7 @@ describe("US1 buyer mobile flow", () => {
     const readyOptions = createSocialAuthOptions({
       supabaseUrl: "https://stage.supabase.co/",
       redirectTo: "petslay://auth/callback",
+      googleEnabled: true,
     });
     assert.equal(readyOptions[0].provider, "google");
     assert.equal(readyOptions[0].enabled, true);
@@ -234,6 +235,8 @@ describe("US1 buyer mobile flow", () => {
     assert.equal(translationResources.hinglish.arrivalAlertsBody, "Sirf relevant new-arrival prompts milenge jab device notifications ready honge.");
     assert.equal(translationResources.hindi.authTitle, "नोइरा के साथ तेज़ रीस्टॉक करें");
     assert.equal(translationResources.hinglish.startWholesaleOrder, "Wholesale order start karo");
+    assert.equal(translationResources.english.whatsappOrderingTitle, "Order on WhatsApp for now");
+    assert.equal(translationResources.english.socialGoogleUnavailable, "Gmail sign-in will appear here as soon as it is enabled for this app.");
     assert.equal(translationResources.hindi.languageHindiLabel, "हिन्दी");
     assert.equal(translationResources.english.missingCallbackToken, "Sign-in callback did not include a buyer token. Please try again.");
   });

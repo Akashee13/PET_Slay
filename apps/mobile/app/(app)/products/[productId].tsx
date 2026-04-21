@@ -1,12 +1,13 @@
-import { Link, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, Text, View } from "react-native";
 import type { ProductDetail } from "@pet-slay/types";
 
 import { ActionButton } from "../../../src/components/ActionButton";
 import { FashionImageCarousel } from "../../../src/components/FashionImageCarousel";
 import { mobileTheme, Screen } from "../../../src/components/Screen";
 import { getProductImageUrls } from "../../../src/features/catalog/product-images";
+import { buildWhatsappOrderUrl } from "../../../src/features/orders/whatsapp-order";
 import { mobileCopy } from "../../../src/i18n";
 import { useBuyerApp, useSessionSnapshot } from "../../../src/state/buyer-app-context";
 
@@ -17,6 +18,7 @@ export default function ProductDetailScreen() {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     if (!productId) {
@@ -44,14 +46,33 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const primaryVariant = product.variants[0];
+  const currentProduct = product;
+  const primaryVariant = currentProduct.variants[0];
+  const imageUrls = getProductImageUrls(currentProduct);
+
+  async function sendOrderToWhatsapp() {
+    try {
+      const url = buildWhatsappOrderUrl({
+        businessName: session.user?.businessName,
+        productTitle: currentProduct.title,
+        productImageUrl: imageUrls[0],
+        quantity: currentProduct.moq,
+        moq: currentProduct.moq,
+        unitPrice: currentProduct.baseWholesalePrice,
+      });
+      await Linking.openURL(url);
+      setMessage(mobileCopy(session.language, "whatsappReady"));
+    } catch {
+      setMessage(mobileCopy(session.language, "whatsappFailed"));
+    }
+  }
 
   return (
-    <Screen eyebrow={product.category.replace("_", " ")} title={product.title} subtitle={product.description || mobileCopy(session.language, "productDetailFallbackSubtitle")}>
-      <FashionImageCarousel imageUrls={getProductImageUrls(product)} aspectRatio={3 / 4} />
+    <Screen eyebrow={currentProduct.category.replace("_", " ")} title={currentProduct.title} subtitle={currentProduct.description || mobileCopy(session.language, "productDetailFallbackSubtitle")}>
+      <FashionImageCarousel imageUrls={imageUrls} aspectRatio={3 / 4} />
       <View style={styles.priceCard}>
-        <Text style={styles.price}>₹{product.baseWholesalePrice} {mobileCopy(session.language, "wholesalePriceSuffix")}</Text>
-        <Text style={styles.meta}>MOQ {product.moq} · {product.availabilityStatus.replace("_", " ")}</Text>
+        <Text style={styles.price}>₹{currentProduct.baseWholesalePrice} {mobileCopy(session.language, "wholesalePriceSuffix")}</Text>
+        <Text style={styles.meta}>MOQ {currentProduct.moq} · {currentProduct.availabilityStatus.replace("_", " ")}</Text>
       </View>
 
       <View style={styles.variantCard}>
@@ -66,24 +87,12 @@ export default function ProductDetailScreen() {
         )}
       </View>
 
-      {primaryVariant && (
-        <Link
-          href={{
-            pathname: "/(app)/checkout",
-            params: {
-              productId: product.id,
-              productTitle: product.title,
-              productImage: getProductImageUrls(product)[0],
-              variantId: primaryVariant.id,
-              moq: String(product.moq),
-              unitPrice: String(product.baseWholesalePrice),
-            },
-          }}
-          asChild
-        >
-          <ActionButton label={mobileCopy(session.language, "startWholesaleOrder")} />
-        </Link>
-      )}
+      <View style={styles.notice}>
+        <Text style={styles.noticeTitle}>{mobileCopy(session.language, "whatsappOrderingTitle")}</Text>
+        <Text style={styles.noticeBody}>{mobileCopy(session.language, "whatsappOrderingBody")}</Text>
+      </View>
+      {message ? <Text style={styles.success}>{message}</Text> : null}
+      {primaryVariant && <ActionButton label={mobileCopy(session.language, "sendViaWhatsapp")} onPress={() => void sendOrderToWhatsapp()} />}
     </Screen>
   );
 }
@@ -116,10 +125,32 @@ const styles = StyleSheet.create({
     backgroundColor: mobileTheme.cardAlt,
     padding: 18,
   },
+  notice: {
+    gap: 6,
+    borderWidth: 1,
+    borderColor: mobileTheme.line,
+    borderRadius: 24,
+    backgroundColor: mobileTheme.cardAlt,
+    padding: 18,
+  },
+  noticeTitle: {
+    color: mobileTheme.ink,
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  noticeBody: {
+    color: mobileTheme.muted,
+    fontSize: 14,
+    lineHeight: 21,
+  },
   sectionTitle: {
     color: mobileTheme.ink,
     fontSize: 16,
     fontWeight: "900",
+  },
+  success: {
+    color: mobileTheme.sage,
+    fontWeight: "800",
   },
   error: {
     color: mobileTheme.danger,
