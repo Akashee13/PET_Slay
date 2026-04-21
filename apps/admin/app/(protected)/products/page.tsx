@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 import { getAdminSessionToken } from "@/src/features/auth/admin-session";
@@ -8,6 +9,7 @@ import { useAdminLanguage } from "@/src/features/i18n/admin-language";
 import { mergeSelectedProductImages, removeSelectedProductImage } from "@/src/features/products/file-selection";
 import {
   createAdminProduct,
+  deleteAdminProduct,
   getAdminProduct,
   type AdminProduct,
   listAdminProducts,
@@ -123,6 +125,8 @@ function toUpdateForm(product: AdminProduct): UpdateForm {
 
 export default function ProductsPage() {
   const { t } = useAdminLanguage();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [modalMode, setModalMode] = useState<ModalMode>(null);
   const [createForm, setCreateForm] = useState<CreateForm>(defaultCreateForm);
   const [updateForm, setUpdateForm] = useState<UpdateForm>(defaultUpdateForm);
@@ -131,9 +135,10 @@ export default function ProductsPage() {
   const [selectedEditProductId, setSelectedEditProductId] = useState("");
   const [createUploadFiles, setCreateUploadFiles] = useState<File[]>([]);
   const [updateUploadFiles, setUpdateUploadFiles] = useState<File[]>([]);
-  const [busyOperation, setBusyOperation] = useState<BusyOperation>("");
+  const [busyOperation, setBusyOperation] = useState<BusyOperation | "delete">("");
   const [result, setResult] = useState<AdminProduct | null>(null);
   const [error, setError] = useState("");
+  const [deleteConfirmArmed, setDeleteConfirmArmed] = useState(false);
   const isBusy = busyOperation !== "";
 
   const activeProducts = useMemo(() => [...products].sort((left, right) => right.id.localeCompare(left.id)), [products]);
@@ -142,12 +147,16 @@ export default function ProductsPage() {
       ? "Creating product"
       : busyOperation === "update"
         ? "Updating product"
+        : busyOperation === "delete"
+          ? "Deleting product"
         : "Loading product details";
   const busyDetail =
     busyOperation === "create"
       ? "Uploading product images and creating the catalog item. Please keep this tab open."
       : busyOperation === "update"
         ? "Saving the edited product and replacing images if selected. Please keep this tab open."
+        : busyOperation === "delete"
+          ? "Removing the product and refreshing the admin catalog. Please keep this tab open."
         : "Fetching the latest product details to prefill the edit form.";
 
   async function loadProducts() {
@@ -174,6 +183,21 @@ export default function ProductsPage() {
     void loadProducts();
   }, []);
 
+  useEffect(() => {
+    const editProductId = searchParams.get("edit");
+    if (!editProductId || productsLoading || isBusy) {
+      return;
+    }
+    if (!activeProducts.some((product) => product.id === editProductId)) {
+      return;
+    }
+    if (modalMode === "edit" && selectedEditProductId === editProductId) {
+      return;
+    }
+
+    void prefillEditForm(editProductId);
+  }, [activeProducts, isBusy, modalMode, productsLoading, searchParams, selectedEditProductId]);
+
   function closeModal() {
     if (isBusy) {
       return;
@@ -182,13 +206,19 @@ export default function ProductsPage() {
     setError("");
     setCreateUploadFiles([]);
     setUpdateUploadFiles([]);
+    setDeleteConfirmArmed(false);
+    if (searchParams.get("edit")) {
+      router.replace("/products");
+    }
   }
 
   function openCreateModal() {
     setCreateForm(defaultCreateForm);
     setCreateUploadFiles([]);
     setError("");
+    setDeleteConfirmArmed(false);
     setModalMode("create");
+    router.replace("/products");
   }
 
   async function prefillEditForm(productId: string) {
@@ -205,7 +235,9 @@ export default function ProductsPage() {
       setSelectedEditProductId(productId);
       setUpdateForm(toUpdateForm(product));
       setUpdateUploadFiles([]);
+      setDeleteConfirmArmed(false);
       setModalMode("edit");
+      router.replace(`/products?edit=${encodeURIComponent(productId)}`);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to load product details");
     } finally {
@@ -300,10 +332,47 @@ export default function ProductsPage() {
       setResult(updated);
       setUpdateUploadFiles([]);
       setUpdateForm(toUpdateForm(updated));
+      setDeleteConfirmArmed(false);
       setModalMode(null);
+      router.replace("/products");
       await loadProducts();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to update product");
+    } finally {
+      setBusyOperation("");
+    }
+  }
+
+  async function onDeleteProduct() {
+    const token = getAdminSessionToken();
+    if (!token) {
+      setError("Missing admin session token");
+      return;
+    }
+    if (!updateForm.productId.trim()) {
+      setError("Select a product to delete first.");
+      return;
+    }
+    if (!deleteConfirmArmed) {
+      setDeleteConfirmArmed(true);
+      setError("Tap delete once more to confirm permanent removal.");
+      return;
+    }
+
+    setError("");
+    try {
+      setBusyOperation("delete");
+      await deleteAdminProduct(token, updateForm.productId.trim());
+      setResult(null);
+      setDeleteConfirmArmed(false);
+      setModalMode(null);
+      setSelectedEditProductId("");
+      setUpdateForm(defaultUpdateForm);
+      setUpdateUploadFiles([]);
+      router.replace("/products");
+      await loadProducts();
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Failed to delete product");
     } finally {
       setBusyOperation("");
     }
@@ -464,6 +533,7 @@ export default function ProductsPage() {
                   onChange={(event) => {
                     const nextProductId = event.target.value;
                     setSelectedEditProductId(nextProductId);
+                    setDeleteConfirmArmed(false);
                     if (nextProductId) {
                       void prefillEditForm(nextProductId);
                     }
@@ -572,6 +642,9 @@ export default function ProductsPage() {
 
                     <div className="modal-actions">
                       <button type="button" className="secondary" onClick={closeModal} disabled={isBusy}>Cancel</button>
+                      <button type="button" className={`secondary danger-action ${deleteConfirmArmed ? "confirm-armed" : ""}`} onClick={() => void onDeleteProduct()} disabled={isBusy}>
+                        {busyOperation === "delete" ? "Deleting..." : deleteConfirmArmed ? "Confirm delete" : "Delete product"}
+                      </button>
                       <button type="submit" disabled={isBusy}>
                         {busyOperation === "update" && <span className="spinner" aria-hidden="true" />}
                         {busyOperation === "update" ? "Updating product..." : "Update Product"}
@@ -624,7 +697,7 @@ export default function ProductsPage() {
                   >
                     Open edit modal
                   </button>
-                  <Link href="/listed-products" className="inline-link">Open listed-products table</Link>
+                  <Link href={`/products?edit=${encodeURIComponent(product.id)}`} className="inline-link">Open direct edit</Link>
                 </div>
               </div>
             </article>

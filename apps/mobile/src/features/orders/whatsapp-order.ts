@@ -20,7 +20,7 @@ export function buildWhatsappOrderUrl(input: {
     input.gstNumber ? `GST number: ${input.gstNumber}` : undefined,
     `Product: ${input.productTitle}`,
     `Required quantity: ${input.quantity}`,
-    `MOQ: ${input.moq}`,
+    input.moq > 0 ? `MOQ: ${input.moq}` : undefined,
     input.city ? `Delivery city: ${input.city}` : undefined,
     `Base wholesale price: INR ${input.unitPrice}`,
     input.productImageUrl ? `Product image: ${input.productImageUrl}` : undefined,

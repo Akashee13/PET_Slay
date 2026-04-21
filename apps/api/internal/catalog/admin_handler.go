@@ -16,7 +16,7 @@ func AdminListHandler(service *Service) http.HandlerFunc {
 			return
 		}
 
-		httpresponse.JSON(w, http.StatusOK, map[string][]ProductCard{
+		httpresponse.JSON(w, http.StatusOK, map[string][]ProductDetail{
 			"items": items,
 		})
 	}
@@ -83,5 +83,27 @@ func AdminDetailHandler(service *Service) http.HandlerFunc {
 		}
 
 		httpresponse.JSON(w, http.StatusOK, product)
+	}
+}
+
+func AdminDeleteHandler(service *Service) http.HandlerFunc {
+	prefix := "/v1/admin/products/"
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		productID := strings.TrimPrefix(r.URL.Path, prefix)
+		if productID == "" || productID == r.URL.Path {
+			httpresponse.Error(w, http.StatusBadRequest, "invalid_product_id")
+			return
+		}
+
+		if err := service.DeleteProduct(productID); err != nil {
+			httpresponse.Error(w, http.StatusNotFound, err.Error())
+			return
+		}
+
+		httpresponse.JSON(w, http.StatusOK, map[string]string{
+			"status":    "deleted",
+			"productId": productID,
+		})
 	}
 }

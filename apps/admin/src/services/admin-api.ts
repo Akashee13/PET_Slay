@@ -5,7 +5,7 @@ function getApiBaseUrl(): string {
 }
 
 type RequestOptions = {
-  method?: "GET" | "POST" | "PATCH";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   token: string;
   body?: unknown;
 };
@@ -103,6 +103,13 @@ export async function updateAdminProduct(token: string, productId: string, input
 export async function getAdminProduct(token: string, productId: string): Promise<AdminProduct> {
   return adminRequest<AdminProduct>(`/v1/admin/products/${productId}`, {
     method: "GET",
+    token,
+  });
+}
+
+export async function deleteAdminProduct(token: string, productId: string): Promise<{ status: string; productId: string }> {
+  return adminRequest<{ status: string; productId: string }>(`/v1/admin/products/${productId}`, {
+    method: "DELETE",
     token,
   });
 }

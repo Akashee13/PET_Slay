@@ -176,6 +176,8 @@ func New() http.Handler {
 			catalog.AdminDetailHandler(catalogService).ServeHTTP(w, r)
 		case http.MethodPatch:
 			catalog.AdminUpdateHandler(catalogService).ServeHTTP(w, r)
+		case http.MethodDelete:
+			catalog.AdminDeleteHandler(catalogService).ServeHTTP(w, r)
 		default:
 			httpresponse.Error(w, http.StatusMethodNotAllowed, "method_not_allowed")
 		}

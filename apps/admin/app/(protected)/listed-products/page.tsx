@@ -34,6 +34,19 @@ function isListedForResellers(product: AdminProduct): boolean {
   return product.listingStatus === "listed" && !isExpired(product);
 }
 
+function formatSizes(product: AdminProduct): string {
+  const sizes = (product.variants ?? []).map((variant) => variant.sizeLabel).filter(Boolean);
+  return sizes.length > 0 ? sizes.join(", ") : "No sizes";
+}
+
+function formatPriceLine(product: AdminProduct): string {
+  const parts = [`₹${product.baseWholesalePrice} wholesale`];
+  if (product.moq > 0) {
+    parts.push(`MOQ ${product.moq}`);
+  }
+  return parts.join(" · ");
+}
+
 function getProductImages(product: AdminProduct): string[] {
   const uniqueImages = new Set<string>();
   if (product.coverImageUrl) {
@@ -219,7 +232,8 @@ export default function ListedProductsPage() {
                     <div className="plp-card-copy">
                       <p>{product.category.replace("_", " ")}</p>
                       <h2>{product.title}</h2>
-                      <span>₹{product.baseWholesalePrice} wholesale · MOQ {product.moq}</span>
+                      <span>{formatPriceLine(product)}</span>
+                      <small>{formatSizes(product)}</small>
                     </div>
                     <div className="plp-card-meta">
                       <span className={`status-chip ${listed ? "success" : "danger"}`}>
@@ -236,9 +250,9 @@ export default function ListedProductsPage() {
                       >
                         {busyProductId === product.id ? "Updating..." : listed ? t("unlistNow") : t("listNow")}
                       </button>
-                      <Link href={`/products/${product.id}`} className="edit-product-tile">
+                      <Link href={`/products?edit=${encodeURIComponent(product.id)}`} className="edit-product-tile">
                         <span>{t("editProduct")}</span>
-                        <small>Pricing, MOQ, images</small>
+                        <small>Pricing, sizes, images</small>
                       </Link>
                     </div>
                   </div>

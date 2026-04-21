@@ -111,7 +111,7 @@ export default function CheckoutScreen() {
     >
       <View style={styles.summary}>
         <Text style={styles.summaryTitle}>{mobileCopy(session.language, "orderSummary")}</Text>
-        <Text style={styles.summaryLine}>MOQ {moq}</Text>
+        {moq > 0 ? <Text style={styles.summaryLine}>MOQ {moq}</Text> : null}
         <Text style={styles.summaryLine}>{mobileCopy(session.language, "estimatedTotal")} {formatInr(Number(quantity || 0) * unitPrice)}</Text>
       </View>
 

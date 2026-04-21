@@ -59,12 +59,13 @@ type ProductDetail struct {
 
 type Repository interface {
 	List(category, collection string) ([]ProductCard, error)
-	AdminList() ([]ProductCard, error)
+	AdminList() ([]ProductDetail, error)
 	Get(productID string) (*ProductDetail, error)
 	GetVisible(productID string) (*ProductDetail, error)
 	FindByVariantID(variantID string) (*ProductCard, *ProductVariant, error)
 	CreateProduct(input AdminCreateProductInput) (*ProductDetail, error)
 	UpdateProduct(productID string, input AdminUpdateProductInput) (*ProductDetail, error)
+	DeleteProduct(productID string) error
 }
 
 type Service struct {
@@ -165,7 +166,7 @@ func (s *Service) List(category, collection string) ([]ProductCard, error) {
 	return filtered, nil
 }
 
-func (s *Service) AdminList() ([]ProductCard, error) {
+func (s *Service) AdminList() ([]ProductDetail, error) {
 	if s.repo != nil {
 		return s.repo.AdminList()
 	}
@@ -173,9 +174,9 @@ func (s *Service) AdminList() ([]ProductCard, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	items := make([]ProductCard, 0, len(s.products))
+	items := make([]ProductDetail, 0, len(s.products))
 	for _, product := range s.products {
-		items = append(items, product.ProductCard)
+		items = append(items, product)
 	}
 
 	return items, nil
@@ -359,7 +360,7 @@ func (s *Service) CreateProduct(input AdminCreateProductInput) (*ProductDetail, 
 			Title:              input.Title,
 			Category:           ProductCategory(input.Category),
 			BaseWholesalePrice: input.BaseWholesalePrice,
-			MOQ:                1,
+			MOQ:                0,
 			AvailabilityStatus: AvailabilityStatus(status),
 			IsNewArrival:       false,
 			ImageURLs:          imageURLs,
@@ -455,6 +456,26 @@ func (s *Service) UpdateProduct(productID string, input AdminUpdateProductInput)
 	}
 
 	return nil, ErrProductNotFound
+}
+
+func (s *Service) DeleteProduct(productID string) error {
+	if s.repo != nil {
+		return s.repo.DeleteProduct(productID)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for index, product := range s.products {
+		if product.ID != productID {
+			continue
+		}
+
+		s.products = append(s.products[:index], s.products[index+1:]...)
+		return nil
+	}
+
+	return ErrProductNotFound
 }
 
 func productVisible(product ProductCard) bool {

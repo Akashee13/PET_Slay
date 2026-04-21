@@ -101,7 +101,7 @@ export default function ProductDetailScreen() {
     setOrderSheetOpen(true);
   }
 
-  function continueToOrderFlow() {
+function continueToOrderFlow() {
     const nextQuantity = Number(quantity);
     if (!fullName.trim() || !whatsappPhone.trim()) {
       setOrderError(mobileCopy(session.language, "orderDetailsRequired"));
@@ -172,7 +172,11 @@ export default function ProductDetailScreen() {
           <Text style={styles.price}>
             ₹{currentProduct.baseWholesalePrice} {mobileCopy(session.language, "wholesalePriceSuffix")}
           </Text>
-          <Text style={styles.meta}>MOQ {currentProduct.moq} · {currentProduct.availabilityStatus.replace("_", " ")}</Text>
+          <Text style={styles.meta}>
+            {currentProduct.moq > 0
+              ? `MOQ ${currentProduct.moq} · ${currentProduct.availabilityStatus.replace("_", " ")}`
+              : currentProduct.availabilityStatus.replace("_", " ")}
+          </Text>
         </View>
 
         <View style={styles.variantCard}>

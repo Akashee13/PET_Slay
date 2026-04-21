@@ -112,7 +112,9 @@ export default function CatalogScreen() {
                 <View style={styles.productBody}>
                   <Text style={styles.category}>{product.category.replace("_", " ")}</Text>
                   <Text style={styles.productTitle}>{product.title}</Text>
-                  <Text style={styles.price}>₹{product.baseWholesalePrice} wholesale · MOQ {product.moq}</Text>
+                  <Text style={styles.price}>
+                    {`₹${product.baseWholesalePrice} wholesale${product.moq > 0 ? ` · MOQ ${product.moq}` : ""}`}
+                  </Text>
                   <Text style={styles.status}>{product.availabilityStatus.replace("_", " ")}</Text>
                 </View>
               </Pressable>

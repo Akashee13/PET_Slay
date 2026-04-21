@@ -74,20 +74,29 @@ func (r *PostgresRepository) List(category, collection string) ([]ProductCard, e
 	return products, rows.Err()
 }
 
-func (r *PostgresRepository) AdminList() ([]ProductCard, error) {
+func (r *PostgresRepository) AdminList() ([]ProductDetail, error) {
 	rows, err := r.db.Query(adminListProductsSQL)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	products := []ProductCard{}
+	products := []ProductDetail{}
 	for rows.Next() {
-		product, err := scanProductCard(rows)
+		productCard, err := scanProductCard(rows)
 		if err != nil {
 			return nil, err
 		}
-		products = append(products, product)
+
+		variants, err := r.listVariants(productCard.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		products = append(products, ProductDetail{
+			ProductCard: productCard,
+			Variants:    variants,
+		})
 	}
 
 	return products, rows.Err()
@@ -222,7 +231,7 @@ func (r *PostgresRepository) CreateProduct(input AdminCreateProductInput) (*Prod
 	_, err = r.db.Exec(`
 		INSERT INTO products (id, sku, title, slug, category, description, base_wholesale_price, moq, availability_status, media_cover_url, media_urls, listing_status, visible_until)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12, $13)
-	`, id, sku, input.Title, strings.TrimPrefix(id, "prod-"), input.Category, input.Description, input.BaseWholesalePrice, 1, status, coverImageURL, string(imageURLsJSON), listingStatus, visibleUntil)
+	`, id, sku, input.Title, strings.TrimPrefix(id, "prod-"), input.Category, input.Description, input.BaseWholesalePrice, 0, status, coverImageURL, string(imageURLsJSON), listingStatus, visibleUntil)
 	if err != nil {
 		return nil, err
 	}
@@ -327,6 +336,18 @@ func (r *PostgresRepository) UpdateProduct(productID string, input AdminUpdatePr
 	}
 
 	return r.Get(productID)
+}
+
+func (r *PostgresRepository) DeleteProduct(productID string) error {
+	result, err := r.db.Exec(`DELETE FROM products WHERE id = $1`, productID)
+	if err != nil {
+		return err
+	}
+	if rowsAffected, _ := result.RowsAffected(); rowsAffected == 0 {
+		return ErrProductNotFound
+	}
+
+	return nil
 }
 
 func (r *PostgresRepository) listVariants(productID string) ([]ProductVariant, error) {
