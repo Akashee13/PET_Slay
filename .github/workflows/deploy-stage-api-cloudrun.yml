@@ -101,7 +101,7 @@ jobs:
             --image "us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/pet-slay/pet-slay-api:${{ env.IMAGE_TAG }}" \
             --allow-unauthenticated \
             --port 8080 \
-            --set-env-vars "APP_ENV=stage,DATABASE_REQUIRED=true,DATABASE_URL=${{ secrets.STAGE_DATABASE_URL }},SUPABASE_URL=${{ secrets.STAGE_SUPABASE_URL }},SUPABASE_ANON_KEY=${{ secrets.STAGE_SUPABASE_ANON_KEY }},SUPABASE_SERVICE_ROLE_KEY=${{ secrets.STAGE_SUPABASE_SERVICE_ROLE_KEY }},STAGE_ADMIN_BEARER_TOKEN=${{ secrets.STAGE_ADMIN_BEARER_TOKEN }},FOUNDER_ADMIN_BEARER_TOKEN=${{ secrets.FOUNDER_ADMIN_BEARER_TOKEN }}"
+            --set-env-vars "APP_ENV=stage,DATABASE_REQUIRED=true,DATABASE_URL=${{ secrets.STAGE_DATABASE_URL }},SUPABASE_URL=${{ secrets.STAGE_SUPABASE_URL }},SUPABASE_ANON_KEY=${{ secrets.STAGE_SUPABASE_ANON_KEY }},SUPABASE_SERVICE_ROLE_KEY=${{ secrets.STAGE_SUPABASE_SERVICE_ROLE_KEY }},STAGE_ADMIN_BEARER_TOKEN=${{ secrets.STAGE_ADMIN_BEARER_TOKEN }},STAGE_BUYER_BEARER_TOKEN=${{ secrets.STAGE_BUYER_BEARER_TOKEN }},FOUNDER_ADMIN_BEARER_TOKEN=${{ secrets.FOUNDER_ADMIN_BEARER_TOKEN }}"
 
       - name: Show stage URL
         run: |

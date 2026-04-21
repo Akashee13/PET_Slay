@@ -14,6 +14,15 @@ func NewStaticVerifier() *StaticVerifier {
 }
 
 func (v *StaticVerifier) VerifyBearerToken(token string) (*Session, error) {
+	stageBuyerToken := os.Getenv("STAGE_BUYER_BEARER_TOKEN")
+	if stageBuyerToken != "" && token == stageBuyerToken {
+		return &Session{
+			UserID: "buyer-stage-001",
+			Role:   RoleBuyer,
+			Email:  "buyer-stage@example.com",
+		}, nil
+	}
+
 	founderAdminToken := os.Getenv("FOUNDER_ADMIN_BEARER_TOKEN")
 	if founderAdminToken != "" && token == founderAdminToken {
 		return &Session{

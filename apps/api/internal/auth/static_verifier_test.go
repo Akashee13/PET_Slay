@@ -28,6 +28,23 @@ func TestStaticVerifierAllowsExplicitStageAdminToken(t *testing.T) {
 	}
 }
 
+func TestStaticVerifierAllowsExplicitStageBuyerToken(t *testing.T) {
+	t.Setenv("APP_ENV", "stage")
+	t.Setenv("STAGE_BUYER_BEARER_TOKEN", "stage-buyer-secret")
+
+	verifier := NewStaticVerifier()
+	session, err := verifier.VerifyBearerToken("stage-buyer-secret")
+	if err != nil {
+		t.Fatalf("expected stage buyer token to pass: %v", err)
+	}
+	if session.Role != RoleBuyer {
+		t.Fatalf("expected buyer role, got %s", session.Role)
+	}
+	if session.UserID != "buyer-stage-001" {
+		t.Fatalf("expected buyer stage user id, got %s", session.UserID)
+	}
+}
+
 func TestStaticVerifierAllowsFounderAdminTokenInStage(t *testing.T) {
 	t.Setenv("APP_ENV", "stage")
 	t.Setenv("FOUNDER_ADMIN_BEARER_TOKEN", "founder-admin-secret")
