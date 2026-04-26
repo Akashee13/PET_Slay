@@ -1,10 +1,10 @@
 <!--
 Sync Impact Report
-Version change: 1.2.0 -> 1.3.0
+Version change: 1.3.0 -> 1.3.1
 Modified principles:
-- Added VI. Anxiety-Reducing UX and Consistent Design Language
+- II. Spec-First and Test-First Delivery (clarified ambiguity handling)
 Added sections:
-- Core Principle VI
+- None
 Removed sections:
 - None
 Templates requiring updates:
@@ -12,10 +12,9 @@ Templates requiring updates:
 - ✅ .specify/templates/spec-template.md
 - ✅ .specify/templates/plan-template.md
 - ✅ .specify/templates/tasks-template.md
-- ✅ /Users/akash/Documents/PetProjects/PET_Slay/specs/001-wholesale-fashion-platform/plan.md
 - ⚠ pending .specify/templates/commands/*.md (directory not present in this scaffold)
 Follow-up TODOs:
-- Existing scaffolded code predates this amendment and has not yet been retrofitted with tests.
+- Existing scaffolded code predates some newer principles and may still need test retrofits.
 -->
 # PET_Slay Constitution
 
@@ -32,10 +31,12 @@ they are required to keep the platform extensible.
 All meaningful feature work MUST pass through the spec-kit flow in order:
 constitution, specification, clarification when needed, planning, tasks, and
 then implementation. Specs MUST describe what and why in business terms. Plans
-MUST describe how with explicit technical tradeoffs. Open questions with product
-impact MUST be resolved before implementation begins. All implementation work
-MUST follow TDD: define or update the relevant test first, confirm it fails for
-the intended reason, then implement the production change, and finally return to
+MUST describe how with explicit technical tradeoffs. If requirements, behavior,
+or scope contain material ambiguity, the team MUST stop and ask concise
+clarifying questions before implementing. Open questions with product impact
+MUST be resolved before implementation begins. All implementation work MUST
+follow TDD: define or update the relevant test first, confirm it fails for the
+intended reason, then implement the production change, and finally return to
 green.
 
 ### III. Multilingual Local-Market Readiness
@@ -117,4 +118,4 @@ for principle removals or incompatible governance changes. Minor version changes
 are required for new principles or materially expanded rules. Patch changes are
 reserved for clarifications that do not alter project behavior.
 
-**Version**: 1.3.0 | **Ratified**: 2026-04-19 | **Last Amended**: 2026-04-20
+**Version**: 1.3.1 | **Ratified**: 2026-04-19 | **Last Amended**: 2026-04-25

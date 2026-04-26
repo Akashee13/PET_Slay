@@ -15,7 +15,7 @@ export type OrderController = {
   loadOrderHistory: () => Promise<Order[]>;
   loadRefunds: (orderId: string) => Promise<RefundDecision[]>;
   submitOrder: (input: SubmitOrderInput) => Promise<Order>;
-  validateWholesaleQuantity: (input: { quantity: number; moq: number }) => void;
+  validateWholesaleQuantity: (input: { quantity: number }) => void;
 };
 
 export function createOrderController(options: { api: BuyerApiClient; analytics?: Analytics }): OrderController {
@@ -52,10 +52,10 @@ export function createOrderController(options: { api: BuyerApiClient; analytics?
         throw error;
       }
     },
-    validateWholesaleQuantity({ quantity, moq }) {
-      if (quantity < moq) {
-        options.analytics?.track("order_quantity_rejected", { quantity, moq });
-        throw new Error("quantity_below_moq");
+    validateWholesaleQuantity({ quantity }) {
+      if (quantity <= 0) {
+        options.analytics?.track("order_quantity_rejected", { quantity });
+        throw new Error("quantity_invalid");
       }
     },
   };

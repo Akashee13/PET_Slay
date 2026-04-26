@@ -25,10 +25,11 @@ export default function AuthScreen() {
   const [googleError, setGoogleError] = useState("");
   const supabaseConfig = getMobileSupabaseConfig();
   const redirectTo = ExpoLinking.createURL("/callback");
+  const googleAvailable = Boolean(supabaseConfig.url && supabaseConfig.anonKey) && (googleEnabled || googleError.length > 0);
   const socialOptions = createSocialAuthOptions({
     supabaseUrl: supabaseConfig.url,
     redirectTo,
-    googleEnabled,
+    googleEnabled: googleAvailable,
   });
 
   useEffect(() => {
@@ -48,8 +49,8 @@ export default function AuthScreen() {
         setGoogleError("");
       })
       .catch(() => {
-        setGoogleEnabled(false);
-        setGoogleError(mobileCopy(session.language, "socialGoogleUnavailable"));
+        setGoogleEnabled(Boolean(supabaseConfig.url && supabaseConfig.anonKey));
+        setGoogleError("");
       })
       .finally(() => setGoogleLoading(false));
   }, [session.language, supabaseConfig.anonKey, supabaseConfig.url]);
@@ -103,16 +104,16 @@ export default function AuthScreen() {
         </View>
         <Pressable
           accessibilityRole="button"
-          disabled={!googleEnabled || googleLoading}
+          disabled={!googleAvailable || googleLoading}
           onPress={() => {
-            if (googleEnabled) {
+            if (googleAvailable) {
               void continueWithGoogle();
             }
           }}
           style={({ pressed }) => [
             styles.gmailButton,
-            (!googleEnabled || googleLoading) && styles.gmailButtonDisabled,
-            pressed && googleEnabled && !googleLoading && styles.gmailButtonPressed,
+            (!googleAvailable || googleLoading) && styles.gmailButtonDisabled,
+            pressed && googleAvailable && !googleLoading && styles.gmailButtonPressed,
           ]}
         >
           <View style={styles.gmailButtonRow}>
@@ -120,7 +121,7 @@ export default function AuthScreen() {
             <Text style={styles.gmailButtonLabel}>{mobileCopy(session.language, "continueWithGmail")}</Text>
           </View>
         </Pressable>
-        {!googleEnabled && !googleLoading ? <Text style={styles.providerHint}>{mobileCopy(session.language, "socialGoogleUnavailable")}</Text> : null}
+        {!googleAvailable && !googleLoading ? <Text style={styles.providerHint}>{mobileCopy(session.language, "socialGoogleUnavailable")}</Text> : null}
         {googleError ? <Text style={styles.error}>{googleError}</Text> : null}
       </View>
       <View style={styles.card}>

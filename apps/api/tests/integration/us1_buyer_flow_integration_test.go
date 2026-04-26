@@ -164,10 +164,10 @@ func TestCatalogFilterAndOrderJourney(t *testing.T) {
 	}
 }
 
-func TestOrderRejectsMOQViolation(t *testing.T) {
+func TestOrderRejectsNonPositiveQuantity(t *testing.T) {
 	handler := testutil.NewHandler()
 
-	req := httptest.NewRequest(http.MethodPost, "/v1/orders", testutil.JSONBody(`{"items":[{"productVariantId":"var-western-001-s","quantity":1}],"shippingAddress":{"city":"Delhi"}}`))
+	req := httptest.NewRequest(http.MethodPost, "/v1/orders", testutil.JSONBody(`{"items":[{"productVariantId":"var-western-001-s","quantity":0}],"shippingAddress":{"city":"Delhi"}}`))
 	req.Header.Set("Authorization", "Bearer dev-buyer-token")
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()

@@ -17,27 +17,30 @@ func (v *StaticVerifier) VerifyBearerToken(token string) (*Session, error) {
 	stageBuyerToken := os.Getenv("STAGE_BUYER_BEARER_TOKEN")
 	if stageBuyerToken != "" && token == stageBuyerToken {
 		return &Session{
-			UserID: "buyer-stage-001",
-			Role:   RoleBuyer,
-			Email:  "buyer-stage@example.com",
+			UserID:      "buyer-stage-001",
+			Role:        RoleBuyer,
+			Email:       "buyer-stage@example.com",
+			DisplayName: "Noira Stage Buyer",
 		}, nil
 	}
 
 	founderAdminToken := os.Getenv("FOUNDER_ADMIN_BEARER_TOKEN")
 	if founderAdminToken != "" && token == founderAdminToken {
 		return &Session{
-			UserID: "founder-admin-001",
-			Role:   RoleAdmin,
-			Email:  "founder@pet-slay.local",
+			UserID:      "founder-admin-001",
+			Role:        RoleAdmin,
+			Email:       "founder@pet-slay.local",
+			DisplayName: "Founder Admin",
 		}, nil
 	}
 
 	stageAdminToken := os.Getenv("STAGE_ADMIN_BEARER_TOKEN")
 	if stageAdminToken != "" && token == stageAdminToken {
 		return &Session{
-			UserID: "admin-stage-001",
-			Role:   RoleAdmin,
-			Email:  "admin-stage@example.com",
+			UserID:      "admin-stage-001",
+			Role:        RoleAdmin,
+			Email:       "admin-stage@example.com",
+			DisplayName: "Stage Admin",
 		}, nil
 	}
 
@@ -48,15 +51,17 @@ func (v *StaticVerifier) VerifyBearerToken(token string) (*Session, error) {
 	switch token {
 	case "dev-buyer-token":
 		return &Session{
-			UserID: "buyer-dev-001",
-			Role:   RoleBuyer,
-			Email:  "buyer@example.com",
+			UserID:      "buyer-dev-001",
+			Role:        RoleBuyer,
+			Email:       "buyer@example.com",
+			DisplayName: "Demo Buyer",
 		}, nil
 	case "dev-admin-token":
 		return &Session{
-			UserID: "admin-dev-001",
-			Role:   RoleAdmin,
-			Email:  "admin@example.com",
+			UserID:      "admin-dev-001",
+			Role:        RoleAdmin,
+			Email:       "admin@example.com",
+			DisplayName: "Demo Admin",
 		}, nil
 	default:
 		return nil, ErrInvalidToken

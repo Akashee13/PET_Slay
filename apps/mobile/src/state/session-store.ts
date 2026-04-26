@@ -14,9 +14,11 @@ export type SessionSnapshot = {
 
 export type SessionStore = {
   bootstrap: (api: BuyerApiClient) => Promise<void>;
+  hydrate: (api: BuyerApiClient) => Promise<void>;
   getSnapshot: () => SessionSnapshot;
   getToken: () => string | null;
   setLanguage: (language: Language) => void;
+  setUser: (user: CurrentUser) => void;
   setToken: (token: string) => void;
   signOut: () => void;
   subscribe: (listener: () => void) => () => void;
@@ -24,6 +26,11 @@ export type SessionStore = {
 
 export type SessionStoreOptions = {
   initialToken?: string | null;
+  persistence?: {
+    loadToken: () => Promise<string | null>;
+    saveToken: (token: string) => Promise<void>;
+    clearToken: () => Promise<void>;
+  };
 };
 
 export function getDefaultBuyerToken(): string {
@@ -63,7 +70,24 @@ export function createSessionStore(options?: SessionStoreOptions): SessionStore 
     emit();
   }
 
+  const persistence = options?.persistence;
+
   return {
+    async hydrate(api) {
+      if (snapshot.token) {
+        await this.bootstrap(api);
+        return;
+      }
+
+      const persistedToken = await persistence?.loadToken();
+      if (!persistedToken) {
+        setSnapshot({ ...snapshot, status: "anonymous" });
+        return;
+      }
+
+      setSnapshot({ ...snapshot, token: persistedToken, status: "anonymous", error: undefined });
+      await this.bootstrap(api);
+    },
     async bootstrap(api) {
       if (!snapshot.token) {
         setSnapshot({ ...snapshot, status: "anonymous" });
@@ -96,11 +120,21 @@ export function createSessionStore(options?: SessionStoreOptions): SessionStore 
     setLanguage(language) {
       setSnapshot({ ...snapshot, language, user: snapshot.user ? { ...snapshot.user, preferredLanguage: language } : null });
     },
+    setUser(user) {
+      setSnapshot({
+        ...snapshot,
+        status: "authenticated",
+        user,
+        language: user.preferredLanguage,
+      });
+    },
     setToken(token) {
       setSnapshot({ ...snapshot, token, status: "anonymous", error: undefined });
+      void persistence?.saveToken(token);
     },
     signOut() {
       setSnapshot({ status: "anonymous", token: null, user: null, language: snapshot.language });
+      void persistence?.clearToken();
     },
     subscribe(listener) {
       listeners.add(listener);

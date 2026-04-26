@@ -53,8 +53,8 @@ func (r *PostgresRepository) Save(input CreateOrderRequest, order Order) error {
 	orderNumber := "PS-" + order.ID
 	if _, err := tx.Exec(`
 		INSERT INTO orders (id, buyer_id, order_number, status, subtotal_amount, total_amount, shipping_address, notes)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	`, order.ID, input.BuyerID, orderNumber, order.Status, order.TotalAmount, order.TotalAmount, shippingAddress, input.Notes); err != nil {
+		VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)
+	`, order.ID, input.BuyerID, orderNumber, order.Status, order.TotalAmount, order.TotalAmount, string(shippingAddress), input.Notes); err != nil {
 		return err
 	}
 

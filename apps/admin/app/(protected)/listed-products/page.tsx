@@ -40,11 +40,7 @@ function formatSizes(product: AdminProduct): string {
 }
 
 function formatPriceLine(product: AdminProduct): string {
-  const parts = [`₹${product.baseWholesalePrice} wholesale`];
-  if (product.moq > 0) {
-    parts.push(`MOQ ${product.moq}`);
-  }
-  return parts.join(" · ");
+  return `₹${product.baseWholesalePrice} wholesale`;
 }
 
 function getProductImages(product: AdminProduct): string[] {

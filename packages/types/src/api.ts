@@ -13,7 +13,19 @@ export interface UpdateLanguageResponse {
   role: "buyer";
   email: string;
   preferredLanguage: Language;
+  displayName?: string;
   businessName?: string;
+  phone?: string;
+  region?: string;
+  avatarUrl?: string;
+}
+
+export interface UpdateBuyerProfileRequest {
+  displayName?: string;
+  businessName?: string;
+  phone?: string;
+  region?: string;
+  avatarUrl?: string;
 }
 
 export interface CreateOrderRequest {
@@ -64,6 +76,10 @@ export interface ApiContractMap {
   updateLanguage: {
     request: UpdateLanguageRequest;
     response: UpdateLanguageResponse;
+  };
+  updateBuyerProfile: {
+    request: UpdateBuyerProfileRequest;
+    response: import("./domain").CurrentUser;
   };
   catalogProducts: {
     response: CatalogProductsResponse;

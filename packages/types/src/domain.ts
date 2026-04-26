@@ -15,7 +15,11 @@ export interface CurrentUser {
   role: Role;
   email: string;
   preferredLanguage: Language;
+  displayName?: string;
   businessName?: string;
+  phone?: string;
+  region?: string;
+  avatarUrl?: string;
 }
 
 export interface ProductCard {

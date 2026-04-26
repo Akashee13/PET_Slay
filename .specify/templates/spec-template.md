@@ -5,6 +5,10 @@
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
 
+> If any requirement, scope boundary, or business rule is materially ambiguous,
+> the author MUST stop and ask concise clarification questions before drafting
+> implementation-ready artifacts.
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--

@@ -113,6 +113,14 @@ func New() http.Handler {
 
 		users.UpdateLanguageHandler(preferenceStore).ServeHTTP(w, r)
 	})))
+	mux.Handle("/v1/buyers/profile", auth.RequireRole(verifier, auth.RoleBuyer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			httpresponse.Error(w, http.StatusMethodNotAllowed, "method_not_allowed")
+			return
+		}
+
+		users.UpdateBuyerProfileHandler(preferenceStore).ServeHTTP(w, r)
+	})))
 	mux.Handle("/v1/catalog/products", auth.RequireRole(verifier, auth.RoleBuyer)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			httpresponse.Error(w, http.StatusMethodNotAllowed, "method_not_allowed")

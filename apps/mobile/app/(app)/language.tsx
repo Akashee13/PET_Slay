@@ -41,18 +41,18 @@ export default function LanguageScreen() {
         {([
           {
             value: "english",
-            label: mobileCopy(session.language, "languageEnglishLabel"),
-            helper: mobileCopy(session.language, "languageEnglishHelper"),
+            label: "English",
+            helper: "Simple catalog and checkout copy for daily operations.",
           },
           {
             value: "hindi",
-            label: mobileCopy(session.language, "languageHindiLabel"),
-            helper: mobileCopy(session.language, "languageHindiHelper"),
+            label: "हिन्दी",
+            helper: "उत्तर भारत के रीसेलर खरीदारों के लिए हिन्दी लिपि समर्थन।",
           },
           {
             value: "hinglish",
-            label: mobileCopy(session.language, "languageHinglishLabel"),
-            helper: mobileCopy(session.language, "languageHinglishHelper"),
+            label: "Hinglish",
+            helper: "WhatsApp-style business language for quick selling.",
           },
         ] satisfies Array<{ value: Language; label: string; helper: string }>).map((option) => {
           const selected = session.language === option.value;

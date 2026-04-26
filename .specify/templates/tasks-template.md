@@ -10,6 +10,8 @@ description: "Task list template for feature implementation"
 
 **Tests**: Tests are mandatory for implementation work because the project constitution requires TDD. Include test tasks before implementation tasks wherever automated coverage is practical. If a UI behavior cannot yet be automated, include an explicit manual verification task and explain the automation gap.
 
+**Clarifications**: If material ambiguity remains after planning, stop and resolve it before creating implementation tasks.
+
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
 ## Format: `[ID] [P?] [Story] Description`

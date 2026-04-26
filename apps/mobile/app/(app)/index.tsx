@@ -112,9 +112,7 @@ export default function CatalogScreen() {
                 <View style={styles.productBody}>
                   <Text style={styles.category}>{product.category.replace("_", " ")}</Text>
                   <Text style={styles.productTitle}>{product.title}</Text>
-                  <Text style={styles.price}>
-                    {`₹${product.baseWholesalePrice} wholesale${product.moq > 0 ? ` · MOQ ${product.moq}` : ""}`}
-                  </Text>
+                  <Text style={styles.price}>₹{product.baseWholesalePrice} wholesale</Text>
                   <Text style={styles.status}>{product.availabilityStatus.replace("_", " ")}</Text>
                 </View>
               </Pressable>
@@ -135,6 +133,7 @@ export default function CatalogScreen() {
             .catch(() => setNotificationStatus(mobileCopy(session.language, "unableToCheckNotificationReadiness")));
         }}
         onClose={() => setDrawerOpen(false)}
+        onAccount={() => router.push("/(app)/account")}
         onLanguage={() => router.push("/(app)/language")}
         onOrders={() => router.push("/(app)/orders")}
         onRefresh={() => router.replace("/(app)")}

@@ -26,7 +26,9 @@ function createTransport(): { transport: ApiTransport; calls: Array<{ path: stri
         role: "buyer",
         email: "ruchi@example.com",
         preferredLanguage: "english",
+        displayName: "Ruchi Arora",
         businessName: "Ruchi Fashion House",
+        avatarUrl: "https://cdn.example.com/ruchi.jpg",
       };
     }
 
@@ -36,6 +38,24 @@ function createTransport(): { transport: ApiTransport; calls: Array<{ path: stri
         role: "buyer",
         email: "ruchi@example.com",
         preferredLanguage: JSON.parse(String(init.body)).preferredLanguage,
+        displayName: "Ruchi Arora",
+        businessName: "Ruchi Fashion House",
+        avatarUrl: "https://cdn.example.com/ruchi.jpg",
+      };
+    }
+
+    if (path === "/v1/buyers/profile") {
+      const payload = JSON.parse(String(init.body));
+      return {
+        id: "buyer-001",
+        role: "buyer",
+        email: "ruchi@example.com",
+        preferredLanguage: "english",
+        displayName: payload.displayName,
+        businessName: payload.businessName,
+        phone: payload.phone,
+        region: payload.region,
+        avatarUrl: payload.avatarUrl,
       };
     }
 
@@ -47,7 +67,7 @@ function createTransport(): { transport: ApiTransport; calls: Array<{ path: stri
             title: "Jeans Top Set",
             category: "western",
             baseWholesalePrice: 310,
-            moq: 200,
+            moq: 0,
             availabilityStatus: "in_stock",
             isNewArrival: true,
             coverImageUrl: "https://cdn.example.com/look.jpg",
@@ -62,7 +82,7 @@ function createTransport(): { transport: ApiTransport; calls: Array<{ path: stri
         title: "Jeans Top Set",
         category: "western",
         baseWholesalePrice: 310,
-        moq: 200,
+        moq: 0,
         availabilityStatus: "in_stock",
         isNewArrival: true,
         variants: [{ id: "var-western-001-s", sizeLabel: "S", availabilityStatus: "in_stock" }],
@@ -145,6 +165,7 @@ describe("US1 buyer mobile flow", () => {
 
     await sessionStore.bootstrap(api);
     assert.equal(sessionStore.getSnapshot().status, "authenticated");
+    assert.equal(sessionStore.getSnapshot().user?.displayName, "Ruchi Arora");
     assert.equal(sessionStore.getSnapshot().user?.businessName, "Ruchi Fashion House");
 
     const updated = await languageController.selectLanguage("hinglish");
@@ -156,6 +177,27 @@ describe("US1 buyer mobile flow", () => {
     assert.equal(sessionStore.getSnapshot().status, "anonymous");
     assert.equal(sessionStore.getSnapshot().token, null);
     assert.equal(sessionStore.getSnapshot().language, "hinglish");
+  });
+
+  it("updates the buyer profile with business-facing details", async () => {
+    const { transport } = createTransport();
+    const sessionStore = createSessionStore({ initialToken: "buyer-token" });
+    const api = new BuyerApiClient({ baseUrl: "https://api.example.com", getToken: sessionStore.getToken, transport });
+
+    await sessionStore.bootstrap(api);
+    const updated = await api.updateProfile({
+      displayName: "Ruchi Stores",
+      businessName: "Ruchi North India Hub",
+      phone: "+91-9999999999",
+      region: "Delhi NCR",
+      avatarUrl: "https://cdn.example.com/ruchi-updated.jpg",
+    });
+    sessionStore.setUser(updated);
+
+    assert.equal(sessionStore.getSnapshot().user?.displayName, "Ruchi Stores");
+    assert.equal(sessionStore.getSnapshot().user?.businessName, "Ruchi North India Hub");
+    assert.equal(sessionStore.getSnapshot().user?.phone, "+91-9999999999");
+    assert.equal(sessionStore.getSnapshot().user?.region, "Delhi NCR");
   });
 
   it("prepares provider-ready social auth options without enabling unfinished OAuth", () => {
@@ -190,7 +232,7 @@ describe("US1 buyer mobile flow", () => {
 
     const products = await catalog.loadProducts({ language: "hinglish" });
     assert.equal(products[0].title, "Jeans Top Set");
-    assert.equal(products[0].moq, 200);
+    assert.equal(products[0].moq, 0);
     assert.equal(calls.find((call) => call.path === "/v1/catalog/products")?.init.headers?.["Accept-Language"], "hinglish");
 
     const detail = await catalog.loadProductDetail("prod-western-001", { language: "hindi" });
@@ -206,7 +248,7 @@ describe("US1 buyer mobile flow", () => {
         title: "Kurti set",
         category: "south_asian",
         baseWholesalePrice: 280,
-        moq: 150,
+        moq: 0,
         availabilityStatus: "in_stock",
         isNewArrival: false,
         coverImageUrl: " https://cdn.example.com/look-1.jpg ",
@@ -221,7 +263,7 @@ describe("US1 buyer mobile flow", () => {
         title: "Top",
         category: "western",
         baseWholesalePrice: 220,
-        moq: 100,
+        moq: 0,
         availabilityStatus: "in_stock",
         isNewArrival: true,
       }),
@@ -246,7 +288,7 @@ describe("US1 buyer mobile flow", () => {
     assert.equal(formatInr(62000), "₹62,000");
   });
 
-  it("submits a valid wholesale order and blocks quantities below MOQ", async () => {
+  it("submits a valid wholesale order and blocks non-positive quantities", async () => {
     const { transport } = createTransport();
     const analytics = createRecordingAnalytics();
     const sessionStore = createSessionStore({ initialToken: "buyer-token" });
@@ -254,8 +296,8 @@ describe("US1 buyer mobile flow", () => {
     const orders = createOrderController({ api, analytics });
 
     assert.throws(
-      () => orders.validateWholesaleQuantity({ quantity: 20, moq: 200 }),
-      /quantity_below_moq/,
+      () => orders.validateWholesaleQuantity({ quantity: 0 }),
+      /quantity_invalid/,
     );
 
     const order = await orders.submitOrder({
@@ -275,7 +317,6 @@ describe("US1 buyer mobile flow", () => {
       productTitle: "Jeans Top Set",
       productImageUrl: "https://cdn.example.com/look.jpg",
       quantity: 250,
-      moq: 200,
       city: "Delhi",
       unitPrice: 310,
     });

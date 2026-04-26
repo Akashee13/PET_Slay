@@ -2,6 +2,7 @@ import type {
   CatalogProductsResponse,
   CreateOrderRequest,
   Language,
+  UpdateBuyerProfileRequest,
   UpdateLanguageRequest,
   UpdateLanguageResponse,
 } from "@pet-slay/types";
@@ -50,6 +51,13 @@ export class BuyerApiClient {
     return this.request<UpdateLanguageResponse>("/v1/buyers/preferences/language", {
       method: "PUT",
       body: JSON.stringify({ preferredLanguage } satisfies UpdateLanguageRequest),
+    });
+  }
+
+  async updateProfile(input: UpdateBuyerProfileRequest): Promise<CurrentUser> {
+    return this.request<CurrentUser>("/v1/buyers/profile", {
+      method: "PUT",
+      body: JSON.stringify(input),
     });
   }
 

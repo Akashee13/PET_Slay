@@ -18,16 +18,14 @@ export default function CheckoutScreen() {
     productTitle: string;
     productImage: string;
     variantId: string;
-    moq: string;
     unitPrice: string;
     quantity: string;
     fullName: string;
     whatsappPhone: string;
     gstNumber: string;
   }>();
-  const moq = Number(params.moq || "0");
   const unitPrice = Number(params.unitPrice || "0");
-  const [quantity, setQuantity] = useState(params.quantity || params.moq || "");
+  const [quantity, setQuantity] = useState(params.quantity || "1");
   const [fullName, setFullName] = useState(params.fullName || "");
   const [whatsappPhone, setWhatsappPhone] = useState(params.whatsappPhone || "");
   const [gstNumber, setGstNumber] = useState(params.gstNumber || "");
@@ -43,7 +41,7 @@ export default function CheckoutScreen() {
       if (!fullName.trim() || !whatsappPhone.trim()) {
         throw new Error("order_details_required");
       }
-      orders.validateWholesaleQuantity({ quantity: nextQuantity, moq });
+      orders.validateWholesaleQuantity({ quantity: nextQuantity });
       setSubmitting(true);
       const order = await orders.submitOrder({
         productVariantId: params.variantId,
@@ -62,8 +60,8 @@ export default function CheckoutScreen() {
       setMessage(`${mobileCopy(session.language, "orderCreated")}: ${order.id} · ${mobileCopy(session.language, "status")}: ${formatOrderStatus(order.status)}`);
     } catch (requestError) {
       setMessage(
-        requestError instanceof Error && requestError.message === "quantity_below_moq"
-          ? mobileCopy(session.language, "quantityBelowMoq").replace("{{moq}}", String(moq))
+        requestError instanceof Error && requestError.message === "quantity_invalid"
+          ? mobileCopy(session.language, "quantityMustBePositive")
           : requestError instanceof Error && requestError.message === "order_details_required"
             ? mobileCopy(session.language, "orderDetailsRequired")
             : requestError instanceof Error
@@ -88,7 +86,6 @@ export default function CheckoutScreen() {
         productTitle: params.productTitle || mobileCopy(session.language, "createOrder"),
         productImageUrl: params.productImage || "",
         quantity: Number(quantity || 0),
-        moq,
         city,
         unitPrice,
       });
@@ -111,7 +108,6 @@ export default function CheckoutScreen() {
     >
       <View style={styles.summary}>
         <Text style={styles.summaryTitle}>{mobileCopy(session.language, "orderSummary")}</Text>
-        {moq > 0 ? <Text style={styles.summaryLine}>MOQ {moq}</Text> : null}
         <Text style={styles.summaryLine}>{mobileCopy(session.language, "estimatedTotal")} {formatInr(Number(quantity || 0) * unitPrice)}</Text>
       </View>
 

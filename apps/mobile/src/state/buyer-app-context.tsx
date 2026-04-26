@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useMemo, useSyncExternalStore } from "react";
+import { createContext, ReactNode, useContext, useEffect, useMemo, useSyncExternalStore } from "react";
 
 import { createCatalogController, type CatalogController } from "../features/catalog/catalog-controller";
 import { createLanguageController, type LanguageController } from "../features/language/language-controller";
@@ -10,6 +10,7 @@ import { createRefundController, type RefundController } from "../features/refun
 import { createConsoleAnalytics, type Analytics } from "../services/analytics";
 import { BuyerApiClient } from "../services/buyer-api";
 import { NotificationsService } from "../services/notifications";
+import { sessionPersistence } from "../services/session-persistence";
 import { createSessionStore, getConfiguredBuyerToken, type SessionSnapshot, type SessionStore } from "./session-store";
 
 type BuyerAppContextValue = {
@@ -24,7 +25,10 @@ type BuyerAppContextValue = {
 };
 
 const BuyerAppContext = createContext<BuyerAppContextValue | null>(null);
-const sessionStore = createSessionStore({ initialToken: getConfiguredBuyerToken() || null });
+const sessionStore = createSessionStore({
+  initialToken: getConfiguredBuyerToken() || null,
+  persistence: sessionPersistence,
+});
 const api = new BuyerApiClient({ getToken: sessionStore.getToken });
 const analytics = createConsoleAnalytics();
 const catalog = createCatalogController({ api, analytics });
@@ -48,6 +52,10 @@ export function BuyerAppProvider({ children }: { children: ReactNode }) {
     }),
     [],
   );
+
+  useEffect(() => {
+    void sessionStore.hydrate(api);
+  }, []);
 
   return <BuyerAppContext.Provider value={value}>{children}</BuyerAppContext.Provider>;
 }

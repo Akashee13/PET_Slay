@@ -8,9 +8,11 @@ const (
 )
 
 type Session struct {
-	UserID string
-	Role   Role
-	Email  string
+	UserID      string
+	Role        Role
+	Email       string
+	DisplayName string
+	AvatarURL   string
 }
 
 type Verifier interface {

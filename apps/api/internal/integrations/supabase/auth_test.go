@@ -20,7 +20,7 @@ func TestVerifyAccessTokenReturnsBuyerSessionFromSupabaseUser(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"id":"supabase-user-001","email":"buyer@example.com"}`))
+		_, _ = w.Write([]byte(`{"id":"supabase-user-001","email":"buyer@example.com","user_metadata":{"given_name":"Ruchi","family_name":"Arora","avatar_url":"https://cdn.example.com/ruchi.jpg"},"identities":[{"identity_data":{"name":"Ruchi Arora","picture":"https://cdn.example.com/ruchi.jpg"}}]}`))
 	}))
 	defer server.Close()
 
@@ -41,6 +41,12 @@ func TestVerifyAccessTokenReturnsBuyerSessionFromSupabaseUser(t *testing.T) {
 	}
 	if session.UserID != "supabase-user-001" {
 		t.Fatalf("expected supabase-user-001, got %s", session.UserID)
+	}
+	if session.DisplayName != "Ruchi Arora" {
+		t.Fatalf("expected display name from metadata, got %q", session.DisplayName)
+	}
+	if session.AvatarURL != "https://cdn.example.com/ruchi.jpg" {
+		t.Fatalf("expected avatar url from metadata, got %q", session.AvatarURL)
 	}
 }
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { getAdminSessionToken } from "@/src/features/auth/admin-session";
 import { useAdminLanguage } from "@/src/features/i18n/admin-language";
@@ -139,6 +139,7 @@ export default function ProductsPage() {
   const [result, setResult] = useState<AdminProduct | null>(null);
   const [error, setError] = useState("");
   const [deleteConfirmArmed, setDeleteConfirmArmed] = useState(false);
+  const dismissedEditParamRef = useRef<string | null>(null);
   const isBusy = busyOperation !== "";
 
   const activeProducts = useMemo(() => [...products].sort((left, right) => right.id.localeCompare(left.id)), [products]);
@@ -185,7 +186,11 @@ export default function ProductsPage() {
 
   useEffect(() => {
     const editProductId = searchParams.get("edit");
-    if (!editProductId || productsLoading || isBusy) {
+    if (!editProductId) {
+      dismissedEditParamRef.current = null;
+      return;
+    }
+    if (dismissedEditParamRef.current === editProductId || productsLoading || isBusy) {
       return;
     }
     if (!activeProducts.some((product) => product.id === editProductId)) {
@@ -202,8 +207,12 @@ export default function ProductsPage() {
     if (isBusy) {
       return;
     }
+    dismissedEditParamRef.current = searchParams.get("edit");
     setModalMode(null);
     setError("");
+    setSelectedEditProductId("");
+    setCreateForm(defaultCreateForm);
+    setUpdateForm(defaultUpdateForm);
     setCreateUploadFiles([]);
     setUpdateUploadFiles([]);
     setDeleteConfirmArmed(false);
@@ -213,6 +222,7 @@ export default function ProductsPage() {
   }
 
   function openCreateModal() {
+    dismissedEditParamRef.current = null;
     setCreateForm(defaultCreateForm);
     setCreateUploadFiles([]);
     setError("");
@@ -229,6 +239,7 @@ export default function ProductsPage() {
     }
 
     setBusyOperation("prefill");
+    dismissedEditParamRef.current = null;
     setError("");
     try {
       const product = await getAdminProduct(token, productId);
@@ -284,6 +295,8 @@ export default function ProductsPage() {
       setCreateForm(defaultCreateForm);
       setCreateUploadFiles([]);
       setModalMode(null);
+      setSelectedEditProductId("");
+      setUpdateForm(defaultUpdateForm);
       await loadProducts();
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Failed to create product");
@@ -334,6 +347,7 @@ export default function ProductsPage() {
       setUpdateForm(toUpdateForm(updated));
       setDeleteConfirmArmed(false);
       setModalMode(null);
+      dismissedEditParamRef.current = null;
       router.replace("/products");
       await loadProducts();
     } catch (requestError) {
@@ -369,6 +383,7 @@ export default function ProductsPage() {
       setSelectedEditProductId("");
       setUpdateForm(defaultUpdateForm);
       setUpdateUploadFiles([]);
+      dismissedEditParamRef.current = null;
       router.replace("/products");
       await loadProducts();
     } catch (requestError) {
@@ -397,8 +412,8 @@ export default function ProductsPage() {
         <p className="subtle">Open a focused modal for adding or editing products. Edit forms are prefilled so the admin can erase, refine, and resubmit quickly.</p>
         <div className="product-action-grid">
           <button className="product-action-card" type="button" onClick={openCreateModal}>
-            <strong>Add Product</strong>
-            <span>Open a fresh intake form with image upload and size selection.</span>
+            <span className="product-action-card-title">Add Product</span>
+            <span className="product-action-card-copy">Open a fresh intake form with image upload and size selection.</span>
           </button>
           <button
             className="product-action-card accent"
@@ -413,8 +428,8 @@ export default function ProductsPage() {
               }
             }}
           >
-            <strong>Edit Product</strong>
-            <span>Choose a product below and open a prefilled edit modal.</span>
+            <span className="product-action-card-title">Edit Product</span>
+            <span className="product-action-card-copy">Choose a product below and open a prefilled edit modal.</span>
           </button>
         </div>
       </section>

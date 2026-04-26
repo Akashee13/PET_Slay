@@ -11,7 +11,6 @@ import (
 var (
 	ErrEmptyOrder            = errors.New("order must contain at least one item")
 	ErrInvalidQuantity       = errors.New("quantity must be greater than zero")
-	ErrMOQNotSatisfied       = errors.New("quantity does not satisfy moq")
 	ErrProductVariantMissing = errors.New("product variant not found")
 	ErrOrderNotFound         = errors.New("order not found")
 )
@@ -97,10 +96,6 @@ func (s *Service) Create(input CreateOrderRequest) (*Order, error) {
 		product, variant, err := s.catalog.FindByVariantID(item.ProductVariantID)
 		if err != nil {
 			return nil, err
-		}
-
-		if item.Quantity < product.MOQ {
-			return nil, ErrMOQNotSatisfied
 		}
 
 		lineTotal := float64(item.Quantity) * product.BaseWholesalePrice

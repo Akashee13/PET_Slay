@@ -76,7 +76,7 @@ export default function ProductDetailScreen() {
   const currentProduct = product;
   const primaryVariant = currentProduct.variants[0];
   const imageUrls = getProductImageUrls(currentProduct);
-  const minimumOrderQuantity = String(currentProduct.moq);
+  const minimumOrderQuantity = "1";
   const availableSizes = Array.from(
     new Set(
       currentProduct.variants
@@ -96,19 +96,19 @@ export default function ProductDetailScreen() {
   }
 
   function openOrderSheet() {
-    setQuantity(String(currentProduct.moq));
+    setQuantity("1");
     setOrderError("");
     setOrderSheetOpen(true);
   }
 
-function continueToOrderFlow() {
+  function continueToOrderFlow() {
     const nextQuantity = Number(quantity);
     if (!fullName.trim() || !whatsappPhone.trim()) {
       setOrderError(mobileCopy(session.language, "orderDetailsRequired"));
       return;
     }
-    if (!Number.isFinite(nextQuantity) || nextQuantity < currentProduct.moq) {
-      setOrderError(mobileCopy(session.language, "quantityBelowMoq").replace("{{moq}}", String(currentProduct.moq)));
+    if (!Number.isFinite(nextQuantity) || nextQuantity <= 0) {
+      setOrderError(mobileCopy(session.language, "quantityMustBePositive"));
       return;
     }
 
@@ -123,7 +123,6 @@ function continueToOrderFlow() {
         productTitle: currentProduct.title,
         productImageUrl: imageUrls[0],
         quantity: nextQuantity,
-        moq: currentProduct.moq,
         unitPrice: currentProduct.baseWholesalePrice,
       });
       void Linking.openURL(url)
@@ -139,7 +138,6 @@ function continueToOrderFlow() {
         productTitle: currentProduct.title,
         productImage: imageUrls[0],
         variantId: primaryVariant?.id ?? "",
-        moq: String(currentProduct.moq),
         unitPrice: String(currentProduct.baseWholesalePrice),
         quantity: String(nextQuantity),
         fullName: fullName.trim(),
@@ -172,11 +170,7 @@ function continueToOrderFlow() {
           <Text style={styles.price}>
             ₹{currentProduct.baseWholesalePrice} {mobileCopy(session.language, "wholesalePriceSuffix")}
           </Text>
-          <Text style={styles.meta}>
-            {currentProduct.moq > 0
-              ? `MOQ ${currentProduct.moq} · ${currentProduct.availabilityStatus.replace("_", " ")}`
-              : currentProduct.availabilityStatus.replace("_", " ")}
-          </Text>
+          <Text style={styles.meta}>{currentProduct.availabilityStatus.replace("_", " ")}</Text>
         </View>
 
         <View style={styles.variantCard}>
@@ -239,6 +233,7 @@ function continueToOrderFlow() {
             .catch(() => setMessage(mobileCopy(session.language, "unableToCheckNotificationReadiness")));
         }}
         onClose={() => setDrawerOpen(false)}
+        onAccount={() => router.push("/(app)/account")}
         onLanguage={() => router.push("/(app)/language")}
         onOrders={() => router.push("/(app)/orders")}
         onRefresh={() => router.replace("/(app)")}

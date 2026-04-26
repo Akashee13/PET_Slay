@@ -33,6 +33,7 @@
 
 - **Reseller-First Product Value**: [PASS/FAIL with reseller problem and confidence/value created]
 - **Spec-First and Test-First Delivery**: [PASS/FAIL with test-first plan and unresolved questions]
+- **Ambiguity Resolution**: [PASS/FAIL confirming material doubts were clarified before implementation]
 - **Multilingual Local-Market Readiness**: [PASS/FAIL with English/Hindi/Hinglish strategy if buyer-facing]
 - **Two-Surface Platform Coherence**: [PASS/FAIL with client/admin impact and shared-rule ownership]
 - **Conversion-Respectful Operations**: [PASS/FAIL with relevance, fairness, and non-spam safeguards]

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { Animated, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Image, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { CurrentUser, Language } from "@pet-slay/types";
 
@@ -13,6 +13,7 @@ export function BuyerAccountDrawer({
   language,
   user,
   onClose,
+  onAccount,
   onOrders,
   onLanguage,
   onRefresh,
@@ -23,6 +24,7 @@ export function BuyerAccountDrawer({
   language: Language;
   user: CurrentUser | null;
   onClose: () => void;
+  onAccount: () => void;
   onOrders: () => void;
   onLanguage: () => void;
   onRefresh: () => void;
@@ -49,14 +51,17 @@ export function BuyerAccountDrawer({
 
   const actions = useMemo(
     () => [
+      { key: "account", label: mobileCopy(language, "myAccount"), variant: "primary" as const, onPress: onAccount },
       { key: "orders", label: mobileCopy(language, "orderHistory"), variant: "secondary" as const, onPress: onOrders },
       { key: "language", label: mobileCopy(language, "languagePreference"), variant: "secondary" as const, onPress: onLanguage },
       { key: "refresh", label: mobileCopy(language, "refreshCatalog"), variant: "secondary" as const, onPress: onRefresh },
       { key: "alerts", label: mobileCopy(language, "arrivalAlerts"), variant: "secondary" as const, onPress: onArrivalAlerts },
       { key: "signout", label: mobileCopy(language, "signOut"), variant: "danger" as const, onPress: onSignOut },
     ],
-    [language, onArrivalAlerts, onLanguage, onOrders, onRefresh, onSignOut],
+    [language, onAccount, onArrivalAlerts, onLanguage, onOrders, onRefresh, onSignOut],
   );
+  const identityName = user?.displayName || user?.businessName || mobileCopy(language, "resellerCatalog");
+  const businessName = user?.businessName && user.businessName !== identityName ? user.businessName : "";
 
   return (
     <Modal animationType="none" onRequestClose={onClose} transparent visible={visible}>
@@ -67,8 +72,23 @@ export function BuyerAccountDrawer({
           <View style={styles.grabber} />
           <BrandMark name={mobileCopy(language, "appName")} tagline={mobileCopy(language, "brandTagline")} />
           <View style={styles.identityCard}>
-            <Text style={styles.identityTitle}>{user?.businessName ?? mobileCopy(language, "resellerCatalog")}</Text>
-            <Text style={styles.identityMeta}>{user?.email ?? mobileCopy(language, "authSubtitle")}</Text>
+            <View style={styles.identityTopRow}>
+              {user?.avatarUrl ? (
+                <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatarFallback}>
+                  <Text style={styles.avatarFallbackText}>{identityName.slice(0, 1).toUpperCase()}</Text>
+                </View>
+              )}
+              <View style={styles.identityCopy}>
+                <Text style={styles.identityTitle}>{identityName}</Text>
+                {businessName ? <Text style={styles.identityBusiness}>{businessName}</Text> : null}
+                <Text style={styles.identityMeta}>{user?.email ?? mobileCopy(language, "authSubtitle")}</Text>
+              </View>
+            </View>
+            {user?.phone || user?.region ? (
+              <Text style={styles.identityFootnote}>{[user?.phone, user?.region].filter(Boolean).join(" · ")}</Text>
+            ) : null}
           </View>
           <View style={styles.actionList}>
             {actions.map((action) => (
@@ -139,15 +159,55 @@ const styles = StyleSheet.create({
     backgroundColor: mobileTheme.cardAlt,
     padding: 16,
   },
+  identityTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  identityCopy: {
+    flex: 1,
+    gap: 2,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: mobileTheme.accentSoft,
+  },
+  avatarFallback: {
+    alignItems: "center",
+    justifyContent: "center",
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: mobileTheme.accentSoft,
+    borderWidth: 1,
+    borderColor: mobileTheme.line,
+  },
+  avatarFallbackText: {
+    color: mobileTheme.primaryDeep,
+    fontSize: 24,
+    fontWeight: "900",
+  },
   identityTitle: {
     color: mobileTheme.ink,
     fontSize: 20,
     fontWeight: "900",
   },
+  identityBusiness: {
+    color: mobileTheme.primaryDeep,
+    fontSize: 13,
+    fontWeight: "800",
+  },
   identityMeta: {
     color: mobileTheme.muted,
     fontSize: 13,
     lineHeight: 19,
+  },
+  identityFootnote: {
+    color: mobileTheme.muted,
+    fontSize: 12,
+    lineHeight: 18,
   },
   actionList: {
     gap: 12,
